@@ -40,12 +40,18 @@ export default function Events() {
     try {
       setLoading(true);
       
+      console.log('Loading events for user:', user);
+      console.log('User email:', user.email);
+      
       // Get user's organization
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('organization_id')
         .eq('email', user.email!)
         .single();
+
+      console.log('UserData:', userData);
+      console.log('UserError:', userError);
 
       if (!userData?.organization_id) {
         toast.error('Organizzazione non trovata');

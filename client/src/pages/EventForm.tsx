@@ -84,6 +84,9 @@ export default function EventForm() {
         created_by: userData.id,
       };
 
+      console.log('EventData to send:', eventData);
+      console.log('UserData:', userData);
+
       if (isEdit) {
         await updateEvent(params!.id, eventData);
         toast.success('Evento aggiornato con successo');

@@ -21,6 +21,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session:', session);
+      console.log('Initial user:', session?.user);
+      console.log('User email:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -30,6 +33,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session);
+      console.log('New user:', session?.user);
+      console.log('New user email:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
