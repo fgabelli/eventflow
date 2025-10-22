@@ -29,20 +29,29 @@ export async function getEventById(id: string) {
 }
 
 export async function createEvent(event: InsertEvent) {
-  // Generate QR code for the event
-  const qrCodeData = `${window.location.origin}/events/${event.public_url_id || 'new'}`;
-  const qrCodeImage = await QRCode.toDataURL(qrCodeData);
-
+  // Generate QR code for the event after creation
   const { data, error } = await supabase
     .from('events')
-    .insert({
-      ...event,
-      qr_code_image: qrCodeImage,
-    })
+    .insert(event)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error:', error);
+    throw new Error(error.message || 'Errore nella creazione dell\'evento');
+  }
+
+  // Generate and update QR code
+  if (data) {
+    const qrCodeData = `${window.location.origin}/events/${data.id}`;
+    const qrCodeImage = await QRCode.toDataURL(qrCodeData);
+    
+    await supabase
+      .from('events')
+      .update({ qr_code_image: qrCodeImage })
+      .eq('id', data.id);
+  }
+
   return data;
 }
 

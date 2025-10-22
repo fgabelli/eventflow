@@ -30,7 +30,7 @@ export default function Settings() {
       const { data: org, error: orgError } = await supabase
         .from('organizations')
         .select('name')
-        .eq('id', user.id)
+        .eq('email', user.email!)
         .single();
 
       if (orgError) throw orgError;
@@ -40,7 +40,7 @@ export default function Settings() {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('name, email')
-        .eq('id', user.id)
+        .eq('email', user.email!)
         .single();
 
       if (userError) throw userError;
@@ -62,7 +62,7 @@ export default function Settings() {
       const { error } = await supabase
         .from('organizations')
         .update({ name: organizationName })
-        .eq('id', user.id);
+        .eq('email', user.email!);
 
       if (error) throw error;
       toast.success('Nome organizzazione aggiornato con successo');
@@ -82,7 +82,7 @@ export default function Settings() {
       const { error } = await supabase
         .from('users')
         .update({ name: userName })
-        .eq('id', user.id);
+        .eq('email', user.email!);
 
       if (error) throw error;
       toast.success('Profilo aggiornato con successo');

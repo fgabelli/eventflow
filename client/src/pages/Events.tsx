@@ -44,7 +44,7 @@ export default function Events() {
       const { data: userData } = await supabase
         .from('users')
         .select('organization_id')
-        .eq('id', user.id)
+        .eq('email', user.email!)
         .single();
 
       if (!userData?.organization_id) {

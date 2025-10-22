@@ -61,10 +61,15 @@ export default function EventForm() {
     try {
       setLoading(true);
 
+      if (!user.email) {
+        toast.error('Email utente non trovata');
+        return;
+      }
+
       const { data: userData } = await supabase
         .from('users')
-        .select('organization_id')
-        .eq('id', user.id)
+        .select('id, organization_id')
+        .eq('email', user.email)
         .single();
 
       if (!userData?.organization_id) {
@@ -76,7 +81,7 @@ export default function EventForm() {
         ...formData,
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         organization_id: userData.organization_id,
-        created_by: user.id,
+        created_by: userData.id,
       };
 
       if (isEdit) {
