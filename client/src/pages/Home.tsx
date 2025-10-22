@@ -1,35 +1,89 @@
+import { useState, useEffect } from 'react';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Users, Mail, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function Home() {
   const { user } = useSupabaseAuth();
+  const [stats, setStats] = useState({
+    activeEvents: 0,
+    totalAttendees: 0,
+    totalCheckIns: 0,
+    emailsSent: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
+  useEffect(() => {
+    loadStats();
+  }, [user]);
+
+  const loadStats = async () => {
+    if (!user) return;
+
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!userData?.organization_id) return;
+
+      const [eventsData, attendeesData, campaignsData] = await Promise.all([
+        supabase
+          .from('events')
+          .select('status')
+          .eq('organization_id', userData.organization_id),
+        supabase
+          .from('attendees')
+          .select('status')
+          .eq('organization_id', userData.organization_id),
+        supabase
+          .from('email_campaigns')
+          .select('sent_count')
+          .eq('organization_id', userData.organization_id),
+      ]);
+
+      setStats({
+        activeEvents: eventsData.data?.filter((e) => e.status === 'published').length || 0,
+        totalAttendees: attendeesData.data?.length || 0,
+        totalCheckIns: attendeesData.data?.filter((a) => a.status === 'checked_in').length || 0,
+        emailsSent: campaignsData.data?.reduce((sum, c) => sum + (c.sent_count || 0), 0) || 0,
+      });
+    } catch (error: any) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsDisplay = [
     {
       title: 'Eventi Attivi',
-      value: '0',
+      value: stats.activeEvents.toString(),
       description: 'Eventi pubblicati',
       icon: Calendar,
       color: 'text-blue-600',
     },
     {
       title: 'Partecipanti',
-      value: '0',
+      value: stats.totalAttendees.toString(),
       description: 'Registrazioni totali',
       icon: Users,
       color: 'text-green-600',
     },
     {
       title: 'Check-in',
-      value: '0',
+      value: stats.totalCheckIns.toString(),
       description: 'Check-in completati',
       icon: TrendingUp,
       color: 'text-purple-600',
     },
     {
       title: 'Email Inviate',
-      value: '0',
+      value: stats.emailsSent.toString(),
       description: 'Campagne attive',
       icon: Mail,
       color: 'text-orange-600',
@@ -46,7 +100,7 @@ export default function Home() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+        {statsDisplay.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title}>
