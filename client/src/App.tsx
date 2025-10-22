@@ -14,6 +14,8 @@ import CheckIn from "./pages/CheckIn";
 import EventForm from "./pages/EventForm";
 import AttendeeForm from "./pages/AttendeeForm";
 import Categories from "./pages/Categories";
+import Settings from "./pages/Settings";
+import Team from "./pages/Team";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { user, loading } = useSupabaseAuth();
@@ -60,6 +62,8 @@ function Router() {
       <Route path="/events/:id" component={(props) => <ProtectedRoute component={EventForm} {...props} />} />
       <Route path="/attendees/:id" component={(props) => <ProtectedRoute component={AttendeeForm} {...props} />} />
       <Route path="/categories" component={(props) => <ProtectedRoute component={Categories} {...props} />} />
+      <Route path="/settings" component={(props) => <ProtectedRoute component={Settings} {...props} />} />
+      <Route path="/team" component={(props) => <ProtectedRoute component={Team} {...props} />} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

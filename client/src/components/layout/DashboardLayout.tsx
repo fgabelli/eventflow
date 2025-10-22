@@ -19,6 +19,7 @@ import {
   LogOut,
   Menu,
   ScanLine,
+  UserCog,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { label: 'Check-in', href: '/checkin', icon: ScanLine },
   { label: 'Campagne Email', href: '/campaigns', icon: Mail },
   { label: 'Categorie', href: '/categories', icon: Tags },
+  { label: 'Team', href: '/team', icon: UserCog },
   { label: 'Impostazioni', href: '/settings', icon: Settings },
 ];
 
