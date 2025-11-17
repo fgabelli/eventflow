@@ -42,8 +42,14 @@ interface TeamMember {
   created_at: string;
 }
 
+interface UserData {
+  id: string;
+  organization_id: string;
+}
+
 export default function Team() {
   const { user } = useSupabaseAuth();
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,18 +59,38 @@ export default function Team() {
 
   useEffect(() => {
     if (user) {
-      loadTeamMembers();
+      loadUserData();
     }
   }, [user]);
 
-  const loadTeamMembers = async () => {
+  const loadUserData = async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('users')
+        .select('id, organization_id')
+        .eq('open_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setUserData(data);
+      loadTeamMembers(data.organization_id);
+    } catch (error: any) {
+      console.error('Error loading user data:', error);
+      toast.error('Errore nel caricamento dei dati utente');
+    }
+  };
+
+  const loadTeamMembers = async (orgId?: string) => {
+    const organizationId = orgId || userData?.organization_id;
+    if (!organizationId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
         .select('*')
-        .eq('organization_id', user.id)
+        .eq('organization_id', organizationId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -76,7 +102,7 @@ export default function Team() {
   };
 
   const handleInviteMember = async () => {
-    if (!user || !newMemberEmail || !newMemberName) {
+    if (!userData || !newMemberEmail || !newMemberName) {
       toast.error('Compila tutti i campi');
       return;
     }
@@ -84,18 +110,14 @@ export default function Team() {
     setLoading(true);
 
     try {
-      // Genera un ID temporaneo per l'invito
-      const inviteId = crypto.randomUUID();
-      
       // Crea un invito nella tabella users
       const { error } = await supabase
         .from('users')
         .insert({
-          id: inviteId,
           email: newMemberEmail,
           name: newMemberName,
           role: newMemberRole,
-          organization_id: user.id,
+          organization_id: userData.organization_id,
           is_invitation: true,
         });
 

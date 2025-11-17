@@ -53,6 +53,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const signUp = async (email: string, password: string, name: string) => {
+    // Create Supabase Auth user - organization and user record will be created automatically by database trigger
     const { error } = await supabase.auth.signUp({
       email,
       password,
