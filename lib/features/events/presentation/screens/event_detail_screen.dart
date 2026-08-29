@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' show max;
+import 'dart:ui' as ui;
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -556,7 +557,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     }
   }
 
-  void _printQrCode(EventModel event) {
+  Future<void> _printQrCode(EventModel event) async {
     final url = 'https://ticketto.it/register/${widget.eventId}';
     final dateStr = '${event.date.day}/${event.date.month}/${event.date.year}';
     final timeStr = '${event.date.hour.toString().padLeft(2, '0')}:${event.date.minute.toString().padLeft(2, '0')}';
@@ -564,13 +565,30 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     final escapedTitle = event.title.replaceAll("'", "\\'").replaceAll('"', '&quot;');
     final escapedLocation = locationStr.replaceAll("'", "\\'").replaceAll('"', '&quot;');
 
+    String qrImgTag = '<canvas id="qr"></canvas>';
+    try {
+      final painter = QrPainter(
+        data: url,
+        version: QrVersions.auto,
+        errorCorrectionLevel: QrErrorCorrectLevel.M,
+        color: const Color(0xFF1A1A2E),
+        emptyColor: const Color(0xFFFFFFFF),
+      );
+      final picData = await painter.toImageData(320, format: ui.ImageByteFormat.png);
+      if (picData != null) {
+        final base64Qr = base64Encode(picData.buffer.asUint8List());
+        qrImgTag = '<img src="data:image/png;base64,$base64Qr" width="280" height="280" style="display:block; border-radius: 8px; margin: 0 auto;" alt="QR Code" />';
+      }
+    } catch (e) {
+      debugPrint('Error generating QR image for print: $e');
+    }
+
     final printHtml = '''
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>QR Code - ${escapedTitle}</title>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <title>QR Code - $escapedTitle</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     @page { size: A4; margin: 20mm; }
@@ -638,24 +656,20 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 </head>
 <body>
   <div class="card">
-    <div class="event-title">${escapedTitle}</div>
+    <div class="event-title">$escapedTitle</div>
     <div class="event-meta">📅 $dateStr  •  🕐 $timeStr</div>
     ${escapedLocation.isNotEmpty ? '<div class="event-meta">📍 $escapedLocation</div>' : ''}
     <div class="qr-container">
-      <canvas id="qr"></canvas>
+      $qrImgTag
     </div>
     <div class="scan-label">📱 Scan to Register</div>
     <div class="url-label">$url</div>
     <div class="footer">Powered by Ticketto</div>
   </div>
   <script>
-    QRCode.toCanvas(document.getElementById('qr'), '$url', {
-      width: 280,
-      margin: 1,
-      color: { dark: '#1a1a2e', light: '#ffffff' }
-    }, function(err) {
-      if (!err) setTimeout(function() { window.print(); }, 500);
-    });
+    window.onload = function() {
+      setTimeout(function() { window.print(); }, 400);
+    };
   </script>
 </body>
 </html>
