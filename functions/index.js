@@ -302,7 +302,7 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
     const eventIdSafe = (eventData.id || attendee.eventId || "event").replace(/[^a-zA-Z0-9_.-]/g, "_");
     const attendeeIdSafe = (attendeeDocId || attendee.id || attendee.qrCode || "ticket").replace(/[^a-zA-Z0-9_.-]/g, "_");
 
-    const classId = `${GOOGLE_WALLET_ISSUER_ID}.event_${eventIdSafe}`;
+    const classId = `${GOOGLE_WALLET_ISSUER_ID}.ticketto_demo`;
     const objectId = `${GOOGLE_WALLET_ISSUER_ID}.ticket_${attendeeIdSafe}`;
 
     const eventTitle = eventData.title || "Evento Ticketto";
@@ -312,13 +312,45 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
       ? eventData.primaryColor
       : "#6366F1";
 
-    const eventClass = {
-      id: classId,
-      issuerName: issuerName,
-      reviewStatus: "UNDER_REVIEW",
-      eventName: {
-        defaultValue: { language: lang, value: eventTitle },
-      },
+    const locale = getDateLocale(lang);
+    let formattedDateTime = "";
+    if (eventDate) {
+      const dateStr = eventDate.toLocaleDateString(locale, {
+        weekday: "short", year: "numeric", month: "short", day: "numeric", timeZone: "Europe/Rome",
+      });
+      const timeStr = eventDate.toLocaleTimeString(locale, {
+        hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome",
+      });
+      formattedDateTime = `${dateStr} ${timeStr}`;
+    }
+
+    const textModules = [];
+    if (formattedDateTime) {
+      textModules.push({
+        header: t(lang, "wallet", "dateLabel") || "DATA",
+        body: formattedDateTime,
+      });
+    }
+    if (eventData.location) {
+      textModules.push({
+        header: t(lang, "wallet", "locationLabel") || "LUOGO",
+        body: eventData.location,
+      });
+    }
+    textModules.push({
+      header: t(lang, "wallet", "emailLabel") || "Email",
+      body: attendee.email || "—",
+    });
+    if (orgData?.name) {
+      textModules.push({
+        header: t(lang, "wallet", "organizerLabel") || "Organizzatore",
+        body: orgData.name,
+      });
+    }
+
+    const genericObject = {
+      id: objectId,
+      classId: classId,
       logo: {
         sourceUri: {
           uri: "https://ticketto.it/icons/Icon-512.png",
@@ -327,66 +359,31 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
           defaultValue: { language: lang, value: "Ticketto Logo" },
         },
       },
-      hexBackgroundColor: primaryColor,
-      countryCode: "IT",
-    };
-
-    if (eventData.location) {
-      eventClass.venue = {
-        name: {
-          defaultValue: { language: lang, value: eventData.location },
-        },
-      };
-    }
-
-    if (eventDate) {
-      eventClass.dateTime = {
-        start: eventDate.toISOString(),
-      };
-    }
-
-    const eventObject = {
-      id: objectId,
-      classId: classId,
-      state: "ACTIVE",
-      ticketHolderName: attendeeFullName,
+      cardTitle: {
+        defaultValue: { language: lang, value: eventTitle },
+      },
+      subheader: {
+        defaultValue: { language: lang, value: issuerName },
+      },
+      header: {
+        defaultValue: { language: lang, value: attendeeFullName },
+      },
       barcode: {
         type: "QR_CODE",
         value: attendee.qrCode,
         alternateText: attendee.qrCode,
       },
-      textModulesData: [
-        {
-          header: t(lang, "wallet", "emailLabel") || "Email",
-          body: attendee.email || "—",
-        },
-      ],
+      hexBackgroundColor: primaryColor,
+      textModulesData: textModules,
     };
 
-    if (eventData.location) {
-      eventObject.textModulesData.push({
-        header: t(lang, "wallet", "locationLabel") || "Luogo",
-        body: eventData.location,
-      });
-    }
-
-    if (orgData?.name) {
-      eventObject.textModulesData.push({
-        header: t(lang, "wallet", "organizerLabel") || "Organizzatore",
-        body: orgData.name,
-      });
-    }
-
-    // Build the JWT claims for Google Wallet
-    // NOTE: 'origins' must NOT be set for links sent via email/SMS,
-    // otherwise Google Wallet will reject the request due to origin header mismatch.
+    // Build the JWT claims for Google Wallet Generic Pass
     const claims = {
       iss: WALLET_SERVICE_ACCOUNT,
       aud: "google",
       typ: "savetowallet",
       payload: {
-        eventTicketClasses: [eventClass],
-        eventTicketObjects: [eventObject],
+        genericObjects: [genericObject],
       },
     };
 
@@ -398,14 +395,8 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
     const client = await auth.getClient();
 
     const now = Math.floor(Date.now() / 1000);
-    // Set 1-year expiration (31536000 seconds) so pass link remains valid when attendees open the email
-    const oneYearFromNow = now + 31536000;
-    let expTime = oneYearFromNow;
-    if (eventDate) {
-      const eventTimestamp = Math.floor(eventDate.getTime() / 1000);
-      const afterEvent = eventTimestamp + 30 * 86400;
-      expTime = Math.max(oneYearFromNow, afterEvent);
-    }
+    // IAM Credentials API restricts exp to at most 12 hours (43200 seconds) after iat
+    const expTime = now + 43200;
 
     const jwtPayload = {
       ...claims,
