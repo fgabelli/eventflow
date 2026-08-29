@@ -1,0 +1,42 @@
+---
+layout: layouts/base.njk
+title: "Blog"
+seoTitle: "Ticketto Blog: Event & Ticketing Guides"
+description: "Hands-on guides, strategies and real numbers for event organizers — ticketing, check-in, registration and event marketing."
+permalink: "/en/blog/index.html"
+lang: "en"
+locale: "en_US"
+altIt: "https://ticketto.it/blog/"
+altEn: "https://ticketto.it/en/blog/"
+---
+<section class="hub">
+  <h1>Blog</h1>
+  <p>Practical guides, real numbers and tools to run events without surprises at check-in.</p>
+  <div class="posts-grid">
+    {% for post in collections.postsEn %}
+      {% include "partials/article-card.njk" %}
+    {% endfor %}
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "@id": "https://ticketto.it/en/blog/#blog",
+  "name": "Ticketto Blog",
+  "description": "Hands-on guides for running events.",
+  "publisher": { "@id": "https://ticketto.it/#organization" },
+  "inLanguage": "en-US",
+  "blogPost": [
+    {% for post in collections.postsEn | reverse -%}
+    {
+      "@type": "BlogPosting",
+      "headline": {{ post.data.title | dump | safe }},
+      "url": "https://ticketto.it{{ post.url }}",
+      "datePublished": "{{ post.date | isoDate }}"
+    }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}
+</script>

@@ -1,0 +1,48 @@
+{% set L = lang or 'it' %}
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="/icons/Icon-192.png" alt="Ticketto" width="40" height="40" />
+      <p>{% if L == 'en' %}The ticketing and event check-in platform.{% else %}La piattaforma di biglietteria e check-in eventi.{% endif %}</p>
+    </div>
+    {% if L == 'en' %}
+    <nav class="footer-col" aria-label="Product">
+      <h3>Product</h3>
+      <a href="/en/#piattaforma">Platform</a>
+      <a href="/en/pricing/">Pricing</a>
+      <a href="/en/blog/">Blog</a>
+    </nav>
+    <nav class="footer-col" aria-label="Company">
+      <h3>Company</h3>
+      <a href="/en/about/">About</a>
+      <a href="/en/blog/authors/fabio-gabelli/">Author</a>
+      <a href="mailto:info@ticketto.it">Contact</a>
+    </nav>
+    {% else %}
+    <nav class="footer-col" aria-label="Prodotto">
+      <h3>Prodotto</h3>
+      <a href="/#piattaforma">Piattaforma</a>
+      <a href="/prezzi/">Prezzi</a>
+      <a href="/blog/">Blog</a>
+    </nav>
+    <nav class="footer-col" aria-label="Azienda">
+      <h3>Azienda</h3>
+      <a href="/chi-siamo/">Chi siamo</a>
+      <a href="/blog/autori/fabio-gabelli/">Autore</a>
+      <a href="mailto:info@ticketto.it">Contatti</a>
+    </nav>
+    {% endif %}
+  </div>
+  <div class="footer-bottom" style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center;">
+    <div class="legal-links" style="display: flex; gap: 1.5rem; justify-content: center; font-size: 0.95rem;">
+      {% if L == 'en' %}
+      <a href="/en/privacy/" style="color: inherit; text-decoration: none;">Privacy Policy</a>
+      <a href="/en/terms/" style="color: inherit; text-decoration: none;">Terms of Service</a>
+      {% else %}
+      <a href="/privacy/" style="color: inherit; text-decoration: none;">Privacy Policy</a>
+      <a href="/terms/" style="color: inherit; text-decoration: none;">Termini di servizio</a>
+      {% endif %}
+    </div>
+    <small>© 2026 Ticketto — {% if L == 'en' %}a <strong>Bitle S.r.l.s.</strong> product{% else %}un prodotto <strong>Bitle S.r.l.s.</strong>{% endif %} · VAT IT12847530966</small>
+  </div>
+</footer>

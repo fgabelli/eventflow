@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ lang or site.lang or 'it' }}">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ seoTitle or title }} | {{ site.name }}</title>
+  <meta name="description" content="{{ description }}" />
+  <meta name="theme-color" content="#0B1B3A" />
+  <meta name="robots" content="index, follow" />
+
+  <link rel="canonical" href="{{ canonical or (site.url + page.url) }}" />
+
+  {# hreflang (emitted only when a translated counterpart exists) #}
+  {% if altIt and altEn %}
+  <link rel="alternate" hreflang="it" href="{{ altIt }}" />
+  <link rel="alternate" hreflang="en" href="{{ altEn }}" />
+  <link rel="alternate" hreflang="x-default" href="{{ altEn }}" />
+  {% endif %}
+
+  {# Open Graph #}
+  <meta property="og:type" content="{{ ogType or 'article' }}" />
+  <meta property="og:site_name" content="{{ site.name }}" />
+  <meta property="og:locale" content="{{ locale or site.locale or 'it_IT' }}" />
+  <meta property="og:title" content="{{ seoTitle or title }}" />
+  <meta property="og:description" content="{{ description }}" />
+  <meta property="og:url" content="{{ canonical or (site.url + page.url) }}" />
+  <meta property="og:image" content="{{ ogImage or (site.url + '/blog/assets/img/posts/biglietteria-online-guida/hero.webp') }}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  {# Twitter #}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ seoTitle or title }}" />
+  <meta name="twitter:description" content="{{ description }}" />
+  <meta name="twitter:image" content="{{ ogImage or (site.url + '/blog/assets/img/posts/biglietteria-online-guida/hero.webp') }}" />
+
+  {# Alternate RSS #}
+  <link rel="alternate" type="application/rss+xml" title="Blog Ticketto" href="{% if lang == 'en' %}/en/blog/feed.xml{% else %}/blog/feed.xml{% endif %}" />
+
+  {# Fonts preconnect #}
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/blog/assets/css/blog.css" />
+
+  {# Preload LCP hero (solo su articoli) #}
+  {% if image %}<link rel="preload" as="image" href="{{ image | replace('.jpg', '.webp') }}" fetchpriority="high" />{% endif %}
+
+  {# Google Consent Mode v2 + gtag (allineato home) #}
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied',
+      'analytics_storage':'denied','wait_for_update': 500
+    });
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.gaId }}"></script>
+  <script>gtag('js', new Date()); gtag('config', '{{ site.gaId }}'); gtag('config', '{{ site.ga4Id }}');</script>
+</head>
+<body>
+  {% include "partials/header.njk" %}
+  <main>{{ content | safe }}</main>
+  {% include "partials/footer.njk" %}
+</body>
+</html>

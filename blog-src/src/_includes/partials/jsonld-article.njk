@@ -1,0 +1,96 @@
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "mainEntityOfPage": "{{ site.url }}{{ page.url }}",
+  "inLanguage": "{% if (lang or 'it') == 'en' %}en-US{% else %}it-IT{% endif %}",
+  "headline": {{ seoTitle | default(title) | dump | safe }},
+  "description": {{ description | dump | safe }},
+  "image": "{{ site.url }}{{ image | replace('.jpg', '.webp') }}",
+  "author": {
+    "@type": "Person",
+    "name": "{{ site.author.name }}",
+    "url": "{{ site.url }}{% if (lang or 'it') == 'en' %}{{ site.author.urlEn }}{% else %}{{ site.author.url }}{% endif %}"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{ site.name }}",
+    "url": "{{ site.url }}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ site.url }}/favicon.png"
+    }
+  },
+  "datePublished": "{{ date | isoDate }}",
+  "dateModified": "{{ (updated or date) | isoDate }}"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ site.url }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "{{ site.url }}{% if (lang or 'it') == 'en' %}/en/blog/{% else %}/blog/{% endif %}"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ title | dump | safe }},
+      "item": "{{ site.url }}{{ page.url }}"
+    }
+  ]
+}
+</script>
+
+{% if faqs %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {% for faq in faqs %}
+    {
+      "@type": "Question",
+      "name": {{ faq.q | dump | safe }},
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": {{ faq.a | dump | safe }}
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
+
+{% if howTo %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": {{ howTo.name | dump | safe }},
+  "totalTime": "PT15M",
+  "step": [
+    {% for s in howTo.steps %}
+    {
+      "@type": "HowToStep",
+      "position": {{ loop.index }},
+      "name": {{ s.name | dump | safe }},
+      "text": {{ s.text | dump | safe }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}

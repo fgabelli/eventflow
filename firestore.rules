@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: check if user is the document owner
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // Helper: check if user is member of org with given role
+    function isOrgMember(orgId) {
+      return isAuth() && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid));
+    }
+
+    function getOrgMemberRole(orgId) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role;
+    }
+
+    function isOrgAdmin(orgId) {
+      return isOrgMember(orgId) && getOrgMemberRole(orgId) in ['owner', 'admin'];
+    }
+
+    function isOrgStaff(orgId) {
+      return isOrgMember(orgId) && getOrgMemberRole(orgId) in ['owner', 'admin', 'staff'];
+    }
+
+    // ─── Users ─────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+
+    // ─── Organizations ─────────────────────────────────────────
+    match /organizations/{orgId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isOrgAdmin(orgId);
+      allow delete: if isAuth() && getOrgMemberRole(orgId) == 'owner';
+
+      // Organization members subcollection (auth required)
+      match /members/{memberId} {
+        allow read: if isAuth();
+        // Allow org creator to add themselves as first member (owner),
+        // or existing admins to add new members
+        allow create: if isOrgAdmin(orgId)
+          || (isAuth() && memberId == request.auth.uid && request.resource.data.role == 'owner');
+        allow update: if isOrgAdmin(orgId);
+        allow delete: if isAuth() && getOrgMemberRole(orgId) == 'owner';
+      }
+    }
+
+    // ─── Events ────────────────────────────────────────────────
+    match /events/{eventId} {
+      // Public read: anyone can view event details (for registration page)
+      allow read: if true;
+      allow create: if isAuth() && isOrgAdmin(request.resource.data.orgId);
+      // Only authenticated staff can update events
+      // (attendeesCount & timeSlots are updated server-side by Cloud Functions)
+      allow update: if isAuth() && isOrgStaff(resource.data.orgId);
+      allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
+    }
+
+    // ─── Attendees ─────────────────────────────────────────────
+    match /attendees/{attendeeId} {
+      allow read: if isAuth() && isOrgMember(resource.data.orgId);
+      // Allow org staff OR public self-registration (must have required fields)
+      allow create: if (isAuth() && isOrgStaff(request.resource.data.orgId))
+        || (request.resource.data.keys().hasAll(['eventId', 'orgId', 'firstName', 'lastName', 'email', 'qrCode', 'status'])
+            && request.resource.data.firstName is string
+            && request.resource.data.lastName is string
+            && request.resource.data.email is string);
+      allow update: if isAuth() && isOrgStaff(resource.data.orgId);
+      allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
+    }
+  }
+}

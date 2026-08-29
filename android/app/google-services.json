@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "289853352690",
+    "project_id": "eventflow-3541b",
+    "storage_bucket": "eventflow-3541b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289853352690:android:d107e71b9b53e0b87cbe6b",
+        "android_client_info": {
+          "package_name": "com.eventflow.eventflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfrHY96J60TcNZYwptK1s3OgcX_sADTnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289853352690:android:be62d940cac9df197cbe6b",
+        "android_client_info": {
+          "package_name": "com.example.eventflow_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfrHY96J60TcNZYwptK1s3OgcX_sADTnw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

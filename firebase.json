@@ -1,0 +1,127 @@
+{
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "hosting": {
+        "public": "build/web",
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ],
+        "headers": [
+            {
+                "source": "/robots.txt",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "text/plain"
+                    }
+                ]
+            },
+            {
+                "source": "/sitemap*.xml",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/xml"
+                    }
+                ]
+            },
+            {
+                "source": "/blog/feed.xml",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/atom+xml"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.@(jpg|jpeg|png|gif|webp|avif|svg)",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "public, max-age=31536000, immutable"
+                    }
+                ]
+            }
+        ],
+        "rewrites": [
+            {
+                "source": "/",
+                "destination": "/index_landing.html"
+            },
+            {
+                "source": "/blog",
+                "destination": "/blog/index.html"
+            },
+            {
+                "source": "/privacy",
+                "destination": "/privacy/index.html"
+            },
+            {
+                "source": "/terms",
+                "destination": "/terms/index.html"
+            },
+            {
+                "source": "/prezzi",
+                "destination": "/prezzi/index.html"
+            },
+            {
+                "source": "/chi-siamo",
+                "destination": "/chi-siamo/index.html"
+            },
+            {
+                "source": "/en",
+                "destination": "/en/index.html"
+            },
+            {
+                "source": "/en/blog",
+                "destination": "/en/blog/index.html"
+            },
+            {
+                "source": "/en/pricing",
+                "destination": "/en/pricing/index.html"
+            },
+            {
+                "source": "/en/about",
+                "destination": "/en/about/index.html"
+            },
+            {
+                "source": "/en/privacy",
+                "destination": "/en/privacy/index.html"
+            },
+            {
+                "source": "/en/terms",
+                "destination": "/en/terms/index.html"
+            },
+            {
+                "source": "/login",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/signup",
+                "destination": "/app.html"
+            },
+            {
+                "source": "**",
+                "destination": "/app.html"
+            }
+        ]
+    },
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "default",
+            "ignore": [
+                "node_modules",
+                ".git"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <!-- Google Consent Mode v2 + gtag -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied',
+      'analytics_storage':'denied','wait_for_update': 500
+    });
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-417739561"></script>
+  <script>gtag('js', new Date()); gtag('config', 'AW-417739561'); gtag('config', 'G-JS3J7696GM');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prezzi e Piani | Ticketto - Zero Commissioni sui Biglietti</title>
+  <meta name="description" content="I piani di Ticketto: Free per piccoli eventi (anche online), Pro €29 con PDF biglietto, Wallet e notifiche real-time, Business €79 con stampa termica zero-tap Zebra/Brother. Zero commissioni piattaforma.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#6C63FF">
+  <link rel="canonical" href="https://ticketto.it/prezzi/">
+  <link rel="alternate" hreflang="it" href="https://ticketto.it/prezzi/" />
+  <link rel="alternate" hreflang="en" href="https://ticketto.it/en/pricing/" />
+  <link rel="alternate" hreflang="x-default" href="https://ticketto.it/en/pricing/" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/layout.css?v=2">
+  
+  <style>
+    :root {
+      --primary: #6C63FF;
+      --primary-dark: #4F46E5;
+      --primary-light: #EEEDFF;
+      --text-dark: #0F172A;
+      --text-main: #334155;
+      --text-muted: #64748B;
+      --bg-light: #F8FAFC;
+      --border: #E2E8F0;
+      --success: #10B981;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; color: var(--text-main); line-height: 1.6; background: #fff; }
+    h1, h2, h3, .nav-brand { font-family: 'Outfit', sans-serif; color: var(--text-dark); }
+    a { text-decoration: none; color: var(--primary); }
+    
+    .header-section { padding: 160px 5% 80px; text-align: center; background: radial-gradient(circle at top, var(--primary-light) 0%, transparent 70%); }
+    .header-section h1 { font-size: clamp(2.5rem, 4vw, 4rem); font-weight: 900; line-height: 1.1; margin-bottom: 1rem; }
+    .header-section p { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin: 0 auto; }
+
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto 100px; padding: 0 5%; }
+    .price-card { background: #fff; border: 1px solid var(--border); border-radius: 24px; padding: 3rem 2.5rem; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
+    .price-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.06); }
+    .price-card.popular { border: 2px solid var(--primary); box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1); }
+    .price-card.popular::before { content: "Il più scelto"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 4px 16px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .price-card h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .price-card p.desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; height: 40px; }
+    .price-amount { font-size: 3.5rem; font-weight: 900; font-family: 'Outfit', sans-serif; color: var(--text-dark); margin-bottom: 2rem; display: flex; align-items: baseline; }
+    .price-amount span { font-size: 1rem; color: var(--text-muted); font-weight: 500; margin-left: 0.5rem; }
+    .price-features { list-style: none; margin-top: 2rem; margin-bottom: 2.5rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .price-features li { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; font-size: 0.95rem; }
+    .price-features li svg { width: 20px; height: 20px; color: var(--success); flex-shrink: 0; }
+    .price-card .btn { width: 100%; }
+
+    .faq-section { max-width: 800px; margin: 0 auto 100px; padding: 0 5%; }
+    .faq-section h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
+    .faq-item { margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+    .faq-item h3 { font-size: 1.2rem; margin-bottom: 0.5rem; font-weight: 700; }
+    .faq-item p { color: var(--text-muted); }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Product",
+        "name": "Ticketto Free",
+        "description": "Piano gratuito per piccoli eventi fino a 50 partecipanti, con check-in da smartphone, email di conferma automatica e supporto eventi online (link Zoom/Meet).",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock",
+          "url": "https://ticketto.it/prezzi/"
+        }
+      },
+      {
+        "@type": "Product",
+        "name": "Ticketto Pro",
+        "description": "Abbonamento mensile per eventi fino a 500 partecipanti con Stripe, fasce orarie, campi di registrazione personalizzati, registrazione di gruppo fino a 10 persone, biglietto PDF allegato, Apple e Google Wallet, notifiche real-time e esportazione badge PDF.",
+        "offers": {
+          "@type": "Offer",
+          "price": "29",
+          "priceCurrency": "EUR",
+          "priceValidUntil": "2027-12-31",
+          "availability": "https://schema.org/InStock",
+          "url": "https://ticketto.it/prezzi/"
+        }
+      },
+      {
+        "@type": "Product",
+        "name": "Ticketto Business",
+        "description": "Abbonamento mensile per festival e corporate event senza limiti di eventi o partecipanti, con stampa termica zero-tap (Zebra/Brother ZPL), team illimitato e account manager dedicato.",
+        "offers": {
+          "@type": "Offer",
+          "price": "79",
+          "priceCurrency": "EUR",
+          "priceValidUntil": "2027-12-31",
+          "availability": "https://schema.org/InStock",
+          "url": "https://ticketto.it/prezzi/"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Ci sono commissioni aggiuntive sui biglietti venduti?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No, Ticketto non trattiene nessuna commissione percentuale sui tuoi biglietti. Paghi solo le commissioni del gateway di pagamento (Stripe)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Devo noleggiare dei lettori barcode?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Assolutamente no. Il check-in dei biglietti si effettua direttamente tramite smartphone utilizzando l'app web di Ticketto."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Posso gestire eventi online (Zoom, Meet, Teams) con Ticketto?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sì. Su tutti i piani, anche Free, puoi creare un evento marcandolo come 'Online' e inserendo il link della tua riunione Zoom, Google Meet o Microsoft Teams. Il link viene inviato all'iscritto solo dopo la conferma di registrazione (o pagamento) — niente leak prima."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Per la stampa termica al varco devo comprare hardware?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "La stampa termica zero-tap è esclusiva del piano Business e funziona con qualunque stampante Zebra o Brother compatibile ZPL via rete locale (porta 9100). Se preferisci, sul piano Pro puoi stampare a casa dei badge in PDF (10 per foglio A4) con una normale stampante da ufficio."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <header class="site-header" role="banner">
+    <a class="nav-brand" href="/" aria-label="Ticketto — Home">
+      <img src="/icons/Icon-192.png" alt="" width="36" height="36" decoding="async" />
+      <span>Ticketto</span>
+    </a>
+    <nav class="nav-links" aria-label="Navigazione principale">
+      <a href="/#piattaforma" class="link">Piattaforma</a>
+      <a href="/prezzi/" class="link" aria-current="page">Prezzi</a>
+      <a href="/blog/" class="link">Blog</a>
+      <a href="/chi-siamo/" class="link">Chi siamo</a>
+      <a href="https://ticketto.it/en/pricing/" class="link" hreflang="en" aria-label="English version">EN</a>
+      <a href="/login" class="btn btn-outline">Accedi</a>
+      <a href="/signup" class="btn btn-primary" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
+    </nav>
+    <button class="nav-toggle" aria-label="Apri menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <div class="header-section">
+    <h1>Piani semplici, zero sorprese</h1>
+    <p>Non tratteniamo commissioni in base a quanto vendi. Scegli il piano giusto per le dimensioni del tuo evento e inizia a vendere.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>Free</h3>
+      <p class="desc">Perfetto per testare la piattaforma o per piccoli eventi gratuiti.</p>
+      <div class="price-amount">€0<span>/mese</span></div>
+      <ul class="price-features">
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 1 evento attivo</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fino a 50 partecipanti</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Check-in via smartphone (web app)</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Email di conferma automatica</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Eventi online con link Zoom/Meet protetto</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Supporto base</li>
+      </ul>
+      <a href="/signup" class="btn btn-outline" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
+    </div>
+
+    <div class="price-card popular">
+      <h3>Pro</h3>
+      <p class="desc">Per professionisti e agenzie in rapida crescita.</p>
+      <div class="price-amount">€29<span>/mese</span></div>
+      <ul class="price-features">
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 10 eventi attivi</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fino a 500 partecipanti</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Pagamenti con Stripe</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fasce orarie con capienza per slot</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Campi di registrazione personalizzati</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Registrazione di gruppo (fino a 10 persone)</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Biglietto PDF allegato all'email</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Apple Wallet + Google Wallet</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Notifiche real-time a ogni iscritto</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Esportazione badge PDF (10 per foglio A4)</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Importazione partecipanti da CSV</li>
+      </ul>
+      <a href="/login" class="btn btn-primary">Prova Pro</a>
+    </div>
+
+    <div class="price-card">
+      <h3>Business</h3>
+      <p class="desc">Nessun limite per grandi festival e corporate event.</p>
+      <div class="price-amount">€79<span>/mese</span></div>
+      <ul class="price-features">
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Eventi e partecipanti illimitati</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Tutto il piano Pro, più:</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Stampa termica zero-tap (Zebra/Brother ZPL)</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Team di gestione illimitato</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Esportazione dati avanzata</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Account Manager dedicato</li>
+      </ul>
+      <a href="/login" class="btn btn-outline">Prova Business</a>
+    </div>
+  </div>
+
+  <div class="faq-section">
+    <h2>Domande Frequenti</h2>
+    <div class="faq-item">
+      <h3>Ci sono commissioni aggiuntive sui biglietti venduti?</h3>
+      <p>No, Ticketto non trattiene nessuna commissione percentuale sui tuoi biglietti. Paghi solo le normali commissioni del gateway di pagamento (Stripe), mentre l'incasso arriva direttamente sul tuo conto.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Devo noleggiare dei lettori barcode o PDA hardware?</h3>
+      <p>Assolutamente no. Il check-in dei biglietti si effettua direttamente tramite smartphone. Il tuo staff dovrà solo aprire la dashboard web dal proprio telefono e usare la fotocamera per scansionare i QR code velocemente.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Posso gestire eventi online (Zoom, Meet, Teams) con Ticketto?</h3>
+      <p>Sì, su tutti i piani — anche Free. Quando crei l'evento scegli "Online" e inserisci il link della tua riunione: il pulsante "Partecipa allo Streaming" viene incluso nell'email di conferma e inviato all'iscritto <strong>solo dopo</strong> la conferma di registrazione (o pagamento), così il link non circola mai prima.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Per la stampa dei badge al varco serve hardware speciale?</h3>
+      <p>Dipende dal piano. Sul <strong>Business</strong>, la stampa termica zero-tap funziona con qualunque stampante Zebra o Brother compatibile ZPL via rete locale (porta 9100): ogni volta che lo staff scansiona un biglietto, il badge esce automaticamente, senza un tap in più. Sul <strong>Pro</strong>, puoi scaricare un PDF A4 con 10 badge per foglio e stamparli a casa con una normale stampante da ufficio.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Posso disdire l'abbonamento in qualsiasi momento?</h3>
+      <p>Sì, puoi passare al piano Free o cancellare l'abbonamento in totale autonomia dalla tua dashboard, senza alcun vincolo di permanenza a lungo termine.</p>
+    </div>
+  </div>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="/icons/Icon-192.png" alt="Ticketto" width="40" height="40" />
+        <p>La piattaforma di biglietteria e check-in eventi.</p>
+      </div>
+      <nav class="footer-col" aria-label="Prodotto">
+        <h3>Prodotto</h3>
+        <a href="/#piattaforma">Piattaforma</a>
+        <a href="/prezzi/">Prezzi</a>
+        <a href="/blog/">Blog</a>
+      </nav>
+      <nav class="footer-col" aria-label="Azienda">
+        <h3>Azienda</h3>
+        <a href="/chi-siamo/">Chi siamo</a>
+        <a href="/blog/autori/fabio-gabelli/">Autore</a>
+        <a href="mailto:info@ticketto.it">Contatti</a>
+      </nav>
+  </div>
+    <div class="footer-bottom" style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center;">
+      <div class="legal-links" style="display: flex; gap: 1.5rem; justify-content: center; font-size: 0.95rem;">
+        <a href="/privacy/" style="color: inherit; text-decoration: none;">Privacy Policy</a>
+        <a href="/terms/" style="color: inherit; text-decoration: none;">Termini di servizio</a>
+      </div>
+      <small>© 2026 Ticketto — un prodotto <strong>Bitle S.r.l.s.</strong> · P.IVA 12847530966</small>
+    </div>
+  </footer>
+  
+  <script>
+    document.querySelector('.nav-toggle')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      document.querySelector('.nav-links').classList.toggle('is-open', !open);
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% if leadMagnet %}
+<aside class="lead-magnet" aria-labelledby="lm-title">
+  <div class="lead-magnet-icon" aria-hidden="true">📋</div>
+  <div class="lead-magnet-body">
+    <h3 id="lm-title">{{ leadMagnet.title }}</h3>
+    <p>{{ leadMagnet.subtitle }}</p>
+
+    <form class="lead-magnet-form"
+          id="lm-form"
+          action="https://assets.mailerlite.com/jsonp/{{ site.mailerlite.accountId }}/forms/{{ leadMagnet.mailerliteFormId }}/subscribe"
+          method="post"
+          data-file-url="{{ leadMagnet.fileUrl }}"
+          data-article-slug="{{ page.fileSlug }}"
+          novalidate>
+      <label for="lm-email" class="sr-only">Email di lavoro</label>
+      <input type="email" id="lm-email" name="fields[email]" required
+             placeholder="La tua email di lavoro" autocomplete="email" />
+
+      <label class="lm-consent">
+        <input type="checkbox" name="consent" required />
+        <span>Accetto la <a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a>
+              e di ricevere la checklist via email.</span>
+      </label>
+
+      {# Campi tecnici richiesti da Mailerlite #}
+      <input type="hidden" name="ml-submit" value="1" />
+      <input type="hidden" name="anticsrf" value="true" />
+
+      <button type="submit" class="btn btn-primary">Scarica la checklist</button>
+    </form>
+    <p class="lead-magnet-hint">Niente spam, cancellazione con un click.</p>
+  </div>
+</aside>
+
+<script>
+  (function () {
+    const form = document.getElementById('lm-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email   = form.elements['fields[email]'].value.trim();
+      const consent = form.elements['consent'].checked;
+      if (!email || !consent) return;
+
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Invio in corso…';
+
+      // Analytics
+      if (typeof gtag === 'function') {
+        gtag('event', 'lead_magnet_submit', {
+          lead_magnet_id: 'checklist-eventi-aziendali',
+          article_slug: form.dataset.articleSlug
+        });
+      }
+
+      // Mailerlite endpoint accepta form-data via POST; no-cors perché JSONP-era
+      try {
+        const fd = new FormData(form);
+        await fetch(form.action, { method: 'POST', mode: 'no-cors', body: fd });
+      } catch (err) {
+        console.warn('Mailerlite submit (no-cors):', err);
+      }
+
+      // Success UI + download link immediato come fallback
+      form.innerHTML = `
+        <div class="lm-success">
+          <strong>✓ Grazie!</strong> La checklist sta arrivando nella tua casella entro 2 minuti.<br>
+          Se non la trovi, controlla la cartella promozioni o
+          <a href="${form.dataset.fileUrl}" download>scaricala subito qui</a>.
+        </div>`;
+    });
+  })();
+</script>
+{% endif %}

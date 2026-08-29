@@ -1,0 +1,96 @@
+---
+layout: layouts/base.njk
+title: "Fabio Gabelli — Founder of Ticketto"
+seoTitle: "Fabio Gabelli — Founder of Ticketto and blog author"
+description: "Fabio Gabelli is the founder of Ticketto. On this blog he writes hands-on guides on online ticketing, event check-in and event management."
+permalink: "/en/blog/authors/fabio-gabelli/index.html"
+lang: "en"
+locale: "en_US"
+ogType: "profile"
+ogImage: "https://ticketto.it/blog/assets/images/authors/fabio-gabelli.jpg"
+altIt: "https://ticketto.it/blog/autori/fabio-gabelli/"
+altEn: "https://ticketto.it/en/blog/authors/fabio-gabelli/"
+---
+
+<section class="author-page" style="max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 5rem;">
+  <nav aria-label="breadcrumb" class="breadcrumb">
+    <a href="/en/">Home</a> › <a href="/en/blog/">Blog</a> › <span>Fabio Gabelli</span>
+  </nav>
+
+  <header class="author-hero">
+    <img src="{{ site.author.image }}" alt="Fabio Gabelli, founder of Ticketto"
+         width="140" height="140" style="border-radius: 999px; margin-bottom: 1.5rem;" />
+    <p class="post-category">Author</p>
+    <h1>{{ site.author.name }}</h1>
+    <p class="post-lede">{{ site.author.roleEn }}</p>
+  </header>
+
+  <div class="post-body">
+    <p>I'm Fabio Gabelli, founder of Ticketto. For over ten years I've worked at the intersection of software and events: I started out building digital tools for organizers and trainers, and over time I watched the same frustrations repeat dozens of times — queues at check-in, QR scanners that won't turn on, fees that eat the margin, attendees who can't find their ticket email.</p>
+
+    <p>I founded Ticketto to solve exactly these problems with a different approach: instead of selling dedicated hardware, we turn your staff's smartphone into a professional QR scanner. Instead of opaque fees, flat transparent pricing. Instead of a complex tool, a flow that lets you create an event in five minutes.</p>
+
+    <h2>What I write here</h2>
+    <p>On this blog I publish <strong>hands-on guides based on what we see every day working with hundreds of organizers</strong>: what works, what breaks the night, which mistakes cost you dearly. No generic theory — just practice and numbers.</p>
+
+    <h2>Areas of expertise</h2>
+    <ul>
+      <li>Event management and online ticketing</li>
+      <li>Digital check-in and access control</li>
+      <li>Payments, GDPR and data privacy</li>
+      <li>Marketing and conversion optimization for registrations</li>
+      <li>SaaS, online payments and Stripe integrations</li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p>You can reach me at <a href="mailto:fabio@ticketto.it">fabio@ticketto.it</a> or on <a href="https://www.linkedin.com/in/fabio-gabelli-10bb35b1/" rel="me">LinkedIn</a>.</p>
+  </div>
+
+  <section style="margin-top: 4rem;">
+    <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: var(--navy-900); margin-bottom: 1.5rem;">Latest articles</h2>
+    <div class="posts-grid">
+      {% for post in collections.postsEn | reverse | slice(0, 6) %}
+        {% include "partials/article-card.njk" %}
+      {% endfor %}
+    </div>
+  </section>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "ProfilePage",
+      "@id": "https://ticketto.it/en/blog/authors/fabio-gabelli/#profilepage",
+      "url": "https://ticketto.it/en/blog/authors/fabio-gabelli/",
+      "name": "Fabio Gabelli — Founder of Ticketto",
+      "inLanguage": "en-US",
+      "mainEntity": { "@id": "https://ticketto.it/en/blog/authors/fabio-gabelli/#person" },
+      "isPartOf": { "@id": "https://ticketto.it/#website" }
+    },
+    {
+      "@type": "Person",
+      "@id": "https://ticketto.it/en/blog/authors/fabio-gabelli/#person",
+      "name": "Fabio Gabelli",
+      "givenName": "Fabio",
+      "familyName": "Gabelli",
+      "jobTitle": "Founder of Ticketto",
+      "worksFor": { "@id": "https://ticketto.it/#organization" },
+      "url": "https://ticketto.it/en/blog/authors/fabio-gabelli/",
+      "image": "https://ticketto.it/blog/assets/images/authors/fabio-gabelli.jpg",
+      "sameAs": [
+        "https://www.linkedin.com/in/fabiogabelli/"
+      ],
+      "knowsAbout": [
+        "Event management",
+        "Online ticketing",
+        "Digital check-in",
+        "SaaS",
+        "Stripe",
+        "GDPR"
+      ]
+    }
+  ]
+}
+</script>

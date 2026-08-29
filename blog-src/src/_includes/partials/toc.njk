@@ -1,0 +1,5 @@
+{% set L = lang or 'it' %}
+<aside class="toc-wrapper" aria-label="{% if L == 'en' %}Table of contents{% else %}Indice dei contenuti{% endif %}">
+  <p class="toc-title">{% if L == 'en' %}In this article{% else %}In questo articolo{% endif %}</p>
+  {{ content | toc | safe }}
+</aside>

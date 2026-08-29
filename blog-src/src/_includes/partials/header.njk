@@ -1,0 +1,53 @@
+{% set L = lang or 'it' %}
+{% if L == 'en' %}
+{% set navItems = [
+  { href: "/en/#piattaforma", label: "Platform", match: "/en/#" },
+  { href: "/en/pricing/",     label: "Pricing",  match: "/en/pricing/" },
+  { href: "/en/blog/",        label: "Blog",     match: "/en/blog/" },
+  { href: "/en/about/",       label: "About",    match: "/en/about/" }
+] %}
+{% set brandHref = "/en/" %}
+{% set loginLabel = "Log in" %}
+{% set ctaLabel = "Start for free" %}
+{% set switchHref = altIt or "/" %}
+{% set switchLabel = "IT" %}
+{% set switchAria = "Versione italiana" %}
+{% else %}
+{% set navItems = [
+  { href: "/#piattaforma", label: "Piattaforma", match: "piattaforma" },
+  { href: "/prezzi/",      label: "Prezzi",      match: "/prezzi/" },
+  { href: "/blog/",        label: "Blog",        match: "/blog/" },
+  { href: "/chi-siamo/",   label: "Chi siamo",   match: "/chi-siamo/" }
+] %}
+{% set brandHref = "/" %}
+{% set loginLabel = "Accedi" %}
+{% set ctaLabel = "Inizia gratis" %}
+{% set switchHref = altEn %}
+{% set switchLabel = "EN" %}
+{% set switchAria = "English version" %}
+{% endif %}
+<header class="site-header" role="banner">
+  <a class="nav-brand" href="{{ brandHref }}" aria-label="Ticketto — Home">
+    <img src="/icons/Icon-192.png" alt="" width="36" height="36" decoding="async" />
+    <span>Ticketto</span>
+  </a>
+  <nav class="nav-links" aria-label="Navigazione principale">
+    {% for item in navItems %}
+      <a href="{{ item.href }}" class="link"{% if page.url and item.match in page.url %} aria-current="page"{% endif %}>{{ item.label }}</a>
+    {% endfor %}
+    {% if switchHref %}<a href="{{ switchHref }}" class="link" hreflang="{% if L == 'en' %}it{% else %}en{% endif %}" aria-label="{{ switchAria }}">{{ switchLabel }}</a>{% endif %}
+    <a href="/login{% if L == 'en' %}?lang=en{% endif %}" class="btn btn-outline">{{ loginLabel }}</a>
+    <a href="/signup{% if L == 'en' %}?lang=en{% endif %}" class="btn btn-primary" onclick="gtag('event','cta_click',{cta_label:'{{ ctaLabel }}',source:document.location.pathname});">{{ ctaLabel }}</a>
+  </nav>
+  <button class="nav-toggle" aria-label="Apri menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+<script>
+  document.querySelector('.nav-toggle')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!open));
+    document.querySelector('.nav-links').classList.toggle('is-open', !open);
+  });
+</script>

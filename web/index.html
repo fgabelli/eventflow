@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <!-- Google Consent Mode v2 — defaults BEFORE gtag loads -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+
+    // Default: deny all non-essential cookies
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'wait_for_update': 500
+    });
+  </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-417739561"></script>
+  <script>
+    gtag('js', new Date());
+    gtag('config', 'AW-417739561'); gtag('config', 'G-JS3J7696GM');
+  </script>
+
+  <!-- Consent management functions (called from Flutter) -->
+  <script>
+    var _tiktokLoaded = false;
+
+    function grantMarketingConsent() {
+      // Update Google Consent Mode
+      gtag('consent', 'update', {
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted',
+        'analytics_storage': 'granted'
+      });
+
+      // Fire deferred conversion events
+      gtag('event', 'conversion', {'send_to': 'AW-417739561/-YVFCKrlkJMcEKnmmMcB'});
+
+      // Load TikTok Pixel only after consent
+      if (!_tiktokLoaded) {
+        _tiktokLoaded = true;
+        !function (w, d, t) {
+          w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
+          var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
+          ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+          ttq.load('D7FANQ3C77UB0P249JEG');
+          ttq.page();
+        }(window, document, 'ttq');
+      }
+
+      localStorage.setItem('cookie_consent', 'granted');
+    }
+
+    function revokeMarketingConsent() {
+      gtag('consent', 'update', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied'
+      });
+      localStorage.setItem('cookie_consent', 'denied');
+    }
+
+    function getCookieConsent() {
+      return localStorage.getItem('cookie_consent');
+    }
+
+    // Auto-restore consent on page load if previously granted
+    (function() {
+      var saved = localStorage.getItem('cookie_consent');
+      if (saved === 'granted') {
+        grantMarketingConsent();
+      }
+    })();
+  </script>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+
+  <title>Ticketto — Piattaforma di Gestione Eventi e Biglietteria Online | Crea, Vendi, Check-in</title>
+
+  <!-- SEO Meta -->
+  <meta name="description" content="Ticketto è la piattaforma completa per la gestione eventi e biglietteria online. Crea eventi, vendi biglietti con Stripe, check-in con QR code, Apple e Google Wallet. Genera eventi con AI.">
+  <meta name="keywords" content="gestione eventi, biglietteria online, vendita biglietti, QR check-in, evento management, Stripe pagamenti, Apple Wallet biglietto, Google Wallet evento, piattaforma eventi, organizzazione eventi">
+  <meta name="author" content="Bitle">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#6C63FF">
+  <link rel="canonical" href="https://ticketto.it">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ticketto.it">
+  <meta property="og:site_name" content="Ticketto">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="Ticketto — Piattaforma di Gestione Eventi e Biglietteria Online">
+  <meta property="og:description" content="Crea eventi, vendi biglietti online, check-in con QR code e Wallet digitali. La piattaforma completa per organizzatori di eventi.">
+  <meta property="og:image" content="https://ticketto.it/icons/Icon-512.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="Ticketto Platform">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Ticketto — Gestione Eventi e Biglietteria">
+  <meta name="twitter:description" content="Crea eventi, vendi biglietti e gestisci check-in con QR code. Piattaforma completa per organizzatori.">
+  <meta name="twitter:image" content="https://ticketto.it/icons/Icon-512.png">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Ticketto">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+  <script src="chatbot.js" defer></script>
+
+  <!-- Structured Data JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Ticketto",
+    "url": "https://ticketto.it",
+    "description": "Piattaforma completa per la gestione eventi e biglietteria online. Crea eventi, vendi biglietti con Stripe, check-in con QR code, Apple e Google Wallet.",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web, iOS, Android",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "Bitle",
+      "url": "https://bitle.it"
+    },
+    "featureList": ["Creazione Eventi", "Vendita Biglietti Online", "QR Code Check-in", "Apple Wallet", "Google Wallet", "Stripe Connect", "Generazione AI", "Email Automatiche"]
+  }
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{% set L = lang or 'it' %}
+<aside class="author-bio" aria-label="{% if L == 'en' %}Author{% else %}Autore{% endif %}">
+  <img src="{{ site.author.image }}" alt="{% if L == 'en' %}Photo of{% else %}Foto di{% endif %} {{ site.author.name }}" width="72" height="72" loading="lazy" />
+  <div>
+    <p class="author-bio-name">
+      <a href="{% if L == 'en' %}{{ site.author.urlEn }}{% else %}{{ site.author.url }}{% endif %}">{{ site.author.name }}</a>
+      <span class="author-bio-role">· {% if L == 'en' %}{{ site.author.roleEn }}{% else %}{{ site.author.role }}{% endif %}</span>
+    </p>
+    <p class="author-bio-text">{% if L == 'en' %}{{ site.author.bioEn }}{% else %}{{ site.author.bio }}{% endif %}</p>
+    <p class="author-bio-social">
+      {% for link in site.author.sameAs %}
+        <a href="{{ link }}" rel="me noopener" target="_blank">{{ link | replace("https://www.", "") | replace("/", "") | truncate(24, true, "") }}</a>
+      {% endfor %}
+    </p>
+  </div>
+</aside>

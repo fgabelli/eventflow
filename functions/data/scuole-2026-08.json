@@ -1,0 +1,254 @@
+[
+  {
+    "name": "Cantieri CrossFit Genova",
+    "email": "fraztao@hotmail.it",
+    "city": "Genova",
+    "regione": "Liguria",
+    "apertura": "la ripresa di settembre e le gare interne"
+  },
+  {
+    "name": "LifeDance Academy Bergamo ASD",
+    "email": "lifedancebergamo@gmail.com",
+    "city": "Bergamo",
+    "regione": "Lombardia",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "On-Stage Scuola di Danza Brescia",
+    "email": "info@on-stage.net",
+    "city": "Brescia",
+    "regione": "Lombardia",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "MAS CrossFit",
+    "email": "info@mascrossfit.it",
+    "city": "Brescia",
+    "regione": "Lombardia",
+    "apertura": "la ripresa di settembre e l'open day"
+  },
+  {
+    "name": "Il Mastro Dance School S.S.D.",
+    "email": "info@ilmastro.net",
+    "city": "Casnate con Bernate",
+    "regione": "Lombardia",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "ASD SAMZ Milano",
+    "email": "info@asdsamzmilano.it",
+    "city": "Milano",
+    "regione": "Lombardia",
+    "apertura": "la ripresa delle attività di settembre"
+  },
+  {
+    "name": "Spazio Danza Monza",
+    "email": "info@spaziodanzamonza.it",
+    "city": "Monza",
+    "regione": "Lombardia",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "Koreos Academy A.S.D. Danza & Pilates",
+    "email": "koreosacademyasd@gmail.com",
+    "city": "Monza",
+    "regione": "Lombardia",
+    "apertura": "l'open day e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Scuola di Danza Citta di Pavia (Libertas SSD)",
+    "email": "info@danzacittadipavia.it",
+    "city": "Pavia",
+    "regione": "Lombardia",
+    "apertura": "l'open day e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Antea Danza Varese ASD",
+    "email": "info@anteadanza.it",
+    "city": "Varese",
+    "regione": "Lombardia",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Foyer della Danza Varese",
+    "email": "soniafusco@foyerdelladanza.com",
+    "city": "Varese",
+    "regione": "Lombardia",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "Tempio della Danza ASD",
+    "email": "info@scuoladidanzanovara.it",
+    "city": "Novara",
+    "regione": "Piemonte",
+    "apertura": "l'open day e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Officina della Danza",
+    "email": "info@officinadelladanza.it",
+    "city": "Novara",
+    "regione": "Piemonte",
+    "apertura": "l'open day e le iscrizioni ai corsi"
+  },
+  {
+    "name": "DAM Danza Arte Movimento",
+    "email": "info@damdanzatorino.it",
+    "city": "Torino",
+    "regione": "Piemonte",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Almadanza - Accademia di arti coreografiche",
+    "email": "danza@almastudios.it",
+    "city": "Bologna",
+    "regione": "Emilia-Romagna",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Studio Danza Ensemble",
+    "email": "info@studiodanzaensemble.it",
+    "city": "Bologna",
+    "regione": "Emilia-Romagna",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "MS Danza S.S.D.",
+    "email": "info@msdanza.com",
+    "city": "Ferrara",
+    "regione": "Emilia-Romagna",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "J'Latinos A.S.D. Dance School",
+    "email": "info.jlatinosdanceschool@gmail.com",
+    "city": "Modena",
+    "regione": "Emilia-Romagna",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "DNA Danza",
+    "email": "info@dnadanza.it",
+    "city": "Udine",
+    "regione": "Friuli-Venezia Giulia",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Masterbox CrossFit",
+    "email": "futurabovolone@gmail.com",
+    "city": "Bovolone",
+    "regione": "Veneto",
+    "apertura": "la ripresa di settembre e le gare interne"
+  },
+  {
+    "name": "Spaziodanza Padova",
+    "email": "info@spaziodanzapadova.it",
+    "city": "Padova",
+    "regione": "Veneto",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "CrossFit Strada Battaglia (Iron Box A.S.D.)",
+    "email": "ironboxasd@hotmail.com",
+    "city": "Padova",
+    "regione": "Veneto",
+    "apertura": "la ripresa di settembre e le gare interne"
+  },
+  {
+    "name": "JAcademy A.S.D.",
+    "email": "info@jacademyasd.it",
+    "city": "Treviso",
+    "regione": "Veneto",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Studiodanza Verona (Laura Ratti)",
+    "email": "studiodanza.vr@libero.it",
+    "city": "Verona",
+    "regione": "Veneto",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "ASD Formazione Danza Iolanda Rocchi",
+    "email": "formazionedanzaiolandarocchi@gmail.com",
+    "city": "Frosinone",
+    "regione": "Lazio",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "ESN Roma Tre",
+    "email": "roma_tre@esn.it",
+    "city": "Roma",
+    "regione": "Lazio",
+    "apertura": "la ripresa delle attività di settembre"
+  },
+  {
+    "name": "ESN Roma ASE (Sapienza)",
+    "email": "ufficio@esn-roma.it",
+    "city": "Roma",
+    "regione": "Lazio",
+    "apertura": "la ripresa delle attività di settembre"
+  },
+  {
+    "name": "A.S.D. Momento Danza",
+    "email": "info@momentodanza.it",
+    "city": "Roma",
+    "regione": "Lazio",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "Scuola di Danza Hamlyn",
+    "email": "info@scuolahamlyn.com",
+    "city": "Firenze",
+    "regione": "Toscana",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "CrossFit Perugia",
+    "email": "cfpg@outlook.it",
+    "city": "Perugia",
+    "regione": "Umbria",
+    "apertura": "la ripresa di settembre e l'open day"
+  },
+  {
+    "name": "A.S.D. Arte Danza Terni",
+    "email": "artedanzaterni@hotmail.com",
+    "city": "Terni",
+    "regione": "Umbria",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "Movimento Danza",
+    "email": "info@movimentodanza.org",
+    "city": "Napoli",
+    "regione": "Campania",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  },
+  {
+    "name": "CEDARTS - Centro Danza Arte Spettacolo",
+    "email": "cedartsdanza@gmail.com",
+    "city": "Lecce",
+    "regione": "Puglia",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "CrossFit Mola di Bari",
+    "email": "crossfitmoladibari@gmail.com",
+    "city": "Mola di Bari",
+    "regione": "Puglia",
+    "apertura": "la ripresa di settembre e le gare interne"
+  },
+  {
+    "name": "DanzaKalaris (New Dance)",
+    "email": "info@danzakalaris.it",
+    "city": "Cagliari",
+    "regione": "Sardegna",
+    "apertura": "le iscrizioni ai corsi"
+  },
+  {
+    "name": "Associazione Danza S.D. (Aurino e Beltrame)",
+    "email": "info@assodanzacandidaamato.it",
+    "city": "Palermo",
+    "regione": "Sicilia",
+    "apertura": "gli stage e le iscrizioni ai corsi"
+  }
+]

@@ -1,0 +1,11 @@
+<section class="faq" aria-labelledby="faq-heading">                                                                                                                       
+  <h2 id="faq-heading">{% if (lang or 'it') == 'en' %}Frequently asked questions{% else %}Domande frequenti{% endif %}</h2>
+  <div class="faq-list">                                                                                                                                                  
+    {% for f in faqs %}                                                                                                                                                   
+      <details class="faq-item">
+        <summary>{{ f.q }}</summary>                                                                                                                                      
+        <div class="faq-answer">{{ f.a | safe }}</div>
+      </details>                                                                                                                                                          
+    {% endfor %}
+  </div>                                                                                                                                                                  
+</section>

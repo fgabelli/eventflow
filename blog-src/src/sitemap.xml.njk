@@ -1,0 +1,40 @@
+---
+permalink: "/blog/sitemap.xml"
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ticketto.it/blog/</loc>
+    <lastmod>{{ collections.posts | getNewestCollectionItemDate | dateToRfc3339 }}</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ticketto.it/blog/autori/fabio-gabelli/</loc>
+    <priority>0.5</priority>
+  </url>
+  {% for post in collections.posts %}
+  <url>
+    <loc>https://ticketto.it{{ post.url }}</loc>
+    <lastmod>{{ (post.data.updated or post.date) | isoDate }}</lastmod>
+    <priority>0.6</priority>
+  </url>
+  {% endfor %}
+  {# English blog #}
+  <url>
+    <loc>https://ticketto.it/en/blog/</loc>
+    <lastmod>{{ collections.postsEn | getNewestCollectionItemDate | dateToRfc3339 }}</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ticketto.it/en/blog/authors/fabio-gabelli/</loc>
+    <priority>0.5</priority>
+  </url>
+  {% for post in collections.postsEn %}
+  <url>
+    <loc>https://ticketto.it{{ post.url }}</loc>
+    <lastmod>{{ (post.data.updated or post.date) | isoDate }}</lastmod>
+    <priority>0.6</priority>
+  </url>
+  {% endfor %}
+</urlset>

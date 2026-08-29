@@ -1,0 +1,100 @@
+---
+layout: layouts/base.njk                                                                                                                                                  
+title: "Fabio Gabelli — Founder di Ticketto"                                                                                                                              
+seoTitle: "Fabio Gabelli — Founder di Ticketto e autore del blog"
+description: "Fabio Gabelli è il founder di Ticketto. Su questo blog scrive guide operative su biglietteria online, check-in eventi e organizzazione di eventi in Italia."
+permalink: "/blog/autori/fabio-gabelli/index.html"
+ogType: "profile"                                                                                                                                                         
+ogImage: "https://ticketto.it/blog/assets/images/authors/fabio-gabelli.jpg"
+altIt: "https://ticketto.it/blog/autori/fabio-gabelli/"
+altEn: "https://ticketto.it/en/blog/authors/fabio-gabelli/"                                                                                               
+---                                                                                                                                                                       
+                                                                                                                                                                          
+<section class="author-page" style="max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 5rem;">                                                                        
+  <nav aria-label="breadcrumb" class="breadcrumb">
+    <a href="/">Home</a> › <a href="/blog/">Blog</a> › <span>Fabio Gabelli</span>                                                                                         
+  </nav>                                                                                                                                                                  
+                                                                                                                                                                          
+  <header class="author-hero">                                                                                                                                            
+    <img src="{{ site.author.image }}" alt="Fabio Gabelli, founder di Ticketto"
+         width="140" height="140" style="border-radius: 999px; margin-bottom: 1.5rem;" />                                                                                 
+    <p class="post-category">Autore</p>                                                                                                                                   
+    <h1>{{ site.author.name }}</h1>                                                                                                                                       
+    <p class="post-lede">{{ site.author.role }}</p>                                                                                                                       
+  </header>     
+                                                                                                                                                                          
+  <div class="post-body">
+    <p>Sono Fabio Gabelli, founder di Ticketto. Da oltre dieci anni lavoro all'intersezione tra software ed eventi: ho iniziato occupandomi di soluzioni digitali per
+organizzatori e formatori, e nel tempo ho visto le stesse identiche frustrazioni ripetersi decine di volte — code al check-in, lettori QR che non si accendono,           
+commissioni che mangiano il margine, partecipanti che non trovano l'email del biglietto.</p>
+                                                                                                                                                                          
+    <p>Ho fondato Ticketto per risolvere proprio questi problemi con un approccio diverso: invece di vendere hardware dedicato, trasformiamo lo smartphone dello staff in 
+un lettore QR professionale. Invece di commissioni opache, prezzi fissi trasparenti. Invece di un tool complesso, un flusso che permette di creare un evento in cinque
+minuti.</p>                                                                                                                                                               
+                
+    <h2>Cosa scrivo qui</h2>
+    <p>Su questo blog pubblico <strong>guide operative basate su quello che vediamo ogni giorno lavorando con centinaia di organizzatori</strong>: cosa funziona, cosa
+rompe la serata, quali errori si pagano caro. Niente teoria generica: solo pratica e numeri.</p>                                                                          
+ 
+    <h2>Competenze e ambiti</h2>                                                                                                                                          
+    <ul>        
+      <li>Gestione eventi e biglietteria online in Italia</li>                                                                                                            
+      <li>Check-in digitale e controllo accessi</li>
+      <li>Normativa eventi: SIAE, GDPR, fatturazione elettronica</li>                                                                                                     
+      <li>Marketing e conversion optimization per registrazioni</li>                                                                                                      
+      <li>SaaS, pagamenti online e integrazioni Stripe</li>                                                                                                               
+    </ul>                                                                                                                                                                 
+                                                                                                                                                                          
+    <h2>Contatti</h2>                                                                                                                                                     
+    <p>Puoi scrivermi a <a href="mailto:fabio@ticketto.it">fabio@ticketto.it</a> o contattarmi su <a href="https://www.linkedin.com/in/fabio-gabelli-10bb35b1/"
+rel="me">LinkedIn</a>.</p>                                                                                                                                                
+  </div>
+                                                                                                                                                                          
+  <section style="margin-top: 4rem;">
+    <h2 style="font-family: var(--font-display); font-size: 1.8rem; color: var(--navy-900); margin-bottom: 1.5rem;">Ultimi articoli</h2>                                  
+    <div class="posts-grid">                                                                                                                                              
+      {% for post in collections.posts | reverse | slice(0, 6) %}
+        {% include "partials/article-card.njk" %}                                                                                                                         
+      {% endfor %}                                                                                                                                                        
+    </div>                                                                                                                                                                
+  </section>                                                                                                                                                              
+</section>      
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [                                                                                                                                                             
+    {
+      "@type": "ProfilePage",                                                                                                                                             
+      "@id": "https://ticketto.it/blog/autori/fabio-gabelli/#profilepage",
+      "url": "https://ticketto.it/blog/autori/fabio-gabelli/",                                                                                                            
+      "name": "Fabio Gabelli — Founder di Ticketto",                                                                                                                      
+      "inLanguage": "it-IT",                                                                                                                                              
+      "mainEntity": { "@id": "https://ticketto.it/blog/autori/fabio-gabelli/#person" },                                                                                   
+      "isPartOf": { "@id": "https://ticketto.it/#website" }                                                                                                               
+    },                                                                                                                                                                    
+    {                                                                                                                                                                     
+      "@type": "Person",                                                                                                                                                  
+      "@id": "https://ticketto.it/blog/autori/fabio-gabelli/#person",
+      "name": "Fabio Gabelli",                                                                                                                                            
+      "givenName": "Fabio",
+      "familyName": "Gabelli",                                                                                                                                            
+      "jobTitle": "Founder di Ticketto",                                                                                                                                  
+      "worksFor": { "@id": "https://ticketto.it/#organization" },
+      "url": "https://ticketto.it/blog/autori/fabio-gabelli/",                                                                                                            
+      "image": "https://ticketto.it/blog/assets/images/authors/fabio-gabelli.jpg",                                                                                        
+      "sameAs": [
+        "https://www.linkedin.com/in/fabiogabelli/"                                                                                                                       
+      ],        
+      "knowsAbout": [                                                                                                                                                     
+        "Gestione eventi",
+        "Biglietteria online",                                                                                                                                            
+        "Check-in digitale",
+        "SaaS",                                                                                                                                                           
+        "Stripe",
+        "GDPR"                                                                                                                                                            
+      ]
+    }                                                                                                                                                                     
+  ]             
+}
+</script>

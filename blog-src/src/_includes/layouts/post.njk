@@ -1,0 +1,69 @@
+---
+layout: layouts/base.njk
+---
+{% set L = lang or 'it' %}
+<article class="post">
+  <nav aria-label="breadcrumb" class="breadcrumb">
+    {% if L == 'en' %}
+    <a href="/en/">Home</a> › <a href="/en/blog/">Blog</a> › <span>{{ title }}</span>
+    {% else %}
+    <a href="/">Home</a> › <a href="/blog/">Blog</a> › <span>{{ title }}</span>
+    {% endif %}
+  </nav>
+
+  <header class="post-header">
+    <p class="post-category">{{ category }}</p>
+    <h1>{{ title }}</h1>
+    <p class="post-lede">{{ description }}</p>
+
+    <div class="post-meta">
+      {% if site.author.image %}
+        <img src="{{ site.author.image }}" alt="{{ site.author.name }}, {{ site.author.role }}" width="48" height="48" loading="lazy">
+      {% endif %}
+      <div>
+        {% if L == 'en' %}
+        <span>Written by <a href="{{ site.author.urlEn }}">{{ site.author.name }}</a></span>
+        <time datetime="{{ date | isoDate }}">{{ date | dateEn }}</time>
+        {% else %}
+        <span>Scritto da <a href="{{ site.author.url }}">{{ site.author.name }}</a></span>
+        <time datetime="{{ date | isoDate }}">{{ date | dateIta }}</time>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if image %}
+    <img src="{{ image | replace('.jpg', '.webp') }}" alt="{{ imageAlt or title }}" width="1200" height="630" fetchpriority="high" decoding="async" class="post-hero" />
+  {% endif %}
+
+  {% if toc %}
+    {% include "partials/toc.njk" %}
+  {% endif %}
+
+  <div class="post-body">
+    {{ content | safe }}
+  </div>
+
+  {% if faqs %}
+    {% include "partials/faq.njk" %}
+  {% endif %}
+
+  {% if relatedPosts %}
+  {% set relatedPool = collections.postsEn if L == 'en' else collections.posts %}
+  <aside class="related-posts" aria-label="{% if L == 'en' %}Related articles{% else %}Articoli correlati{% endif %}">
+    <h2>{% if L == 'en' %}Read also{% else %}Leggi anche{% endif %}</h2>
+    <ul>
+      {% for slug in relatedPosts %}
+        {% for p in relatedPool %}
+          {% if p.fileSlug == slug %}
+            <li><a href="{{ p.url }}">{{ p.data.title }}</a></li>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  </aside>
+  {% endif %}
+
+  {% include "partials/author-bio.njk" %}
+  {% include "partials/jsonld-article.njk" %}
+</article>

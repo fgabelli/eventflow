@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lista Partecipanti Evento: dalla Gestione Excel alla Lista Live [2026] | Ticketto</title>
+  <meta name="description" content="Come gestire la lista partecipanti di un evento senza Excel: lista in tempo reale, import da CSV, check-in che aggiorna i conteggi da solo ed export a fine evento." />
+  <meta name="theme-color" content="#0B1B3A" />
+  <meta name="robots" content="index, follow" />
+
+  <link rel="canonical" href="https://ticketto.it/blog/gestione-lista-partecipanti-evento/" />
+
+  
+  
+
+  
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Ticketto" />
+  <meta property="og:locale" content="it_IT" />
+  <meta property="og:title" content="Lista Partecipanti Evento: dalla Gestione Excel alla Lista Live [2026]" />
+  <meta property="og:description" content="Come gestire la lista partecipanti di un evento senza Excel: lista in tempo reale, import da CSV, check-in che aggiorna i conteggi da solo ed export a fine evento." />
+  <meta property="og:url" content="https://ticketto.it/blog/gestione-lista-partecipanti-evento/" />
+  <meta property="og:image" content="https://ticketto.it/blog/assets/img/posts/biglietteria-online-guida/hero.webp" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Lista Partecipanti Evento: dalla Gestione Excel alla Lista Live [2026]" />
+  <meta name="twitter:description" content="Come gestire la lista partecipanti di un evento senza Excel: lista in tempo reale, import da CSV, check-in che aggiorna i conteggi da solo ed export a fine evento." />
+  <meta name="twitter:image" content="https://ticketto.it/blog/assets/img/posts/biglietteria-online-guida/hero.webp" />
+
+  
+  <link rel="alternate" type="application/rss+xml" title="Blog Ticketto" href="/blog/feed.xml" />
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/blog/assets/css/blog.css" />
+
+  
+  <link rel="preload" as="image" href="/blog/assets/img/posts/gestione-lista-partecipanti-evento/hero.webp" fetchpriority="high" />
+
+  
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied',
+      'analytics_storage':'denied','wait_for_update': 500
+    });
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-417739561"></script>
+  <script>gtag('js', new Date()); gtag('config', 'AW-417739561'); gtag('config', 'G-JS3J7696GM');</script>
+</head>
+<body>
+  
+
+
+
+
+
+
+
+
+
+<header class="site-header" role="banner">
+  <a class="nav-brand" href="/" aria-label="Ticketto — Home">
+    <img src="/icons/Icon-192.png" alt="" width="36" height="36" decoding="async" />
+    <span>Ticketto</span>
+  </a>
+  <nav class="nav-links" aria-label="Navigazione principale">
+    
+      <a href="/#piattaforma" class="link">Piattaforma</a>
+    
+      <a href="/prezzi/" class="link">Prezzi</a>
+    
+      <a href="/blog/" class="link" aria-current="page">Blog</a>
+    
+      <a href="/chi-siamo/" class="link">Chi siamo</a>
+    
+    
+    <a href="/login" class="btn btn-outline">Accedi</a>
+    <a href="/signup" class="btn btn-primary" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
+  </nav>
+  <button class="nav-toggle" aria-label="Apri menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+<script>
+  document.querySelector('.nav-toggle')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const open = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!open));
+    document.querySelector('.nav-links').classList.toggle('is-open', !open);
+  });
+</script>
+
+  <main>
+<article class="post">
+  <nav aria-label="breadcrumb" class="breadcrumb">
+    
+    <a href="/">Home</a> › <a href="/blog/">Blog</a> › <span>Gestire la lista partecipanti di un evento: dal foglio Excel alla lista che si aggiorna da sola</span>
+    
+  </nav>
+
+  <header class="post-header">
+    <p class="post-category">Guida operativa</p>
+    <h1>Gestire la lista partecipanti di un evento: dal foglio Excel alla lista che si aggiorna da sola</h1>
+    <p class="post-lede">Come gestire la lista partecipanti di un evento senza Excel: lista in tempo reale, import da CSV, check-in che aggiorna i conteggi da solo ed export a fine evento.</p>
+
+    <div class="post-meta">
+      
+        <img src="/blog/assets/images/authors/fabio-gabelli.jpg" alt="Fabio Gabelli, Founder di Ticketto" width="48" height="48" loading="lazy">
+      
+      <div>
+        
+        <span>Scritto da <a href="/blog/autori/fabio-gabelli/">Fabio Gabelli</a></span>
+        <time datetime="2026-07-21T00:00:00.000Z">21 luglio 2026</time>
+        
+      </div>
+    </div>
+  </header>
+
+  
+    <img src="/blog/assets/img/posts/gestione-lista-partecipanti-evento/hero.webp" alt="Foglio di calcolo stilizzato che si trasforma in una lista partecipanti digitale aggiornata in tempo reale, palette navy e viola" width="1200" height="630" fetchpriority="high" decoding="async" class="post-hero" />
+  
+
+  
+    
+<aside class="toc-wrapper" aria-label="Indice dei contenuti">
+  <p class="toc-title">In questo articolo</p>
+  <nav class="toc" >
+        <ul><li><a href="#la-lista-partecipanti-e-il-documento-piu-importante-e-il-peggio-gestito">La lista partecipanti è il documento più importante (e il peggio gestito)</a></li><li><a href="#perche-la-lista-su-excel-o-su-carta-ti-tradisce">Perché la lista su Excel (o su carta) ti tradisce</a></li><li><a href="#la-lista-in-tempo-reale-una-sola-sempre-quella-vera">La lista in tempo reale: una sola, sempre quella vera</a></li><li><a href="#importare-i-partecipanti-che-hai-gia-da-csv">Importare i partecipanti che hai già (da CSV)</a></li><li><a href="#il-check-in-che-aggiorna-la-lista-da-solo">Il check-in che aggiorna la lista da solo</a></li><li><a href="#esportare-i-dati-a-fine-evento-e-non-perderli">Esportare i dati a fine evento (e non perderli)</a></li><li><a href="#come-lo-fa-ticketto">Come lo fa Ticketto</a></li><li><a href="#conclusione">Conclusione</a></li></ul>
+      </nav>
+</aside>
+
+  
+
+  <div class="post-body">
+    <blockquote>
+<p><strong>In sintesi:</strong> la lista partecipanti è il documento più importante di un evento e quasi sempre il peggio gestito — un foglio Excel su un computer, una stampa che invecchia il giorno stesso, conteggi che non tornano al varco. Questa guida spiega perché la lista cartacea o su Excel ti tradisce, com’è fatta una lista che si aggiorna da sola, come importare i partecipanti che hai già, come il check-in tiene i conti al posto tuo e come esportare tutto a fine evento.</p>
+</blockquote>
+<h2 id="la-lista-partecipanti-e-il-documento-piu-importante-e-il-peggio-gestito" tabindex="-1"><a class="header-anchor" href="#la-lista-partecipanti-e-il-documento-piu-importante-e-il-peggio-gestito">La lista partecipanti è il documento più importante (e il peggio gestito)</a></h2>
+<p>Su qualsiasi evento — un corso, una cena sociale, un open day, una conferenza — c’è un documento da cui dipende tutto: la lista partecipanti. È quella che ti dice quanti siete davvero, chi ha pagato, chi è entrato, chi manca. È il dato su cui prenoti il catering, dimensioni lo staff, chiudi i conti.</p>
+<p>Ed è anche, quasi sempre, il documento gestito peggio. Nella maggior parte dei casi vive come un <strong>foglio Excel</strong> sul computer dell’organizzatore, magari duplicato in tre versioni leggermente diverse, e il giorno dell’evento diventa una <strong>stampa</strong> che gira di mano in mano al banco d’ingresso. Funziona finché l’evento è piccolo e statico. Si rompe nel momento in cui i numeri crescono, le iscrizioni continuano ad arrivare e più persone devono lavorare sullo stesso elenco.</p>
+<p>Il problema non è Excel in sé: è un ottimo strumento. Il problema è usarlo come <strong>registro vivo</strong> di qualcosa che cambia di continuo. Una lista partecipanti non è una tabella ferma: è un dato che si muove fino all’ultimo minuto, e oltre.</p>
+<h2 id="perche-la-lista-su-excel-o-su-carta-ti-tradisce" tabindex="-1"><a class="header-anchor" href="#perche-la-lista-su-excel-o-su-carta-ti-tradisce">Perché la lista su Excel (o su carta) ti tradisce</a></h2>
+<p>I limiti del foglio di calcolo non sono di chi lo compila: sono strutturali. Emergono sempre, in modo prevedibile, su tre fronti.</p>
+<h3 id="non-e-condivisa" tabindex="-1"><a class="header-anchor" href="#non-e-condivisa">Non è condivisa</a></h3>
+<p>L’Excel sta su un computer. Se chi è alla porta ha la stampa di ieri sera e tu nel frattempo hai aggiunto cinque iscritti, <strong>i due elenchi non combaciano già più</strong>. Quando in segreteria correggono un nome e al varco non lo sanno, stai lavorando su due verità diverse. La condivisione via email peggiora le cose: nascono <code>lista_def</code>, <code>lista_def2</code>, <code>lista_DEFINITIVA_ok</code> e nessuno sa più quale sia quella buona.</p>
+<h3 id="non-e-aggiornata" tabindex="-1"><a class="header-anchor" href="#non-e-aggiornata">Non è aggiornata</a></h3>
+<p>Una lista stampata è <strong>vecchia nel momento esatto in cui esce dalla stampante</strong>. Ogni iscrizione, cancellazione o pagamento successivo non c’è. E le iscrizioni dell’ultimo minuto sono la norma, non l’eccezione: una quota importante di chi partecipa si registra negli ultimi giorni. Con la carta, quei nomi finiscono scritti a penna a margine — quando va bene.</p>
+<h3 id="genera-errori-al-varco" tabindex="-1"><a class="header-anchor" href="#genera-errori-al-varco">Genera errori al varco</a></h3>
+<p>Il momento in cui i limiti diventano visibili a tutti è l’ingresso. Con una lista cartacea il check-in vuol dire <strong>scorrere righe con il dito</strong> cercando un cognome, mentre la coda si allunga. Da lì arrivano gli errori classici:</p>
+<ul>
+<li>la stessa persona spuntata due volte (o due persone con lo stesso cognome confuse);</li>
+<li>qualcuno che entra senza essere segnato, perché la coda spingeva;</li>
+<li>il conteggio finale che non torna, perché tre operatori hanno spuntato su tre copie diverse;</li>
+<li>nessun modo di sapere, a metà giornata, <strong>quanti sono entrati davvero</strong> senza ricontare a mano.</li>
+</ul>
+<p>Il risultato è sempre lo stesso: a fine evento non hai un dato affidabile, hai una stima. E la stima, sulla rendicontazione e sull’edizione successiva, costa.</p>
+<h2 id="la-lista-in-tempo-reale-una-sola-sempre-quella-vera" tabindex="-1"><a class="header-anchor" href="#la-lista-in-tempo-reale-una-sola-sempre-quella-vera">La lista in tempo reale: una sola, sempre quella vera</a></h2>
+<p>L’alternativa non è “un Excel migliore”. È cambiare la natura del documento: da file che qualcuno aggiorna a <strong>lista che vive online e si aggiorna da sé</strong>.</p>
+<p>Il principio è uno solo: <strong>una lista sola, condivisa, sempre allineata</strong>. Chi è alla porta, chi è in segreteria e chi coordina guardano lo stesso elenco nello stesso momento. Quando un dato cambia — un nuovo iscritto, una cancellazione, un check-in — cambia per tutti contemporaneamente. Spariscono le copie, sparisce la domanda “ma questa è l’ultima versione?”.</p>
+<p>Cosa contiene una lista così, riga per riga:</p>
+<ul>
+<li><strong>i dati del partecipante</strong> raccolti all’iscrizione (nome, email e ciò che hai scelto di chiedere);</li>
+<li><strong>lo stato di pagamento</strong>, se incassi online — chi ha versato la quota e chi no;</li>
+<li><strong>lo stato di presenza</strong> — iscritto, presente, assente — che si aggiorna al check-in;</li>
+<li><strong>il conteggio in tempo reale</strong> — quanti iscritti, quanti entrati, quanti posti restano.</li>
+</ul>
+<p>Da qui in poi ogni operazione lavora sullo stesso dato. Il conteggio dei posti è sempre corretto perché è la lista stessa a contarli. Se qualcuno si cancella, aggiorni il suo stato e il numero si riallinea da solo: niente più “aspetta che ricontrollo”.</p>
+<p>Lo stesso ragionamento vale a monte, sul modulo che alimenta la lista: se vuoi approfondire come raccogliere bene le iscrizioni, la nostra <a href="/blog/biglietteria-online-guida/">guida alla biglietteria online</a> spiega come funziona la pagina pubblica dell’evento — il link che condividi e da cui le persone si registrano da sole, senza che tu ricopi niente.</p>
+<h2 id="importare-i-partecipanti-che-hai-gia-da-csv" tabindex="-1"><a class="header-anchor" href="#importare-i-partecipanti-che-hai-gia-da-csv">Importare i partecipanti che hai già (da CSV)</a></h2>
+<p>Obiezione legittima: “ma io le iscrizioni le ho già raccolte, sono nel mio Excel”. Non devi reinserirle a mano.</p>
+<p>Con il piano Pro puoi <strong>importare i partecipanti da un file CSV</strong>. Il flusso è banale:</p>
+<ol>
+<li><strong>esporti il tuo foglio Excel in CSV</strong> (un’opzione standard di qualsiasi foglio di calcolo);</li>
+<li><strong>carichi il file</strong>;</li>
+<li><strong>ogni riga diventa una voce della lista</strong>, con i suoi dati.</li>
+</ol>
+<p>È la scorciatoia giusta quando parti da un elenco esistente: un modulo cartaceo già trascritto, un vecchio gestionale, l’anagrafica soci dell’associazione, le iscrizioni arrivate via email che hai messo insieme tu. Invece di ridigitare cento nomi, li sposti in blocco.</p>
+<p>E i due metodi convivono benissimo. Lo schema più comune è: <strong>importi chi hai già</strong> dal CSV, e in parallelo <strong>apri la pagina pubblica</strong> dell’evento per i nuovi iscritti, che entrano direttamente nella stessa lista. Da quel momento in poi c’è un unico elenco, alimentato da entrambe le fonti.</p>
+<blockquote>
+<p>Nota sul gating: l’import da CSV è una funzione del piano Pro, insieme al superamento dei 50 partecipanti, ai campi di registrazione personalizzati e ai pagamenti online. Sul piano Free la lista la popoli dalla pagina pubblica dell’evento, fino a 50 partecipanti.</p>
+</blockquote>
+<h3 id="prepara-bene-il-csv" tabindex="-1"><a class="header-anchor" href="#prepara-bene-il-csv">Prepara bene il CSV</a></h3>
+<p>Due accortezze evitano metà dei problemi:</p>
+<ul>
+<li><strong>una colonna = un’informazione</strong>: tieni nome, cognome ed email in colonne separate, non tutto in una cella;</li>
+<li><strong>intestazioni pulite</strong>: la prima riga deve dire cosa contiene ogni colonna, così la corrispondenza dei campi è immediata.</li>
+</ul>
+<p>Se hai bisogno di dati specifici oltre a nome ed email — un numero di documento, un’intolleranza, una taglia — quelli si raccolgono meglio con i <strong>campi di registrazione personalizzati</strong> sulla pagina di iscrizione (anch’essi sul piano Pro): ogni partecipante li compila una volta e tu li ritrovi nella stessa riga della lista.</p>
+<h2 id="il-check-in-che-aggiorna-la-lista-da-solo" tabindex="-1"><a class="header-anchor" href="#il-check-in-che-aggiorna-la-lista-da-solo">Il check-in che aggiorna la lista da solo</a></h2>
+<p>Qui sta il salto più grande rispetto alla carta. Con una lista in tempo reale, <strong>il check-in non è un’operazione separata dalla lista: è il modo in cui la lista si aggiorna.</strong></p>
+<p>Il <a href="/blog/check-in-evento-smartphone/">check-in da smartphone</a> funziona così: ogni iscritto ha un codice (un QR nell’email di conferma), lo inquadri con il telefono al varco, e nel momento stesso in cui lo spunti <strong>il suo stato passa a “presente” e i conteggi si riallineano</strong>. Non c’è un foglio da segnare a parte. La lista <em>è</em> il registro degli ingressi.</p>
+<p>Cosa cambia, in pratica, rispetto alla stampa:</p>
+<ul>
+<li><strong>niente ricerca a dito</strong>: il codice porta direttamente alla persona giusta, niente cognomi confusi;</li>
+<li><strong>niente doppi ingressi</strong>: se un codice è già stato usato, te lo dice, così la stessa persona non entra due volte;</li>
+<li><strong>conteggio sempre vivo</strong>: a metà evento sai con un’occhiata quanti sono entrati e quanti mancano, senza ricontare;</li>
+<li><strong>più varchi, una lista sola</strong>: se hai due o tre ingressi, più persone fanno il check-in contemporaneamente e i numeri restano allineati — cosa impossibile con tre copie cartacee.</li>
+</ul>
+<p>Tutto questo gira sulla web app, dal telefono che hai già in tasca: non servono lettori dedicati né hardware. Il check-in da smartphone è incluso anche nel piano Free, quindi la lista che si aggiorna al varco la provi a costo zero già sul primo evento fino a 50 persone.</p>
+<h3 id="quando-il-check-in-incontra-le-fasce-orarie" tabindex="-1"><a class="header-anchor" href="#quando-il-check-in-incontra-le-fasce-orarie">Quando il check-in incontra le fasce orarie</a></h3>
+<p>Se l’evento ha ingressi scaglionati, la lista in tempo reale lavora insieme alla <a href="/blog/gestione-fasce-orarie-eventi/">gestione delle fasce orarie</a>: al varco non vedi solo <em>se</em> il partecipante è atteso, ma <em>in quale fascia</em>, così lo staff capisce a colpo d’occhio chi è nell’orario giusto e chi è fuori finestra. È lo stesso dato — la lista — guardato dal lato dell’ingresso.</p>
+<h2 id="esportare-i-dati-a-fine-evento-e-non-perderli" tabindex="-1"><a class="header-anchor" href="#esportare-i-dati-a-fine-evento-e-non-perderli">Esportare i dati a fine evento (e non perderli)</a></h2>
+<p>L’evento finisce, ma la lista no. È un patrimonio: serve per la rendicontazione, per l’archivio, e soprattutto per la prossima edizione.</p>
+<p>A evento chiuso puoi <strong>esportare la lista partecipanti</strong> completa di tutto ciò che hai raccolto: chi si è iscritto, chi ha pagato, chi si è presentato davvero. Tre usi concreti:</p>
+<ul>
+<li><strong>rendicontazione</strong>: un elenco ordinato di incassi e presenze, pronto per la contabilità o per il direttivo dell’associazione;</li>
+<li><strong>archivio</strong>: i dati restano tuoi, in un file che conservi dove vuoi;</li>
+<li><strong>riuso</strong>: chi ha partecipato quest’anno è la lista d’invito migliore per l’anno prossimo — la riapri e riparti da lì.</li>
+</ul>
+<p>Per chi ha bisogno di estrazioni più ricche o di portare i dati dentro altri sistemi, il piano Business aggiunge un’<strong>esportazione dati avanzata</strong>. Ma per il caso normale — scaricare la lista a fine evento e tenerla — l’export ti dà esattamente il dato pulito che con la carta non hai mai avuto: non una stima, un elenco vero.</p>
+<h2 id="come-lo-fa-ticketto" tabindex="-1"><a class="header-anchor" href="#come-lo-fa-ticketto">Come lo fa Ticketto</a></h2>
+<p>Mettendo insieme i pezzi, ecco il flusso completo della lista partecipanti su Ticketto.</p>
+<ol>
+<li><strong>Raccogli le iscrizioni</strong> dalla pagina pubblica dell’evento (le persone si registrano da sole) e/o <strong>importi da CSV</strong> chi hai già (import da CSV sul piano Pro).</li>
+<li><strong>La lista vive online e si aggiorna da sé</strong>: ogni nuovo iscritto entra nel conteggio, ogni cancellazione lo riallinea, senza copie e senza ricopiare.</li>
+<li><strong>Aggiungi i campi che ti servono</strong> con i campi di registrazione personalizzati (Pro), così ogni dato è già nella riga giusta.</li>
+<li><strong>Incassi online</strong> collegando Stripe, se vuoi che la lista distingua da sola chi ha pagato (Pro) — <strong>senza commissioni di piattaforma</strong>.</li>
+<li><strong>Fai il check-in da smartphone</strong> e la lista si aggiorna allo stato “presente” in tempo reale, anche con più varchi insieme (incluso dal piano Free).</li>
+<li><strong>Esporti tutto a fine evento</strong> per rendicontare, archiviare e riusare i contatti (export avanzato sul piano Business).</li>
+</ol>
+<p>E la parte onesta sui costi: per un evento <strong>fino a 50 partecipanti</strong> tutto questo — lista in tempo reale, pagina di iscrizione, email di conferma automatica e check-in da smartphone — è incluso nel <strong>piano Free</strong>. Si passa al <strong>Pro (€29/mese)</strong> quando ti serve superare i 50 iscritti (fino a 500), importare da CSV, aggiungere campi su misura o incassare online. Il <strong>Business (€79/mese)</strong> arriva quando i numeri diventano illimitati e ti servono team illimitato ed export avanzato.</p>
+<hr>
+<h2 id="conclusione" tabindex="-1"><a class="header-anchor" href="#conclusione">Conclusione</a></h2>
+<p>La lista partecipanti non è un dettaglio amministrativo: è il documento da cui dipendono i conti, lo staff e l’esperienza all’ingresso. Gestirla su un Excel duplicato e su una stampa che invecchia in un’ora significa lavorare tutto il giorno su un dato che non torna mai del tutto.</p>
+<p>La differenza non è uno strumento più sofisticato: è cambiare la natura del documento. Una lista sola, online, che si aggiorna da sé quando arriva un’iscrizione e quando spunti qualcuno al varco — e che a fine evento esporti pulita, invece di ricostruirla a memoria. Il tempo che non passi a far quadrare i numeri è tempo che dedichi all’evento vero.</p>
+<blockquote>
+<p><a href="/app.html#signup">Prova Ticketto gratis</a> — gratis fino a 50 partecipanti, con lista in tempo reale e check-in da smartphone inclusi.</p>
+</blockquote>
+
+  </div>
+
+  
+    <section class="faq" aria-labelledby="faq-heading">                                                                                                                       
+  <h2 id="faq-heading">Domande frequenti</h2>
+  <div class="faq-list">                                                                                                                                                  
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>Posso gestire la lista partecipanti gratis?</summary>                                                                                                                                      
+        <div class="faq-answer">Sì. Per un evento <strong>fino a 50 partecipanti</strong> la lista, la pagina di iscrizione, l'email di conferma automatica e il check-in da smartphone sono inclusi nel piano Free, senza spendere niente. Si passa al Pro quando ti serve superare i 50 iscritti (fino a 500), importare partecipanti da CSV, aggiungere campi di registrazione su misura o incassare i pagamenti online.</div>
+      </details>                                                                                                                                                          
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>Come importo una lista che ho già in Excel?</summary>                                                                                                                                      
+        <div class="faq-answer">Con il piano Pro puoi <strong>importare i partecipanti da un file CSV</strong>: esporti il tuo foglio Excel in formato CSV, lo carichi e ogni riga diventa una voce della lista. È utile quando parti da iscrizioni già raccolte altrove — un modulo cartaceo trascritto, un vecchio gestionale, un elenco soci — e non vuoi reinserire i nomi a mano.</div>
+      </details>                                                                                                                                                          
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>La lista si aggiorna da sola quando faccio il check-in?</summary>                                                                                                                                      
+        <div class="faq-answer">Sì. Ogni volta che spunti un partecipante al varco con lo smartphone, il suo stato passa a <strong>presente</strong> e i conteggi si riallineano in tempo reale: quanti sono entrati, quanti mancano. Non c'è un foglio da aggiornare a mano, e più persone possono fare il check-in contemporaneamente a varchi diversi restando sempre allineate.</div>
+      </details>                                                                                                                                                          
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>Cosa succede se qualcuno si iscrive all&#39;ultimo minuto?</summary>                                                                                                                                      
+        <div class="faq-answer">L'iscrizione entra <strong>direttamente nella lista</strong> nel momento in cui la persona compila la pagina pubblica dell'evento, e riceve l'email di conferma automatica. Non devi ricopiare niente: il nuovo nome è già nel conteggio. Vale anche per chi si registra la sera prima o la mattina stessa.</div>
+      </details>                                                                                                                                                          
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>Posso esportare i dati a fine evento?</summary>                                                                                                                                      
+        <div class="faq-answer">Sì. Puoi <strong>esportare la lista partecipanti</strong> per archiviare i dati, fare la rendicontazione o riusare i contatti per l'edizione successiva. Il piano Business aggiunge un'esportazione dati avanzata per chi ha bisogno di estrazioni più ricche o di integrare i dati con altri sistemi.</div>
+      </details>                                                                                                                                                          
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>Più persone possono lavorare sulla stessa lista?</summary>                                                                                                                                      
+        <div class="faq-answer">Sì. La lista è una sola e vive online, quindi chi è alla porta, chi è in segreteria e chi coordina vedono <strong>lo stesso elenco aggiornato</strong> nello stesso momento. Niente più copie diverse dello stesso Excel che girano via email. Il piano Business offre un team di gestione illimitato per gli staff più numerosi.</div>
+      </details>                                                                                                                                                          
+                                                                                                                                                       
+      <details class="faq-item">
+        <summary>Devo per forza far iscrivere le persone online?</summary>                                                                                                                                      
+        <div class="faq-answer">No. Puoi far registrare i partecipanti dalla <strong>pagina pubblica dell'evento</strong> (loro compilano, tu non ricopi), oppure popolare la lista importando un CSV se le iscrizioni le hai raccolte altrove. Spesso i due metodi convivono: importi chi hai già e apri la pagina per i nuovi.</div>
+      </details>                                                                                                                                                          
+    
+  </div>                                                                                                                                                                  
+</section>
+
+  
+
+  
+  
+  <aside class="related-posts" aria-label="Articoli correlati">
+    <h2>Leggi anche</h2>
+    <ul>
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            <li><a href="/blog/check-in-evento-smartphone/">Come fare il check-in di un evento con lo smartphone (senza lettori QR)</a></li>
+          
+        
+          
+        
+          
+        
+          
+        
+      
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            <li><a href="/blog/gestione-fasce-orarie-eventi/">Gestione fasce orarie eventi: come evitare code e sovraffollamenti</a></li>
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+      
+    </ul>
+  </aside>
+  
+
+  
+<aside class="author-bio" aria-label="Autore">
+  <img src="/blog/assets/images/authors/fabio-gabelli.jpg" alt="Foto di Fabio Gabelli" width="72" height="72" loading="lazy" />
+  <div>
+    <p class="author-bio-name">
+      <a href="/blog/autori/fabio-gabelli/">Fabio Gabelli</a>
+      <span class="author-bio-role">· Founder di Ticketto</span>
+    </p>
+    <p class="author-bio-text">Fabio Gabelli è il founder di Ticketto. Su questo blog scrive guide operative su biglietteria online, check-in eventi e organizzazione di eventi.</p>
+    <p class="author-bio-social">
+      
+        <a href="https://www.linkedin.com/in/fabio-gabelli-10bb35b1/" rel="me noopener" target="_blank">linkedin.cominfabio-gabe</a>
+      
+    </p>
+  </div>
+</aside>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "mainEntityOfPage": "https://ticketto.it/blog/gestione-lista-partecipanti-evento/",
+  "inLanguage": "it-IT",
+  "headline": "Lista Partecipanti Evento: dalla Gestione Excel alla Lista Live [2026]",
+  "description": "Come gestire la lista partecipanti di un evento senza Excel: lista in tempo reale, import da CSV, check-in che aggiorna i conteggi da solo ed export a fine evento.",
+  "image": "https://ticketto.it/blog/assets/img/posts/gestione-lista-partecipanti-evento/hero.webp",
+  "author": {
+    "@type": "Person",
+    "name": "Fabio Gabelli",
+    "url": "https://ticketto.it/blog/autori/fabio-gabelli/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Ticketto",
+    "url": "https://ticketto.it",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://ticketto.it/favicon.png"
+    }
+  },
+  "datePublished": "2026-07-21T00:00:00.000Z",
+  "dateModified": "2026-07-21T00:00:00.000Z"
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://ticketto.it/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Blog",
+      "item": "https://ticketto.it/blog/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Gestire la lista partecipanti di un evento: dal foglio Excel alla lista che si aggiorna da sola",
+      "item": "https://ticketto.it/blog/gestione-lista-partecipanti-evento/"
+    }
+  ]
+}
+</script>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    
+    {
+      "@type": "Question",
+      "name": "Posso gestire la lista partecipanti gratis?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sì. Per un evento <strong>fino a 50 partecipanti</strong> la lista, la pagina di iscrizione, l'email di conferma automatica e il check-in da smartphone sono inclusi nel piano Free, senza spendere niente. Si passa al Pro quando ti serve superare i 50 iscritti (fino a 500), importare partecipanti da CSV, aggiungere campi di registrazione su misura o incassare i pagamenti online."
+      }
+    },
+    
+    {
+      "@type": "Question",
+      "name": "Come importo una lista che ho già in Excel?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Con il piano Pro puoi <strong>importare i partecipanti da un file CSV</strong>: esporti il tuo foglio Excel in formato CSV, lo carichi e ogni riga diventa una voce della lista. È utile quando parti da iscrizioni già raccolte altrove — un modulo cartaceo trascritto, un vecchio gestionale, un elenco soci — e non vuoi reinserire i nomi a mano."
+      }
+    },
+    
+    {
+      "@type": "Question",
+      "name": "La lista si aggiorna da sola quando faccio il check-in?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sì. Ogni volta che spunti un partecipante al varco con lo smartphone, il suo stato passa a <strong>presente</strong> e i conteggi si riallineano in tempo reale: quanti sono entrati, quanti mancano. Non c'è un foglio da aggiornare a mano, e più persone possono fare il check-in contemporaneamente a varchi diversi restando sempre allineate."
+      }
+    },
+    
+    {
+      "@type": "Question",
+      "name": "Cosa succede se qualcuno si iscrive all'ultimo minuto?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "L'iscrizione entra <strong>direttamente nella lista</strong> nel momento in cui la persona compila la pagina pubblica dell'evento, e riceve l'email di conferma automatica. Non devi ricopiare niente: il nuovo nome è già nel conteggio. Vale anche per chi si registra la sera prima o la mattina stessa."
+      }
+    },
+    
+    {
+      "@type": "Question",
+      "name": "Posso esportare i dati a fine evento?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sì. Puoi <strong>esportare la lista partecipanti</strong> per archiviare i dati, fare la rendicontazione o riusare i contatti per l'edizione successiva. Il piano Business aggiunge un'esportazione dati avanzata per chi ha bisogno di estrazioni più ricche o di integrare i dati con altri sistemi."
+      }
+    },
+    
+    {
+      "@type": "Question",
+      "name": "Più persone possono lavorare sulla stessa lista?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sì. La lista è una sola e vive online, quindi chi è alla porta, chi è in segreteria e chi coordina vedono <strong>lo stesso elenco aggiornato</strong> nello stesso momento. Niente più copie diverse dello stesso Excel che girano via email. Il piano Business offre un team di gestione illimitato per gli staff più numerosi."
+      }
+    },
+    
+    {
+      "@type": "Question",
+      "name": "Devo per forza far iscrivere le persone online?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Puoi far registrare i partecipanti dalla <strong>pagina pubblica dell'evento</strong> (loro compilano, tu non ricopi), oppure popolare la lista importando un CSV se le iscrizioni le hai raccolte altrove. Spesso i due metodi convivono: importi chi hai già e apri la pagina per i nuovi."
+      }
+    }
+    
+  ]
+}
+</script>
+
+
+
+
+</article>
+</main>
+  
+<footer class="site-footer" role="contentinfo">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="/icons/Icon-192.png" alt="Ticketto" width="40" height="40" />
+      <p>La piattaforma di biglietteria e check-in eventi.</p>
+    </div>
+    
+    <nav class="footer-col" aria-label="Prodotto">
+      <h3>Prodotto</h3>
+      <a href="/#piattaforma">Piattaforma</a>
+      <a href="/prezzi/">Prezzi</a>
+      <a href="/blog/">Blog</a>
+    </nav>
+    <nav class="footer-col" aria-label="Azienda">
+      <h3>Azienda</h3>
+      <a href="/chi-siamo/">Chi siamo</a>
+      <a href="/blog/autori/fabio-gabelli/">Autore</a>
+      <a href="mailto:info@ticketto.it">Contatti</a>
+    </nav>
+    
+  </div>
+  <div class="footer-bottom" style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center;">
+    <div class="legal-links" style="display: flex; gap: 1.5rem; justify-content: center; font-size: 0.95rem;">
+      
+      <a href="/privacy/" style="color: inherit; text-decoration: none;">Privacy Policy</a>
+      <a href="/terms/" style="color: inherit; text-decoration: none;">Termini di servizio</a>
+      
+    </div>
+    <small>© 2026 Ticketto — un prodotto <strong>Bitle S.r.l.s.</strong> · VAT IT12847530966</small>
+  </div>
+</footer>
+
+</body>
+</html>

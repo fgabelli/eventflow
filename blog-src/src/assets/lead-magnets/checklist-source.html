@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Checklist Definitiva per Eventi Aziendali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0B1B3A;
+    --navy-light: #1A2B4C;
+    --ivory: #F8FAFC;
+    --violet: #6C63FF;
+    --violet-light: rgba(108, 99, 255, 0.1);
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 20mm;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--navy);
+    background-color: var(--ivory);
+    margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+
+  .page {
+    page-break-after: always;
+    position: relative;
+    width: 100%;
+    height: 100vh; /* Actually A4 height minus margins when printed */
+    overflow: hidden;
+  }
+
+  /* Page 1 - Cover */
+  .cover {
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-light) 100%);
+    color: white;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+  }
+  .cover-logo {
+    position: absolute;
+    top: 40px;
+    left: 40px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 24pt;
+    color: white;
+    letter-spacing: 1px;
+  }
+  .cover h1 {
+    font-size: 50pt;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    font-weight: 800;
+  }
+  .cover h2 {
+    font-size: 22pt;
+    color: #B3AEFF; /* light violet */
+    font-weight: 400;
+    line-height: 1.3;
+    max-width: 80%;
+  }
+  .cover .footer {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    font-size: 10pt;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* Inner Pages */
+  .inner-page {
+    padding: 20px;
+    height: 100%;
+  }
+
+  .inner-page h1 {
+    font-size: 28pt;
+    color: var(--navy);
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+  .inner-page p {
+    font-size: 12pt;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  /* Error pages */
+  .error-number {
+    display: inline-block;
+    background-color: var(--violet);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 24pt;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 60px;
+    margin-bottom: 20px;
+  }
+
+  .problem-box {
+    background-color: var(--violet-light);
+    border-left: 4px solid var(--violet);
+    padding: 15px 20px;
+    margin-bottom: 30px;
+    border-radius: 0 8px 8px 0;
+  }
+  .problem-box p { margin: 0; }
+
+  h3 {
+    font-size: 16pt;
+    color: var(--navy);
+    margin-top: 30px;
+    margin-bottom: 15px;
+  }
+
+  ul.checklist {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 30px;
+  }
+  ul.checklist li {
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 15px;
+    font-size: 12pt;
+    line-height: 1.5;
+  }
+  ul.checklist li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--violet);
+    border-radius: 4px;
+    background-color: white;
+  }
+
+  .notes-section {
+    margin-top: 40px;
+  }
+  .notes-line {
+    border-bottom: 1px solid rgba(11, 27, 58, 0.2);
+    height: 30px;
+    margin-bottom: 10px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+  }
+  th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid rgba(11, 27, 58, 0.1);
+  }
+  th {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--navy);
+    color: white;
+    font-weight: 600;
+  }
+
+  .cta-box {
+    background-color: var(--navy);
+    color: white;
+    padding: 30px;
+    border-radius: 12px;
+    border-left: 6px solid var(--violet);
+  }
+  .cta-box h3 { color: white; margin-top: 0; }
+  .cta-box p { margin-bottom: 10px; color: rgba(255,255,255,0.8); }
+  .cta-box a { color: var(--violet); text-decoration: none; font-weight: 600; }
+
+  .page-footer {
+    position: absolute;
+    bottom: 0px;
+    left: 20px;
+    right: 20px;
+    font-size: 9pt;
+    color: rgba(11, 27, 58, 0.6);
+    border-top: 1px solid rgba(11, 27, 58, 0.1);
+    padding-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page cover">
+  <div class="cover-logo">Ticketto</div>
+  <h1>Checklist definitiva per eventi aziendali</h1>
+  <h2>13 pagine per non dimenticare nulla, prima durante e dopo l'evento</h2>
+  <div class="footer">Versione 1.0 · 2026 · di Fabio Gabelli, Founder di Ticketto · ticketto.it</div>
+</div>
+
+<!-- PAGE 2: HOW TO USE -->
+<div class="page inner-page">
+  <h1>Come usare questa checklist</h1>
+  <p>Questa checklist raccoglie i dieci errori operativi più ricorrenti negli eventi aziendali italiani, sulla base di decine di casi reali osservati. Per ogni errore trovi:</p>
+  <ul>
+    <li>Una descrizione del problema in tre righe</li>
+    <li>Da 3 a 5 azioni concrete per prevenirlo, in formato checkbox</li>
+    <li>Uno spazio note per annotare decisioni specifiche del tuo evento</li>
+  </ul>
+  
+  <h3>Come funziona in pratica</h3>
+  <ol>
+    <li>Stampa la checklist (o tienila aperta in PDF su tablet) all'inizio della pianificazione</li>
+    <li>Spunta le azioni man mano che le completi</li>
+    <li>Scrivi nelle note le decisioni prese (fornitore scelto, costo, responsabile) — ti servirà per il briefing interno e per le edizioni successive</li>
+    <li>Non saltare pagine: gli errori sono ordinati per frequenza, non per importanza operativa. Un errore evitato a pagina 3 vale quanto uno a pagina 12</li>
+  </ol>
+
+  <h3>Timeline consigliata</h3>
+  <table>
+    <tr><th>Quando</th><th>Sezione della checklist</th></tr>
+    <tr><td>8–16 settimane prima</td><td>Pagine 3–6 (strategia e pianificazione)</td></tr>
+    <tr><td>4–8 settimane prima</td><td>Pagine 7–9 (registrazione e comunicazione)</td></tr>
+    <tr><td>Giorno dell'evento</td><td>Pagine 10–12 (check-in, agenda, logistica)</td></tr>
+    <tr><td>Entro 24h dopo</td><td>Pagina 13 (misurazione)</td></tr>
+  </table>
+
+  <div class="problem-box" style="background-color: rgba(11,27,58,0.05); border-color: var(--navy); margin-top: 40px;">
+    <p><strong>Nota:</strong> questa checklist è complementare ai tool di gestione eventi, non sostitutiva. Per la parte operativa (registrazione, biglietti, check-in) raccomandiamo una piattaforma dedicata — noi facciamo Ticketto, ma anche altre alternative funzionano.</p>
+  </div>
+</div>
+
+<!-- PAGE 3 -->
+<div class="page inner-page">
+  <div class="error-number">1</div>
+  <h1>L'obiettivo è definito solo a parole</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> "Vogliamo fare un evento per l'Area Vendite" non è un obiettivo, è un'intenzione. Senza un KPI misurabile, non saprai mai se l'evento è stato un successo — e quindi non saprai se ripeterlo, migliorarlo o eliminarlo.</p>
+  </div>
+  
+  <h3>Cosa fare prima di procedere</h3>
+  <ul class="checklist">
+    <li>Scrivi l'obiettivo in una sola frase con almeno un numero dentro</li>
+    <li>Condividi l'obiettivo con lo sponsor interno prima di qualsiasi altra decisione</li>
+    <li>Identifica 1 KPI primario e massimo 2 KPI secondari</li>
+    <li>Stabilisci il benchmark minimo di successo (es. "NPS ≥8 su 100 partecipanti")</li>
+    <li>Definisci chi misurerà il KPI, con quale tool, entro quando</li>
+  </ul>
+
+  <h3>Domande chiave da porsi</h3>
+  <ul>
+    <li>Cosa succederebbe se questo evento non venisse organizzato?</li>
+    <li>Qual è il miglior uso alternativo di questo budget?</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 4 -->
+<div class="page inner-page">
+  <div class="error-number">2</div>
+  <h1>Il budget è "al centesimo"</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> La prima bozza di budget è quasi sempre ottimistica del 15-25%. Catering sottostima le quantità, l'AV scopre cavi da noleggiare, un fornitore non si presenta e va sostituito. Senza buffer sei destinato a chiedere top-up imbarazzanti.</p>
+  </div>
+  
+  <h3>Cosa fare prima di procedere</h3>
+  <ul class="checklist">
+    <li>Blocca il 20% del budget totale come riserva imprevisti, dichiarata al committente</li>
+    <li>Categorizza le voci in "fisse" (vincolate da contratto) vs "variabili" (ottimizzabili)</li>
+    <li>Richiedi almeno 3 preventivi per le voci sopra i €2.000</li>
+    <li>Includi nel budget: staff dedicato pre-evento (15-30 ore/senior), stampa ultimo minuto, Wi-Fi backup, trasporti ospiti</li>
+    <li>Documenta ogni euro speso in un foglio condiviso — utile per il post-evento e per l'anno successivo</li>
+  </ul>
+
+  <h3>Domande chiave da porsi</h3>
+  <ul>
+    <li>Qual è il worst-case scenario di sforamento?</li>
+    <li>Chi autorizza spese extra sopra soglia X, e con che tempi?</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 5 -->
+<div class="page inner-page">
+  <div class="error-number">3</div>
+  <h1>Timing sbagliato</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Lanciare un kick-off il lunedì dopo Pasqua, una convention commerciale il primo venerdì di agosto, una formazione il giorno di uno sciopero annunciato. Tutti casi reali, tutti evitabili con 30 minuti di ricerca.</p>
+  </div>
+  
+  <h3>Cosa verificare prima di bloccare la data</h3>
+  <ul class="checklist">
+    <li>Festività nazionali e ponti tipici nei 7 giorni precedenti e seguenti</li>
+    <li>Festività regionali dell'area target (Sant'Ambrogio a Milano, San Gennaro a Napoli, ecc.)</li>
+    <li>Periodi di ferie settoriali (legal = agosto, retail = dicembre, agriculture = raccolti)</li>
+    <li>Scioperi storici annunciati dei trasporti della città dell'evento</li>
+    <li>Eventi concorrenti dello stesso settore nella stessa settimana</li>
+    <li>Fuso orario se ci sono partecipanti da altri Paesi</li>
+  </ul>
+
+  <h3>Domande chiave da porsi</h3>
+  <ul>
+    <li>Il mio target è già impegnato in quella settimana per eventi interni all'azienda?</li>
+    <li>Il sabato/domenica prima c'è un ponte che svuota gli uffici?</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 6 -->
+<div class="page inner-page">
+  <div class="error-number">4</div>
+  <h1>Venue scelta senza visita</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Le foto sul sito sono sempre con il sole. L'acustica non si sente dal PDF commerciale. La capienza dichiarata è spesso quella "in piedi", non "seduta a cena". Senza visita fisica, scopri la realtà il giorno dell'evento.</p>
+  </div>
+  
+  <h3>Cosa verificare nella visita on-site</h3>
+  <ul class="checklist">
+    <li>Acustica: prova a leggere ad alta voce dall'area palco verso il fondo sala</li>
+    <li>Luce naturale e possibilità di oscuramento per proiezioni</li>
+    <li>Wi-Fi test: speed test dalla console tecnica e da almeno 2 punti in sala</li>
+    <li>Parcheggio misurato in posti auto reali (non "disponibile nelle vicinanze")</li>
+    <li>Cucina/catering area capace rispetto al numero di coperti</li>
+    <li>Bagni: almeno 1 ogni 50 partecipanti, di cui 1 accessibile</li>
+    <li>Ingressi e vie di fuga conformi alla capienza</li>
+    <li>Dress code fotografia: check controluce, riflessi, sfondi</li>
+  </ul>
+
+  <h3>Se non puoi andare tu</h3>
+  <p>Manda un collaboratore con la stessa checklist stampata e una fotocamera. Una visita indiretta con dati oggettivi vale più di una tua visita con valutazioni a impressione.</p>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 7 -->
+<div class="page inner-page">
+  <div class="error-number">5</div>
+  <h1>Form sovraccarico</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Ogni campo in più nel form abbassa il tasso di completamento del 3-5%. Chiedere subito taglia maglietta, intolleranze, consensi marketing multipli ai primi contatti fa scappare i partecipanti.</p>
+  </div>
+  
+  <h3>Cosa tenere nel form di registrazione iniziale</h3>
+  <ul class="checklist">
+    <li>Nome e cognome</li>
+    <li>Email professionale</li>
+    <li>Azienda (opzionale se evento interno)</li>
+    <li>Ruolo (se rilevante per segmentazione)</li>
+    <li>Consenso GDPR (obbligatorio, ma in UN SOLO checkbox chiaro)</li>
+  </ul>
+
+  <h3>Cosa chiedere in follow-up (1 settimana prima)</h3>
+  <ul>
+    <li>Intolleranze alimentari e allergie</li>
+    <li>Taglia maglietta (se merchandising previsto)</li>
+    <li>Preferenza sala break-out (se multi-track)</li>
+    <li>Dati per la fattura (se evento a pagamento)</li>
+    <li>Consensi marketing secondari</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 8 -->
+<div class="page inner-page">
+  <div class="error-number">6</div>
+  <h1>Invitati non segmentati</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Mandare la stessa comunicazione al CFO e al junior produce engagement bassissimo. Il CFO si sente uno qualsiasi, il junior si sente fuori posto.</p>
+  </div>
+  
+  <h3>Segmenti minimi da creare</h3>
+  <ul class="checklist">
+    <li>Senior management / C-level — tono executive, agenda mirata su ROI e strategia</li>
+    <li>Middle management — focus su leadership e decisioni operative</li>
+    <li>Operativi / specialisti — focus su skill, networking, case study</li>
+    <li>Esterni / clienti (se evento ibrido B2B) — tono brand, valore per loro</li>
+  </ul>
+
+  <h3>Cosa differenziare per segmento</h3>
+  <ul>
+    <li>Subject dell'email di invito (personalizzato per ruolo)</li>
+    <li>Tono della comunicazione (formale vs peer)</li>
+    <li>CTA principale (per alcuni sarà "iscriviti", per altri "conferma")</li>
+    <li>Sessioni consigliate nell'agenda</li>
+    <li>Materiali preparatori pertinenti al ruolo</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 9 -->
+<div class="page inner-page">
+  <div class="error-number">7</div>
+  <h1>Comunicazione pre-evento carente</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Tra la registrazione e l'evento passano 2-6 settimane. Senza comunicazioni intermedie, il no-show rate sale al 15-25%, specie per eventi gratuiti.</p>
+  </div>
+  
+  <h3>Sequenza minima di 3 comunicazioni automatiche</h3>
+  <ul class="checklist">
+    <li>T–2 settimane: email conferma con agenda dettagliata, profilo speaker, location</li>
+    <li>T–3 giorni: email reminder con info pratiche (indirizzo, parcheggio, dress code, Wi-Fi password, mappa)</li>
+    <li>T–1 ora: SMS o email breve "Ti aspettiamo alle X in Y. Tieni il QR aperto nell'app."</li>
+  </ul>
+
+  <h3>Contenuto raccomandato in ogni comunicazione</h3>
+  <ul>
+    <li>Data, ora e location in modo evidente (anche nel subject)</li>
+    <li>QR code del biglietto o della registrazione, inline (non come allegato)</li>
+    <li>Contatto di emergenza del giorno</li>
+    <li>CTA secondaria per invitare un collega (solo se appropriato)</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 10 -->
+<div class="page inner-page">
+  <div class="error-number">8</div>
+  <h1>Check-in disorganizzato</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Coda di 10 minuti all'ingresso, staff con liste di carta, partecipanti che chiedono "devo firmare qui?". Il check-in è la prima esperienza fisica dell'evento, se va male contamina tutto ciò che viene dopo.</p>
+  </div>
+  
+  <h3>Cosa preparare prima del giorno dell'evento</h3>
+  <ul class="checklist">
+    <li>Piattaforma di check-in digitale con QR code scansionabile da smartphone staff</li>
+    <li>Almeno 1 postazione ogni 400-500 partecipanti attesi, più una di backup</li>
+    <li>Staff briefato 10 minuti prima dell'apertura porte</li>
+    <li>Postazioni posizionate dove c'è luce buona e non controluce</li>
+    <li>Backup cartaceo: lista partecipanti stampata per casi di emergenza device</li>
+    <li>Cartellonistica direzionale chiara dall'ingresso alla registrazione</li>
+  </ul>
+
+  <h3>Metriche target</h3>
+  <ul>
+    <li>Tempo medio di check-in per partecipante: ≤10 secondi</li>
+    <li>Coda massima osservata: ≤3 partecipanti in attesa</li>
+    <li>Zero duplicati nei biglietti scansionati</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 11 -->
+<div class="page inner-page">
+  <div class="error-number">9</div>
+  <h1>Agenda sovraccarica</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Otto talk da 45 minuti di fila senza interruzione. Tre tavole rotonde consecutive nel pomeriggio. Dopo 90 minuti l'attenzione crolla e il resto del programma viene sprecato.</p>
+  </div>
+  
+  <h3>Struttura agenda raccomandata</h3>
+  <ul class="checklist">
+    <li>Blocchi da 60-90 minuti massimo, poi pausa obbligatoria</li>
+    <li>Pausa di 15-20 minuti ogni blocco, in un'area diversa dalla sala principale</li>
+    <li>Coffee break al mattino (10:30) e nel pomeriggio (15:30)</li>
+    <li>Pranzo non oltre le 13:00 e non prima delle 12:30</li>
+    <li>Dopo pranzo: contenuto leggero (workshop pratico, panel interattivo) — non keynote pesante</li>
+    <li>Chiusura entro le 18:00 per eventi B2B in presenza (gli ospiti vogliono tornare a casa)</li>
+  </ul>
+
+  <h3>Cosa includere nelle pause</h3>
+  <ul>
+    <li>Area catering con bevande e snack</li>
+    <li>Zona networking con card-swap o angolo interattivo</li>
+    <li>Wi-Fi funzionante + prese di ricarica</li>
+    <li>Stewarding visibile per rispondere a domande</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 12 -->
+<div class="page inner-page">
+  <div class="error-number">10</div>
+  <h1>Nessuna misurazione post-evento</h1>
+  <div class="problem-box">
+    <p><strong>Il problema:</strong> Senza dati di ritorno, ogni evento è un'isola. L'anno dopo si ricomincia da zero, con gli stessi errori. Un semplice survey post-evento raccoglie feedback nel 30-50% dei casi e permette di migliorare davvero.</p>
+  </div>
+  
+  <h3>Cosa inviare entro 24 ore dall'evento</h3>
+  <ul class="checklist">
+    <li>Survey breve (3-5 domande, 2 minuti max)</li>
+    <li>Almeno 1 domanda aperta: "Cosa miglioreresti?"</li>
+    <li>1 domanda chiusa sull'obiettivo dichiarato iniziale (errore #1)</li>
+    <li>NPS (probabilità di raccomandare l'evento a un collega)</li>
+    <li>Link al materiale: slide, video recording, foto</li>
+  </ul>
+
+  <h3>Cosa analizzare nei 7 giorni successivi</h3>
+  <ul>
+    <li>Response rate del survey (target ≥35%)</li>
+    <li>NPS medio (target ≥7/10 per eventi interni, ≥8/10 per eventi clienti)</li>
+    <li>Parole ricorrenti nelle risposte aperte (sentimento + keyword)</li>
+    <li>Confronto spesa vs KPI primario definito all'inizio</li>
+    <li>Lista "cosa migliorare" per l'edizione successiva</li>
+  </ul>
+
+  <div class="notes-section">
+    <h3>Note libere</h3>
+    <div class="notes-line"></div>
+    <div class="notes-line"></div>
+  </div>
+</div>
+
+<!-- PAGE 13 -->
+<div class="page inner-page">
+  <h1>10 metriche post-evento da tracciare</h1>
+  
+  <table>
+    <tr><th>#</th><th>Metrica</th><th>Target benchmark</th></tr>
+    <tr><td>1</td><td>Tasso di conversione (registrati/invitati)</td><td>≥35% per B2B interno, ≥15% esterno</td></tr>
+    <tr><td>2</td><td>Tasso di presenza (presenti/registrati)</td><td>≥80% eventi pagati, ≥70% gratuiti</td></tr>
+    <tr><td>3</td><td>No-show rate (assenti senza disdetta)</td><td>≤8%</td></tr>
+    <tr><td>4</td><td>Tempo medio di check-in</td><td>≤10 secondi</td></tr>
+    <tr><td>5</td><td>Drop-off nel form di registrazione</td><td>≤25%</td></tr>
+    <tr><td>6</td><td>Open rate reminder email</td><td>≥45%</td></tr>
+    <tr><td>7</td><td>Response rate survey post-evento</td><td>≥35%</td></tr>
+    <tr><td>8</td><td>NPS medio dei partecipanti</td><td>≥7 (B2B interno), ≥8 (B2B esterno)</td></tr>
+    <tr><td>9</td><td>Costo per partecipante presente</td><td>— (benchmarka te stesso)</td></tr>
+    <tr><td>10</td><td>KPI primario dichiarato all'inizio</td><td>Vedi errore #1 — dipende dall'obiettivo</td></tr>
+  </table>
+
+  <div class="cta-box">
+    <h3>Prossimo passo</h3>
+    <p>Ticketto automatizza tre dei dieci errori.</p>
+    <p>La nostra piattaforma gestisce registrazione (errore #5), comunicazioni pre-evento (errore #7) e check-in digitale da smartphone (errore #8) — i tre punti dove il tempo del team interno si disperde di più.</p>
+    <p>Se vuoi vedere come funziona, <a href="https://ticketto.it/app.html#signup">registrati gratis</a> oppure leggi la <a href="https://ticketto.it/blog/biglietteria-online-guida/">guida online</a>.</p>
+  </div>
+  
+  <div class="page-footer">
+    Checklist definitiva per eventi aziendali · v1.0 · 2026 · Ticketto — Bitle S.r.l.s. · P.IVA 12847530966<br>
+    Per feedback: fabio@ticketto.it
+  </div>
+</div>
+
+</body>
+</html>

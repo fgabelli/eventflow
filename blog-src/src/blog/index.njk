@@ -1,0 +1,40 @@
+---
+layout: layouts/base.njk
+title: "Blog | Ticketto"
+seoTitle: "Blog di Ticketto: Guide su Eventi e Biglietteria"
+description: "Guide operative, strategie e casi di studio per organizzatori di eventi. Biglietteria, check-in, marketing e SIAE."
+permalink: "/blog/index.html"
+altIt: "https://ticketto.it/blog/"
+altEn: "https://ticketto.it/en/blog/"
+---
+<section class="hub">
+  <h1>Blog</h1>
+  <p>Guide pratiche, numeri veri e strumenti per organizzare eventi senza imprevisti al check-in.</p>
+  <div class="posts-grid">
+    {% for post in collections.posts %}
+      {% include "partials/article-card.njk" %}
+    {% endfor %}
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "@id": "https://ticketto.it/blog/#blog",
+  "name": "Blog di Ticketto",
+  "description": "Guide operative per organizzare eventi in Italia.",
+  "publisher": { "@id": "https://ticketto.it/#organization" },
+  "inLanguage": "it-IT",
+  "blogPost": [
+    {% for post in collections.posts | reverse -%}
+    {
+      "@type": "BlogPosting",
+      "headline": {{ post.data.title | dump | safe }},
+      "url": "https://ticketto.it{{ post.url }}",
+      "datePublished": "{{ post.date | isoDate }}"
+    }{% if not loop.last %},{% endif %}
+    {%- endfor %}
+  ]
+}
+</script>
