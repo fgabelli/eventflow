@@ -542,14 +542,11 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
             </td>
           </tr>
 
-          <!-- Wallet Buttons -->
-          ${(walletPassUrl || googleWalletUrl) ? `
+          <!-- Wallet Hints -->
+          ${walletPassUrl ? `
           <tr>
             <td style="padding: 0 32px 24px 32px; text-align: center;">
-              ${walletPassUrl ? `<p style="margin: 0 0 8px 0; font-size: 13px; color: #6B7280;">${t(lang, 'email', 'appleWalletHint')}</p>` : ""}
-              ${googleWalletUrl ? `<a href="${googleWalletUrl}" style="display: inline-block; background-color: #4285F4; color: #FFFFFF; text-decoration: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; margin: 4px;">
-                ${t(lang, 'email', 'googleWalletButton')}
-              </a>` : ""}
+              <p style="margin: 0; font-size: 13px; color: #6B7280;">${t(lang, 'email', 'appleWalletHint')}</p>
             </td>
           </tr>
           ` : ""}
@@ -694,8 +691,9 @@ exports.onAttendeeCreated = onDocumentCreated(
         }
       }
 
-      // Generate Google Wallet link (Pro/Business only)
+      // Generate Google Wallet link (Pro/Business only - Temporarily disabled pending Google Wallet publishing approval)
       let googleWalletUrl = null;
+      /*
       if (isPaidPlan) {
         try {
           googleWalletUrl = await generateGoogleWalletLink(attendee, eventData, orgData, event.data.id, lang);
@@ -703,6 +701,7 @@ exports.onAttendeeCreated = onDocumentCreated(
           console.warn("⚠️ Google Wallet link generation failed (non-blocking):", walletErr.message);
         }
       }
+      */
 
       // Build email (with wallet info only for paid plans)
       const hasApplePass = applePassBuffer !== null;
