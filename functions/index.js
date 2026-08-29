@@ -743,14 +743,15 @@ exports.onAttendeeCreated = onDocumentCreated(
       console.log(`✅ Email sent to ${attendee.email} for "${eventData.title}" | Resend ID: ${data.id} | Plan: ${orgPlan}`);
 
       // Notify organizer on new registration (paid plans only)
-      if (eventData.notifyOrganizerOnNewRegistration && isPaidPlan && orgData?.email) {
+      const targetOrganizerEmail = organizerEmail || orgData?.email;
+      if (eventData.notifyOrganizerOnNewRegistration && isPaidPlan && targetOrganizerEmail) {
         try {
           // Detect organizer language preference
-          let orgLang = "it";
+          let orgLang = lang || "it";
           try {
-            const userQuery = await db.collection("users").where("email", "==", orgData.email).limit(1).get();
+            const userQuery = await db.collection("users").where("email", "==", targetOrganizerEmail).limit(1).get();
             if (!userQuery.empty) {
-              orgLang = userQuery.docs[0].data().uiLanguage || "it";
+              orgLang = userQuery.docs[0].data().uiLanguage || orgLang;
             }
           } catch (langErr) {
             console.warn("⚠️ Failed to fetch organizer uiLanguage:", langErr);
@@ -775,18 +776,18 @@ exports.onAttendeeCreated = onDocumentCreated(
                 <p style="margin: 0;"><strong>${t(orgLang, 'email', 'orgNotificationRegisteredAt')}:</strong> ${registeredAtStr}</p>
               </div>
               <div style="margin-top: 30px; text-align: center;">
-                <a href="https://ticketto.it/events/${event.data.id}" style="background-color: #2b5cff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block;">${t(orgLang, 'email', 'orgNotificationViewEvent')}</a>
+                <a href="https://ticketto.it/events/${attendee.eventId}" style="background-color: #2b5cff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block;">${t(orgLang, 'email', 'orgNotificationViewEvent')}</a>
               </div>
             </div>
           `;
           
           await resend.emails.send({
             from: EMAIL_FROM,
-            to: [orgData.email],
+            to: [targetOrganizerEmail],
             subject: t(orgLang, 'email', 'orgNotificationSubject', { eventTitle: eventData.title }),
             html: orgHtml,
           });
-          console.log(`🔔 Notified organizer ${orgData.email} of new registration in language: ${orgLang}`);
+          console.log(`🔔 Notified organizer ${targetOrganizerEmail} of new registration in language: ${orgLang}`);
         } catch (orgErr) {
           console.error("⚠️ Failed to notify organizer:", orgErr);
         }
