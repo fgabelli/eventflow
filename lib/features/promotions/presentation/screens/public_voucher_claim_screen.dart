@@ -79,6 +79,14 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
         return;
       }
 
+      if (promo.isRegistrationClosed) {
+        setState(() {
+          _claimError = 'Il termine per attivare questa convenzione è scaduto. Non è più possibile registrare nuovi coupon.';
+          _isSubmitting = false;
+        });
+        return;
+      }
+
       final batch = db.batch();
 
       final now = DateTime.now();
@@ -198,7 +206,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
   }
 
   Widget _buildClaimForm(VoucherModel voucher, PromotionModel promo, Organization? org) {
-    final expDateStr = DateFormat('dd/MM/yyyy').format(promo.expirationDate);
+    final expDateStr = promo.expirationDate != null ? DateFormat('dd/MM/yyyy').format(promo.expirationDate!) : null;
 
     return Center(
       child: SingleChildScrollView(
@@ -277,12 +285,19 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Icon(Icons.event_available_rounded, color: Colors.white70, size: 16),
+                        const Icon(Icons.timer_outlined, color: Colors.white70, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          'Valido fino al: $expDateStr',
+                          'Validità: ${promo.validityDays} giorni dalla registrazione',
                           style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
+                        if (expDateStr != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '• Attiva entro il: $expDateStr',
+                            style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -438,6 +453,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                 ),
               ),
 
+              const SizedBox(height: 24),
               _buildFooter(),
             ],
           ),
@@ -447,7 +463,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
   }
 
   Widget _buildSuccessState(VoucherModel voucher, PromotionModel promo, Organization? org) {
-    final expDateStr = DateFormat('dd/MM/yyyy').format(promo.expirationDate);
+    final expDateStr = promo.expirationDate != null ? DateFormat('dd/MM/yyyy').format(promo.expirationDate!) : null;
 
     return Center(
       child: SingleChildScrollView(
@@ -557,7 +573,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                         Text(
                           voucher.expiresAt != null
                               ? '${DateFormat('dd/MM/yyyy').format(voucher.expiresAt!)} (${voucher.remainingDays ?? promo.validityDays} gg rim.)'
-                              : expDateStr,
+                              : (expDateStr ?? 'Illimitata'),
                           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.primary),
                         ),
                       ],
@@ -566,10 +582,28 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Stato Pass:', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
-                        const Text('Attivato (Pronto per l\'uso)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.success)),
+                        const Text('Condizioni:', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                        Text(
+                          promo.offerType.label,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.textPrimary),
+                        ),
                       ],
                     ),
+                    if (promo.paymentMethod == PromotionPaymentMethod.atVenue) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Pagamento:', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                          Text(
+                            promo.price != null && promo.price! > 0
+                                ? '€${promo.price!.toStringAsFixed(2)} alla reception'
+                                : 'In struttura all\'accesso',
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFFD97706)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -581,13 +615,13 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                   color: AppColors.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.screenshot_rounded, color: AppColors.primary, size: 20),
-                    SizedBox(width: 10),
-                    Expanded(
+                    const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Expanded(
                       child: Text(
-                        'Fai uno screenshot di questo pass per averlo sempre a portata di mano al tuo arrivo.',
+                        'Salva questa schermata o fai uno screenshot da mostrare al momento dell\'ingresso.',
                         style: TextStyle(fontSize: 12, color: AppColors.primary),
                       ),
                     ),
@@ -635,6 +669,8 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
   }
 
   Widget _buildExpiredState(PromotionModel promo, Organization? org) {
+    final expDateStr = promo.expirationDate != null ? DateFormat('dd/MM/yyyy').format(promo.expirationDate!) : null;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -651,10 +687,12 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
               child: const Icon(Icons.event_busy_rounded, size: 56, color: AppColors.error),
             ),
             const SizedBox(height: 24),
-            Text(AppLocalizations.of(context)['public_voucher_expired'], style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            Text(AppLocalizations.of(context)['promo_registration_closed_title'], style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(
-              'Questa promozione è scaduta in data ${DateFormat('dd/MM/yyyy').format(promo.expirationDate)}.',
+              expDateStr != null
+                  ? 'Il termine per attivare questa convenzione è scaduto il $expDateStr. Non è più possibile registrare nuovi coupon.'
+                  : 'Le registrazioni per questa promozione sono concluse.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

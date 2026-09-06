@@ -642,7 +642,7 @@ class PromotionModel {
   final int totalVouchers;
   final int claimedCount;
   final int redeemedCount;
-  final DateTime expirationDate;
+  final DateTime? expirationDate; // Termine facoltativo di registrazione (fine accordo)
   final OfferType offerType;
   final double? discountValue;
   final double? price;
@@ -666,7 +666,7 @@ class PromotionModel {
     this.totalVouchers = 0,
     this.claimedCount = 0,
     this.redeemedCount = 0,
-    required this.expirationDate,
+    this.expirationDate,
     this.validityDays = 30,
     this.offerType = OfferType.twoForOne,
     this.discountValue,
@@ -679,8 +679,11 @@ class PromotionModel {
     this.updatedAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  bool get isExpired => DateTime.now().isAfter(expirationDate);
-  bool get isActive => status == PromotionStatus.active && !isExpired;
+  DateTime? get registrationDeadline => expirationDate;
+  bool get hasRegistrationDeadline => expirationDate != null;
+  bool get isRegistrationClosed => expirationDate != null && DateTime.now().isAfter(expirationDate!);
+  bool get isExpired => isRegistrationClosed;
+  bool get isActive => status == PromotionStatus.active;
   bool get isTwoForOne => offerType == OfferType.twoForOne;
   bool get isPartnership => partnerName != null && partnerName!.trim().isNotEmpty;
   int get availableCount => (totalVouchers - claimedCount).clamp(0, totalVouchers);
@@ -701,7 +704,7 @@ class PromotionModel {
       totalVouchers: data['totalVouchers'] ?? 0,
       claimedCount: data['claimedCount'] ?? 0,
       redeemedCount: data['redeemedCount'] ?? 0,
-      expirationDate: (data['expirationDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 30)),
+      expirationDate: (data['expirationDate'] as Timestamp?)?.toDate() ?? (data['registrationDeadline'] as Timestamp?)?.toDate(),
       validityDays: (data['validityDays'] as num?)?.toInt() ?? 30,
       offerType: OfferType.values.firstWhere(
         (t) => t.name == data['offerType'],
@@ -735,7 +738,8 @@ class PromotionModel {
     'totalVouchers': totalVouchers,
     'claimedCount': claimedCount,
     'redeemedCount': redeemedCount,
-    'expirationDate': Timestamp.fromDate(expirationDate),
+    'expirationDate': expirationDate != null ? Timestamp.fromDate(expirationDate!) : null,
+    'registrationDeadline': expirationDate != null ? Timestamp.fromDate(expirationDate!) : null,
     'validityDays': validityDays,
     'offerType': offerType.name,
     'discountValue': discountValue,
@@ -759,6 +763,7 @@ class PromotionModel {
     int? claimedCount,
     int? redeemedCount,
     DateTime? expirationDate,
+    bool clearExpirationDate = false,
     int? validityDays,
     OfferType? offerType,
     double? discountValue,
@@ -781,7 +786,7 @@ class PromotionModel {
       totalVouchers: totalVouchers ?? this.totalVouchers,
       claimedCount: claimedCount ?? this.claimedCount,
       redeemedCount: redeemedCount ?? this.redeemedCount,
-      expirationDate: expirationDate ?? this.expirationDate,
+      expirationDate: clearExpirationDate ? null : (expirationDate ?? this.expirationDate),
       validityDays: validityDays ?? this.validityDays,
       offerType: offerType ?? this.offerType,
       discountValue: discountValue ?? this.discountValue,

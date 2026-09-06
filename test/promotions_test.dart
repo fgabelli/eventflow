@@ -174,5 +174,79 @@ void main() {
       expect(expiredVoucher.isExpired, isTrue);
       expect(expiredVoucher.remainingDays, equals(0));
     });
+
+    test('Optional agreement deadline and independent 12-month voucher validity', () {
+      final now = DateTime.now();
+
+      // 1. Promotion with NO registration deadline (always open)
+      final openPromo = PromotionModel(
+        id: 'promo_open',
+        orgId: 'org_1',
+        title: 'Accordo Permanente',
+        codePrefix: 'PERM',
+        validityDays: 365, // 12 months
+      );
+
+      expect(openPromo.hasRegistrationDeadline, isFalse);
+      expect(openPromo.isRegistrationClosed, isFalse);
+      expect(openPromo.expirationDate, isNull);
+
+      // 2. Promotion whose agreement registration deadline closed yesterday
+      final yesterday = now.subtract(const Duration(days: 1));
+      final closedPromo = PromotionModel(
+        id: 'promo_gym',
+        orgId: 'org_1',
+        title: 'Convenzione Palestra 2026',
+        partnerName: 'Palestra Fit',
+        codePrefix: 'GYM',
+        expirationDate: yesterday, // Registration deadline was yesterday!
+        validityDays: 365, // 12 months validity
+      );
+
+      expect(closedPromo.hasRegistrationDeadline, isTrue);
+      expect(closedPromo.isRegistrationClosed, isTrue);
+
+      // 3. User registered 2 days ago (before deadline)
+      final claimDate = now.subtract(const Duration(days: 2));
+      final voucherExpiresAt = claimDate.add(Duration(days: closedPromo.validityDays));
+
+      final claimedVoucher = VoucherModel(
+        id: 'gym_0001',
+        promoId: closedPromo.id,
+        orgId: 'org_1',
+        code: 'GYM-0001',
+        sequenceNumber: 1,
+        status: VoucherStatus.claimed,
+        claimedAt: claimDate,
+        expiresAt: voucherExpiresAt,
+        claimedFirstName: 'Luigi',
+        claimedLastName: 'Verdi',
+      );
+
+      // The agreement is closed to new registrations, BUT Luigi's voucher is still valid for ~363 days!
+      expect(claimedVoucher.isExpired, isFalse);
+      expect(claimedVoucher.remainingDays, inInclusiveRange(360, 365));
+
+      // Desk validation logic:
+      final isVoucherExpiredAtDesk = claimedVoucher.isClaimed
+          ? claimedVoucher.isExpired
+          : (claimedVoucher.isExpired || closedPromo.isRegistrationClosed);
+      expect(isVoucherExpiredAtDesk, isFalse, reason: 'Claimed voucher must be redeemable despite closed agreement');
+
+      // 4. An unregistered voucher brought after deadline cannot be redeemed
+      final availableVoucher = VoucherModel(
+        id: 'gym_0002',
+        promoId: closedPromo.id,
+        orgId: 'org_1',
+        code: 'GYM-0002',
+        sequenceNumber: 2,
+        status: VoucherStatus.available,
+      );
+
+      final isAvailableVoucherExpiredAtDesk = availableVoucher.isClaimed
+          ? availableVoucher.isExpired
+          : (availableVoucher.isExpired || closedPromo.isRegistrationClosed);
+      expect(isAvailableVoucherExpiredAtDesk, isTrue, reason: 'Unclaimed coupon cannot be redeemed when agreement is closed');
+    });
   });
 }

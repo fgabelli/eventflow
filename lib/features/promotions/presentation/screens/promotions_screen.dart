@@ -353,8 +353,14 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                       ),
                       Text(
-                        'Scadenza: ${dateFormat.format(promo.expirationDate)}',
-                        style: TextStyle(fontSize: 12, color: isExpired ? AppColors.error : AppColors.textTertiary),
+                        promo.expirationDate != null
+                            ? 'Termine: ${dateFormat.format(promo.expirationDate!)}'
+                            : 'Accordo aperto',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: promo.isRegistrationClosed ? AppColors.warning : AppColors.textTertiary,
+                          fontWeight: promo.isRegistrationClosed ? FontWeight.w700 : FontWeight.normal,
+                        ),
                       ),
                     ],
                   ),

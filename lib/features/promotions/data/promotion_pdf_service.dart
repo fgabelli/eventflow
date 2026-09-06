@@ -170,7 +170,7 @@ class PromotionPdfService {
 
     final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
     final dateFormat = DateFormat('dd/MM/yyyy');
-    final expDateStr = dateFormat.format(promotion.expirationDate);
+    final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
 
     final cardFormat = PdfPageFormat(
       85 * PdfPageFormat.mm,
@@ -292,7 +292,9 @@ class PromotionPdfService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        'Valido ${promotion.validityDays} gg da attivazione • Entro $expDateStr',
+                        expDateStr != null
+                            ? 'Valido ${promotion.validityDays} gg da registrazione • Entro $expDateStr'
+                            : 'Valido ${promotion.validityDays} gg da registrazione',
                         style: pw.TextStyle(font: fontSemiBold, fontSize: 5.5, color: PdfColors.red800),
                       ),
                       pw.Text(
@@ -336,7 +338,7 @@ class PromotionPdfService {
 
     final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
     final dateFormat = DateFormat('dd/MM/yyyy');
-    final expDateStr = dateFormat.format(promotion.expirationDate);
+    final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
 
     for (final voucher in vouchers) {
       final claimUrl = '$origin/p/${voucher.code}';
@@ -445,7 +447,9 @@ class PromotionPdfService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        'Valido ${promotion.validityDays} giorni da registrazione • Attiva entro $expDateStr',
+                        expDateStr != null
+                            ? 'Valido ${promotion.validityDays} giorni da registrazione • Attiva entro $expDateStr'
+                            : 'Valido ${promotion.validityDays} giorni dalla registrazione',
                         style: pw.TextStyle(font: fontSemiBold, fontSize: 7, color: PdfColors.red800),
                       ),
                       pw.Text(
@@ -490,7 +494,7 @@ class PromotionPdfService {
 
     final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
     final dateFormat = DateFormat('dd/MM/yyyy');
-    final expDateStr = dateFormat.format(promotion.expirationDate);
+    final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
 
     const itemsPerPage = 6; // 2 cols x 3 rows
 
@@ -538,7 +542,7 @@ class PromotionPdfService {
     required pw.ImageProvider? orgLogoImage,
     required pw.ImageProvider? partnerLogoImage,
     required String claimUrl,
-    required String expDateStr,
+    required String? expDateStr,
     required pw.Font fontRegular,
     required pw.Font fontBold,
     required pw.Font fontSemiBold,
@@ -652,7 +656,9 @@ class PromotionPdfService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Valido ${promotion.validityDays} gg da registrazione • Attiva entro $expDateStr',
+                expDateStr != null
+                    ? 'Valido ${promotion.validityDays} gg da registrazione • Attiva entro $expDateStr'
+                    : 'Valido ${promotion.validityDays} gg da registrazione',
                 style: pw.TextStyle(font: fontSemiBold, fontSize: 7, color: PdfColors.red800),
               ),
               pw.Text(

@@ -381,8 +381,12 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
   Widget _buildVoucherDetailsCard(VoucherModel voucher, PromotionModel promo) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     final isVoucherExpired = voucher.isExpired;
-    final isPromoExpired = promo.isExpired;
-    final isExpired = isVoucherExpired || isPromoExpired;
+    final isRegistrationClosed = promo.isRegistrationClosed;
+    // Claimed voucher expires ONLY when voucher's own expiresAt has passed!
+    // Agreement closing does not invalidate already registered vouchers.
+    final isExpired = voucher.isClaimed
+        ? isVoucherExpired
+        : (isVoucherExpired || isRegistrationClosed);
     final isRedeemed = voucher.isRedeemed;
     final isClaimed = voucher.isClaimed;
     final isAvailable = voucher.isAvailable;
@@ -395,10 +399,10 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
       statusText = 'GIÀ RISCATTATO';
     } else if (isExpired) {
       statusColor = AppColors.error;
-      statusText = isVoucherExpired ? 'SCADUTO (Termine registrazione)' : 'CAMPAGNA TERMINATA';
+      statusText = isVoucherExpired ? 'SCADUTO (Termine registrazione)' : 'ACCORDO CONCLUSO';
     } else if (isClaimed) {
       statusColor = AppColors.success;
-      statusText = 'ATTIVATO DA CLIENTE';
+      statusText = isRegistrationClosed ? 'ATTIVATO (Accordo concluso)' : 'ATTIVATO DA CLIENTE';
     }
 
     return Container(
@@ -461,8 +465,14 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Scadenza: ${DateFormat('dd/MM/yyyy').format(promo.expirationDate)}',
-                style: TextStyle(fontSize: 12, color: isExpired ? AppColors.error : AppColors.textTertiary),
+                promo.expirationDate != null
+                    ? 'Termine accordo: ${DateFormat('dd/MM/yyyy').format(promo.expirationDate!)}'
+                    : 'Accordo sempre aperto',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isRegistrationClosed ? AppColors.warning : AppColors.textTertiary,
+                  fontWeight: isRegistrationClosed ? FontWeight.w600 : FontWeight.w400,
+                ),
               ),
             ],
           ),
@@ -583,6 +593,31 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
             ),
           ],
 
+          // Informative banner: Deal closed to new claims, but this customer voucher is valid
+          if (isRegistrationClosed && isClaimed && !isVoucherExpired && !isRedeemed) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_outlined, color: AppColors.success, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Accordo con il partner terminato il ${promo.expirationDate != null ? DateFormat('dd/MM/yyyy').format(promo.expirationDate!) : ""}, ma questo voucher è stato attivato regolarmente in tempo ed è valido fino al ${DateFormat('dd/MM/yyyy').format(voucher.expiresAt!)} (${voucher.remainingDays ?? 0} gg rimasti).',
+                      style: const TextStyle(color: Color(0xFF166534), fontWeight: FontWeight.w600, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Expired notice
           if (isExpired && !isRedeemed) ...[
             Container(
@@ -601,7 +636,7 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
                     child: Text(
                       isVoucherExpired
                           ? 'Voucher non riscattabile: scaduto il ${dateFormat.format(voucher.expiresAt!)}. I ${promo.validityDays} giorni di validità dalla registrazione sono trascorsi.'
-                          : 'Voucher non riscattabile: la campagna promozionale è terminata il ${DateFormat('dd/MM/yyyy').format(promo.expirationDate)}.',
+                          : 'Coupon non riscattabile: l\'accordo con il partner è terminato il ${promo.expirationDate != null ? DateFormat('dd/MM/yyyy').format(promo.expirationDate!) : ""}. Questo coupon cartaceo non è stato registrato entro la scadenza.',
                       style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600, fontSize: 13),
                     ),
                   ),

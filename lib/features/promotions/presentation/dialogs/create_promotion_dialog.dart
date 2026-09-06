@@ -40,6 +40,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
   bool _isUploadingPartnerLogo = false;
   OfferType _selectedOfferType = OfferType.twoForOne;
   PromotionPaymentMethod _selectedPaymentMethod = PromotionPaymentMethod.atVenue;
+  bool _hasRegistrationDeadline = false;
   DateTime _expirationDate = DateTime.now().add(const Duration(days: 90));
   int _validityDays = 30;
   bool _isCustomValidity = false;
@@ -180,7 +181,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
         totalVouchers: quantity,
         claimedCount: 0,
         redeemedCount: 0,
-        expirationDate: _expirationDate,
+        expirationDate: _hasRegistrationDeadline ? _expirationDate : null,
         validityDays: finalValidityDays,
         offerType: _selectedOfferType,
         discountValue: double.tryParse(_discountValueCtrl.text.trim()),
@@ -656,10 +657,15 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: [7, 14, 30, 60, 90].map((days) {
+                        children: [7, 14, 30, 60, 90, 180, 365].map((days) {
                           final isSelected = !_isCustomValidity && _validityDays == days;
+                          final label = days == 180
+                              ? '6 Mesi (180 gg)'
+                              : days == 365
+                                  ? '12 Mesi (1 Anno)'
+                                  : '$days ${AppLocalizations.of(context)['validity_days_unit']}';
                           return ChoiceChip(
-                            label: Text('$days ${AppLocalizations.of(context)['validity_days_unit']}'),
+                            label: Text(label),
                             selected: isSelected,
                             selectedColor: AppColors.primary.withValues(alpha: 0.15),
                             labelStyle: TextStyle(
@@ -718,41 +724,86 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Campaign Expiration Date (Last Activation Date)
-                InkWell(
-                  onTap: _pickExpirationDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.event_available_rounded, color: AppColors.primary),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(AppLocalizations.of(context)['campaign_deadline_label'], style: Theme.of(context).textTheme.bodySmall),
-                              const SizedBox(height: 2),
-                              Text(
-                                DateFormat('dd/MM/yyyy').format(_expirationDate),
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                AppLocalizations.of(context)['campaign_deadline_helper'],
-                                style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-                              ),
-                            ],
+                // Optional Campaign Expiration Date (Agreement Registration Deadline)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.event_available_rounded, color: AppColors.primary, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  AppLocalizations.of(context)['campaign_deadline_label'],
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  AppLocalizations.of(context)['campaign_deadline_helper'],
+                                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _hasRegistrationDeadline,
+                            activeThumbColor: AppColors.primary,
+                            onChanged: (val) => setState(() => _hasRegistrationDeadline = val),
+                          ),
+                        ],
+                      ),
+                      if (_hasRegistrationDeadline) ...[
+                        const SizedBox(height: 12),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: _pickExpirationDate,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppColors.card,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.primary),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Termine registrazioni: ${DateFormat('dd/MM/yyyy').format(_expirationDate)}',
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                ),
+                                const Text('Modifica data', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
                           ),
                         ),
-                        const Icon(Icons.calendar_month_rounded, size: 20, color: AppColors.textSecondary),
+                        const SizedBox(height: 8),
+                        Text(
+                          AppLocalizations.of(context)['campaign_deadline_note'],
+                          style: const TextStyle(fontSize: 11, color: AppColors.textTertiary, fontStyle: FontStyle.italic),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          AppLocalizations.of(context)['no_registration_deadline'],
+                          style: const TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w600),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
