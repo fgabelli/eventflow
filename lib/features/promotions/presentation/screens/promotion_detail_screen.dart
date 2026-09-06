@@ -161,7 +161,7 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
   }
 
   void _showCampaignQrDialog(PromotionModel promo, Organization org) {
-    final campaignUrl = 'https://eventflow-3541b.web.app/p/c/${promo.id}';
+    final campaignUrl = '${AppConfig.baseUrl}/p/c/${promo.id}';
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -388,7 +388,7 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
               Text(promo.title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13), textAlign: TextAlign.center),
               const SizedBox(height: 20),
               QrImageView(
-                data: 'https://eventflow-3541b.web.app/p/${voucher.code}',
+                data: '${AppConfig.baseUrl}/p/${voucher.code}',
                 version: QrVersions.auto,
                 size: 200,
               ),
@@ -673,7 +673,7 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
     final claimed = vouchers.where((v) => v.isClaimed && !v.isExpired).length;
     final redeemed = vouchers.where((v) => v.isRedeemed).length;
     final expired = vouchers.where((v) => v.isExpired && !v.isRedeemed).length;
-    final campaignUrl = 'https://eventflow-3541b.web.app/p/c/${promo.id}';
+    final campaignUrl = '${AppConfig.baseUrl}/p/c/${promo.id}';
 
     return Container(
       padding: const EdgeInsets.all(24),

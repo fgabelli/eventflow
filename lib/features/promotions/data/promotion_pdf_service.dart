@@ -6,6 +6,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 import 'package:eventflow/core/models.dart';
+import 'package:eventflow/core/constants/app_constants.dart';
 
 enum CouponPrintFormat {
   deskStandA4('Locandina da Banco A4 (210x297 mm)', 'Cartello verticale con grande QR code per desk ed espositori in plexiglass', 210, 297),
@@ -588,7 +589,7 @@ class PromotionPdfService {
     final orgLogoImage = await _resolveImage(orgLogo);
     final partnerLogoImage = await _resolveImage(partnerLogo);
 
-    final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
+    final origin = baseUrl ?? AppConfig.baseUrl;
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
@@ -1286,7 +1287,7 @@ class PromotionPdfService {
     final orgLogoImage = await _resolveImage(orgLogo);
     final partnerLogoImage = await _resolveImage(partnerLogo);
 
-    final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
+    final origin = baseUrl ?? AppConfig.baseUrl;
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
@@ -1356,7 +1357,7 @@ class PromotionPdfService {
     final orgLogoImage = await _resolveImage(orgLogo);
     final partnerLogoImage = await _resolveImage(partnerLogo);
 
-    final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
+    final origin = baseUrl ?? AppConfig.baseUrl;
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
@@ -2034,7 +2035,7 @@ class PromotionPdfService {
     final orgLogoImage = await _resolveImage(orgLogo);
     final partnerLogoImage = await _resolveImage(partnerLogo);
 
-    final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
+    final origin = baseUrl ?? AppConfig.baseUrl;
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
@@ -2134,7 +2135,7 @@ class PromotionPdfService {
     final fontRegular = await PdfGoogleFonts.interRegular();
     final fontBold = await PdfGoogleFonts.interBold();
 
-    final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
+    final origin = baseUrl ?? AppConfig.baseUrl;
     final claimUrl = '$origin/p/c/${promotion.id}';
 
     pdf.addPage(

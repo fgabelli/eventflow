@@ -74,6 +74,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); color: var(--navy-900); line-
 .nav-toggle { display: none; flex-direction: column; gap: 4px; background: transparent; border: 0; padding: 10px; }                                                       
 .nav-toggle span { width: 22px; height: 2px; background: var(--navy-900); border-radius: 2px; }                                                                           
                                                                                                                                                                           
+@media (min-width: 881px) and (max-width: 1180px) {
+  .nav-links { gap: 1.2rem; }
+  .nav-links .btn { padding: 0.7rem 1.1rem; }
+}
+
 @media (max-width: 880px) {                                                                                                                                               
   .nav-toggle { display: flex; }                                                                                                                                          
   .nav-links { position: absolute; top: var(--nav-h); left: 0; right: 0; flex-direction: column; background: #fff; padding: 1.2rem 5% 2rem; gap: 1rem; border-bottom: 1px 

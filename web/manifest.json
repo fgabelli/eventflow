@@ -4,7 +4,7 @@
     "start_url": ".",
     "display": "standalone",
     "background_color": "#1A1A2E",
-    "theme_color": "#6366F1",
+    "theme_color": "#0E6B52",
     "description": "Ticketto - Gestione eventi e biglietteria",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,

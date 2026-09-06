@@ -15,9 +15,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prezzi e Piani | Ticketto - Zero Commissioni sui Biglietti</title>
-  <meta name="description" content="I piani di Ticketto: Free per piccoli eventi (anche online), Pro €29 con PDF biglietto, Wallet e notifiche real-time, Business €79 con stampa termica zero-tap Zebra/Brother. Zero commissioni piattaforma.">
+  <meta name="description" content="I piani di Ticketto: Free per piccoli eventi e 1 campagna coupon, Pro €29/mese (o €249/anno) con pagamenti, Wallet e 5 campagne promo, Business €79/mese (o €699/anno) senza limiti. Zero commissioni di piattaforma.">
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#6C63FF">
+  <meta name="theme-color" content="#0E6B52">
   <link rel="canonical" href="https://ticketto.it/prezzi/">
   <link rel="alternate" hreflang="it" href="https://ticketto.it/prezzi/" />
   <link rel="alternate" hreflang="en" href="https://ticketto.it/en/pricing/" />
@@ -30,9 +30,9 @@
   
   <style>
     :root {
-      --primary: #6C63FF;
-      --primary-dark: #4F46E5;
-      --primary-light: #EEEDFF;
+      --primary: #0E6B52;
+      --primary-dark: #0A503D;
+      --primary-light: #E2F2EC;
       --text-dark: #0F172A;
       --text-main: #334155;
       --text-muted: #64748B;
@@ -52,17 +52,23 @@
     .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto 100px; padding: 0 5%; }
     .price-card { background: #fff; border: 1px solid var(--border); border-radius: 24px; padding: 3rem 2.5rem; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
     .price-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.06); }
-    .price-card.popular { border: 2px solid var(--primary); box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1); }
+    .price-card.popular { border: 2px solid var(--primary); box-shadow: 0 20px 40px rgba(14, 107, 82, 0.1); }
     .price-card.popular::before { content: "Il più scelto"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 4px 16px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
     .price-card h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
     .price-card p.desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; height: 40px; }
     .price-amount { font-size: 3.5rem; font-weight: 900; font-family: 'Outfit', sans-serif; color: var(--text-dark); margin-bottom: 2rem; display: flex; align-items: baseline; }
     .price-amount span { font-size: 1rem; color: var(--text-muted); font-weight: 500; margin-left: 0.5rem; }
+    .billing-note { margin-top: -1.5rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); min-height: 1.4rem; }
+    .billing-note strong { color: var(--text-dark); }
     .price-features { list-style: none; margin-top: 2rem; margin-bottom: 2.5rem; border-top: 1px solid var(--border); padding-top: 2rem; }
     .price-features li { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; font-size: 0.95rem; }
     .price-features li svg { width: 20px; height: 20px; color: var(--success); flex-shrink: 0; }
     .price-card .btn { width: 100%; }
 
+    .promo-callout { max-width: 1100px; margin: 0 auto 100px; padding: 2.5rem; border: 1px solid var(--border); border-radius: 24px; background: var(--primary-light); display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+    .promo-callout .txt { flex: 1 1 420px; }
+    .promo-callout h2 { font-size: 1.6rem; margin-bottom: 0.6rem; }
+    .promo-callout p { color: var(--text-main); font-size: 1rem; }
     .faq-section { max-width: 800px; margin: 0 auto 100px; padding: 0 5%; }
     .faq-section h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
     .faq-item { margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
@@ -77,7 +83,7 @@
       {
         "@type": "Product",
         "name": "Ticketto Free",
-        "description": "Piano gratuito per piccoli eventi fino a 50 partecipanti, con check-in da smartphone, email di conferma automatica e supporto eventi online (link Zoom/Meet).",
+        "description": "Piano gratuito per piccoli eventi fino a 50 partecipanti, con check-in da smartphone, email di conferma automatica, supporto eventi online (link Zoom/Meet) e 1 campagna coupon attiva con 25 voucher digitali.",
         "offers": {
           "@type": "Offer",
           "price": "0",
@@ -89,7 +95,7 @@
       {
         "@type": "Product",
         "name": "Ticketto Pro",
-        "description": "Abbonamento mensile per eventi fino a 500 partecipanti con Stripe, fasce orarie, campi di registrazione personalizzati, registrazione di gruppo fino a 10 persone, biglietto PDF allegato, Apple e Google Wallet, notifiche real-time e esportazione badge PDF.",
+        "description": "Abbonamento per eventi fino a 500 partecipanti con Stripe, fasce orarie, campi di registrazione personalizzati, registrazione di gruppo fino a 10 persone, biglietto PDF allegato, Apple e Google Wallet, notifiche real-time, esportazione badge PDF, team fino a 5 membri e 5 campagne coupon attive (250 voucher l'una) con incasso online. €29 al mese o €249 all'anno.",
         "offers": {
           "@type": "Offer",
           "price": "29",
@@ -102,7 +108,7 @@
       {
         "@type": "Product",
         "name": "Ticketto Business",
-        "description": "Abbonamento mensile per festival e corporate event senza limiti di eventi o partecipanti, con stampa termica zero-tap (Zebra/Brother ZPL), team illimitato e account manager dedicato.",
+        "description": "Abbonamento per festival e corporate event senza limiti di eventi o partecipanti, con stampa termica zero-tap (Zebra/Brother ZPL), team illimitato, campagne coupon e voucher illimitati e account manager dedicato. €79 al mese o €699 all'anno.",
         "offers": {
           "@type": "Offer",
           "price": "79",
@@ -121,6 +127,22 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "No, Ticketto non trattiene nessuna commissione percentuale sui tuoi biglietti. Paghi solo le commissioni del gateway di pagamento (Stripe)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Conviene pagare a mese o ad anno?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Puoi scegliere all'attivazione. Il piano Pro costa 29 € al mese oppure 249 € all'anno (99 € in meno, circa 21 € al mese); il Business 79 € al mese oppure 699 € all'anno (249 € in meno, circa 58 € al mese)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "I coupon e le promozioni sono inclusi nel piano?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sì, il modulo promozioni è incluso in tutti i piani, stampa dei materiali compresa. Free: 1 campagna attiva e 25 voucher. Pro: 5 campagne attive, 250 voucher per campagna e incasso online con Stripe. Business: campagne e voucher illimitati."
             }
           },
           {
@@ -170,6 +192,7 @@
     </a>
     <nav class="nav-links" aria-label="Navigazione principale">
       <a href="/#piattaforma" class="link">Piattaforma</a>
+      <a href="/coupon/" class="link">Coupon</a>
       <a href="/prezzi/" class="link" aria-current="page">Prezzi</a>
       <a href="/blog/" class="link">Blog</a>
       <a href="/chi-siamo/" class="link">Chi siamo</a>
@@ -192,12 +215,14 @@
       <h3>Free</h3>
       <p class="desc">Perfetto per testare la piattaforma o per piccoli eventi gratuiti.</p>
       <div class="price-amount">€0<span>/mese</span></div>
+      <p class="billing-note">Gratis per sempre, senza carta di credito</p>
       <ul class="price-features">
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 1 evento attivo</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fino a 50 partecipanti</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Check-in via smartphone (web app)</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Email di conferma automatica</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Eventi online con link Zoom/Meet protetto</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 1 campagna coupon attiva (fino a 25 voucher)</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Supporto base</li>
       </ul>
       <a href="/signup" class="btn btn-outline" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
@@ -207,6 +232,7 @@
       <h3>Pro</h3>
       <p class="desc">Per professionisti e agenzie in rapida crescita.</p>
       <div class="price-amount">€29<span>/mese</span></div>
+      <p class="billing-note">oppure <strong>€249/anno</strong> — risparmi 99 € (≈ 21 €/mese)</p>
       <ul class="price-features">
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 10 eventi attivi</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fino a 500 partecipanti</li>
@@ -220,6 +246,10 @@
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Notifiche real-time a ogni iscritto</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Esportazione badge PDF (10 per foglio A4)</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Importazione partecipanti da CSV</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Team fino a 5 membri</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 5 campagne coupon attive (fino a 250 voucher l'una)</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Incasso online delle promozioni con Stripe</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Assistente AI per i testi (5 usi al mese)</li>
       </ul>
       <a href="/login" class="btn btn-primary">Prova Pro</a>
     </div>
@@ -228,16 +258,27 @@
       <h3>Business</h3>
       <p class="desc">Nessun limite per grandi festival e corporate event.</p>
       <div class="price-amount">€79<span>/mese</span></div>
+      <p class="billing-note">oppure <strong>€699/anno</strong> — risparmi 249 € (≈ 58 €/mese)</p>
       <ul class="price-features">
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Eventi e partecipanti illimitati</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Tutto il piano Pro, più:</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Stampa termica zero-tap (Zebra/Brother ZPL)</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Team di gestione illimitato</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Campagne coupon e voucher illimitati</li>
+        <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Assistente AI per i testi illimitato</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Esportazione dati avanzata</li>
         <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Account Manager dedicato</li>
       </ul>
       <a href="/login" class="btn btn-outline">Prova Business</a>
     </div>
+  </div>
+
+  <div class="promo-callout" style="margin-top: -60px;">
+    <div class="txt">
+      <h2>🎟️ Coupon e promozioni: inclusi in tutti i piani</h2>
+      <p>Oltre agli eventi, con Ticketto crei campagne di coupon e voucher digitali per il tuo locale: link di ritiro, QR univoco per ogni cliente, riscatto alla cassa e locandine pronte da stampare. Anche sul piano Free.</p>
+    </div>
+    <a href="/coupon/" class="btn btn-primary">Scopri i coupon</a>
   </div>
 
   <div class="faq-section">
@@ -263,6 +304,14 @@
       <p>Sì, dal piano <strong>Pro</strong> in su. In testata alla pagina pubblica compaiono il logo e il nome della tua organizzazione (carichi l'immagine dalle impostazioni o incolli un URL) al posto del logo Ticketto, che resta solo come piccola firma nel footer. Puoi scegliere il colore dell'evento tra i preset o inserire il codice HEX del tuo brand (es. #1B5E9E), oppure lo stile bianco minimale se non vuoi sfondi colorati: i testi e i pulsanti si adattano da soli per restare leggibili.</p>
     </div>
     <div class="faq-item">
+      <h3>Conviene pagare a mese o ad anno?</h3>
+      <p>Puoi scegliere al momento dell'attivazione. Il <strong>Pro</strong> costa €29 al mese oppure €249 all'anno (99 € in meno, circa 21 € al mese); il <strong>Business</strong> €79 al mese oppure €699 all'anno (249 € in meno, circa 58 € al mese). L'annuale si paga in una volta sola e vale 12 mesi.</p>
+    </div>
+    <div class="faq-item">
+      <h3>I coupon e le promozioni sono inclusi nel piano?</h3>
+      <p>Sì, il modulo promozioni è incluso in tutti i piani, stampa dei materiali compresa. Sul <strong>Free</strong> hai una campagna attiva e fino a 25 voucher; sul <strong>Pro</strong> cinque campagne e fino a 250 voucher l'una, con la possibilità di incassare online via Stripe; sul <strong>Business</strong> campagne e voucher illimitati. <a href="/coupon/">Vedi come funzionano i coupon</a>.</p>
+    </div>
+    <div class="faq-item">
       <h3>Posso disdire l'abbonamento in qualsiasi momento?</h3>
       <p>Sì, puoi passare al piano Free o cancellare l'abbonamento in totale autonomia dalla tua dashboard, senza alcun vincolo di permanenza a lungo termine.</p>
     </div>
@@ -277,6 +326,7 @@
       <nav class="footer-col" aria-label="Prodotto">
         <h3>Prodotto</h3>
         <a href="/#piattaforma">Piattaforma</a>
+        <a href="/coupon/">Coupon e promozioni</a>
         <a href="/prezzi/">Prezzi</a>
         <a href="/blog/">Blog</a>
       </nav>

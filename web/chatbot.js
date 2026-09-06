@@ -4,7 +4,7 @@
   // ── Ticketto Assistant — AI Chat Widget ──
   const CONFIG = {
     project: 'ticketto',
-    accent: '#6C63FF',
+    accent: '#0E6B52',
     position: 'right',
     apiUrl: 'https://api-ivufbp6etq-uc.a.run.app/api/v1/chatbot',
     icon: '🎫',

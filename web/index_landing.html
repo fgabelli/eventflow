@@ -23,10 +23,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ticketto — Iscrizioni, partecipanti e check-in dei tuoi eventi</title>
-  <meta name="description" content="Gestisci iscrizioni, partecipanti e check-in dei tuoi eventi: dal viaggio di gruppo all'evento aziendale. Raccogli adesioni, vendi biglietti con Stripe, badge PDF o stampa termica zero-tap. Zero commissioni di piattaforma.">
+  <meta name="description" content="Gestisci iscrizioni, partecipanti e check-in dei tuoi eventi — e ora anche coupon e promozioni per il tuo locale, con voucher QR e locandine pronte da stampare. Pagamenti con Stripe, badge PDF, stampa termica zero-tap. Zero commissioni di piattaforma.">
   <meta name="author" content="Ticketto">
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#6C63FF">
+  <meta name="theme-color" content="#0E6B52">
   <link rel="canonical" href="https://ticketto.it">
   <link rel="alternate" hreflang="it" href="https://ticketto.it" />
   <link rel="alternate" hreflang="en" href="https://ticketto.it/en/" />
@@ -38,7 +38,7 @@
   <meta property="og:site_name" content="Ticketto">
   <meta property="og:locale" content="it_IT">
   <meta property="og:title" content="Ticketto — Iscrizioni, partecipanti e check-in dei tuoi eventi">
-  <meta property="og:description" content="Dal viaggio di gruppo all'evento aziendale: iscrizioni, check-in da smartphone, badge PDF e stampa termica zero-tap. Zero commissioni di piattaforma.">
+  <meta property="og:description" content="Eventi e promozioni in un'unica piattaforma: iscrizioni, check-in da smartphone, badge PDF, coupon digitali con QR e locandine pronte da stampare. Zero commissioni di piattaforma.">
   <meta property="og:image" content="https://ticketto.it/images/hero.png">
   
   <!-- Twitter Card -->
@@ -54,9 +54,9 @@
   
   <style>
     :root {
-      --primary: #6C63FF;
-      --primary-dark: #4F46E5;
-      --primary-light: #EEEDFF;
+      --primary: #0E6B52;
+      --primary-dark: #0A503D;
+      --primary-light: #E2F2EC;
       --text-dark: #0F172A;
       --text-main: #334155;
       --text-muted: #64748B;
@@ -80,8 +80,8 @@
     .nav-links a.link { font-weight: 500; font-size: 0.95rem; color: var(--text-muted); transition: color 0.3s; }
     .nav-links a.link:hover { color: var(--primary); }
     .btn { display: inline-block; padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 600; font-size: 0.95rem; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .btn-primary { background: var(--primary); color: #fff !important; box-shadow: 0 8px 20px rgba(108, 99, 255, 0.25); border: 2px solid var(--primary); }
-    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 12px 24px rgba(108, 99, 255, 0.35); }
+    .btn-primary { background: var(--primary); color: #fff !important; box-shadow: 0 8px 20px rgba(14, 107, 82, 0.25); border: 2px solid var(--primary); }
+    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 12px 24px rgba(14, 107, 82, 0.35); }
     .btn-outline { background: transparent; color: var(--primary) !important; border: 2px solid var(--primary); }
     .btn-outline:hover { background: var(--primary-light); }
   /* --- Mobile nav hamburger --- */
@@ -114,7 +114,7 @@
     .hero p.subtitle { font-size: 1.2rem; color: var(--text-muted); max-width: 650px; margin: 0 auto 3rem; line-height: 1.7; }
     .hero-buttons { display: flex; gap: 1rem; justify-content: center; margin-bottom: 4rem; }
     
-    .hero-image-wrapper { max-width: 1100px; margin: 0 auto; position: relative; border-radius: 24px; box-shadow: 0 40px 80px rgba(108, 99, 255, 0.15); border: 1px solid rgba(255,255,255,0.5); padding: 10px; background: #fff; }
+    .hero-image-wrapper { max-width: 1100px; margin: 0 auto; position: relative; border-radius: 24px; box-shadow: 0 40px 80px rgba(14, 107, 82, 0.15); border: 1px solid rgba(255,255,255,0.5); padding: 10px; background: #fff; }
     .hero-image-wrapper img { border-radius: 16px; }
 
     /* Showcase Sections */
@@ -147,12 +147,14 @@
     .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto; }
     .price-card { background: #fff; border: 1px solid var(--border); border-radius: 24px; padding: 3rem 2.5rem; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
     .price-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.06); }
-    .price-card.popular { border: 2px solid var(--primary); box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1); }
+    .price-card.popular { border: 2px solid var(--primary); box-shadow: 0 20px 40px rgba(14, 107, 82, 0.1); }
     .price-card.popular::before { content: "Il più scelto"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 0.8rem; font-weight: 700; padding: 4px 16px; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; }
     .price-card h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
     .price-card p.desc { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; height: 40px; }
     .price-amount { font-size: 3.5rem; font-weight: 900; font-family: 'Outfit', sans-serif; color: var(--text-dark); margin-bottom: 2rem; display: flex; align-items: baseline; }
     .price-amount span { font-size: 1rem; color: var(--text-muted); font-weight: 500; margin-left: 0.5rem; }
+    .billing-note { margin-top: -1.5rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); min-height: 1.4rem; }
+    .billing-note strong { color: var(--text-dark); }
     .price-features { list-style: none; margin-top: 2rem; margin-bottom: 2.5rem; border-top: 1px solid var(--border); padding-top: 2rem; }
     .price-features li { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; font-size: 0.95rem; }
     .price-features li svg { width: 20px; height: 20px; color: var(--success); flex-shrink: 0; }
@@ -174,7 +176,7 @@
     .footer-brand p { color: rgba(255,255,255,0.7); margin: 0; max-width: 28ch; font-size: 0.92rem; line-height: 1.5; }
     .footer-col h3 { color: #fff; font-size: 0.95rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
     .footer-col a { display: block; color: #CBD5E1; padding: 0.3rem 0; font-size: 0.92rem; transition: color 0.2s; text-decoration: none; }
-    .footer-col a:hover { color: var(--primary, #6C63FF); }
+    .footer-col a:hover { color: var(--primary, #0E6B52); }
     .footer-bottom { max-width: 1200px; margin: 2rem auto 0; color: rgba(255,255,255,0.5); font-size: 0.82rem; text-align: center; display: flex; flex-direction: column; gap: 0.8rem; align-items: center; }
 
     /* Cookie Banner */
@@ -192,6 +194,11 @@
       .footer-brand img { margin: 0 auto; }
       #cookie-banner { flex-direction: column; align-items: stretch; text-align: center; }
       .cookie-actions { justify-content: center; }
+    }
+    @media (min-width: 881px) and (max-width: 1180px) {
+      .nav-links { gap: 1.2rem; }
+      .nav-links .btn { padding: 0.7rem 1.1rem; }
+      .nav-brand { font-size: 1.3rem; }
     }
     @media (max-width: 880px) {
     .nav-toggle { display: flex; }
@@ -267,6 +274,7 @@
     </a>
     <nav class="nav-links" aria-label="Navigazione principale">
       <a href="/#piattaforma" class="link">Piattaforma</a>
+      <a href="/coupon/" class="link">Coupon</a>
       <a href="/prezzi/" class="link">Prezzi</a>
       <a href="/blog/" class="link">Blog</a>
       <a href="/chi-siamo/" class="link">Chi siamo</a>
@@ -358,7 +366,7 @@
     </div>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon" style="color: #8B5CF6;">🌐</div>
+        <div class="feature-icon" style="color: #14B8A6;">🌐</div>
         <h3>Eventi Online o in Presenza</h3>
         <p>Un interruttore: indirizzo fisico o link Zoom/Meet/Teams. Il link allo streaming viene incluso nell'email solo dopo la conferma di registrazione, mai prima.</p>
       </div>
@@ -383,7 +391,7 @@
         <p>Carica migliaia di partecipanti in un colpo solo tramite file CSV. Risparmia ore di inserimenti manuali.</p>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="color: #6C63FF;">📄</div>
+        <div class="feature-icon" style="color: #0E6B52;">📄</div>
         <h3>Badge PDF Pronti da Stampare</h3>
         <p>Esporta l'intera lista ospiti come PDF A4 (10 badge per foglio) e stampa a casa con una normale stampante da ufficio. Niente hardware termico necessario.</p>
       </div>
@@ -392,6 +400,38 @@
         <h3>Comunicazioni Auto</h3>
         <p>Ticketto invia automaticamente l'email di conferma con biglietto QR, Apple/Google Wallet pass e notifica all'organizzatore in tempo reale (Pro/Business).</p>
       </div>
+    </div>
+  </section>
+
+  <section id="promozioni" class="section-padding">
+    <div class="section-header">
+      <h2>Novità: coupon e promozioni per il tuo locale</h2>
+      <p>Non solo eventi. Se hai una palestra, una SPA, un hotel, un ristorante o un negozio, con Ticketto lanci una promozione e sai esattamente chi si è presentato a usarla.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="color: #0E6B52;">🎟️</div>
+        <h3>Un voucher a testa, numerato</h3>
+        <p>2x1, sconto in percentuale, buono in euro, prezzo speciale o omaggio: il cliente apre il link, lascia i suoi dati e riceve il suo voucher con codice univoco e QR code.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="color: #10B981;">📲</div>
+        <h3>Riscatto alla cassa in due secondi</h3>
+        <p>Scansioni il QR con il telefono o cerchi il codice a mano. I voucher già usati o scaduti li blocca il sistema, non tu.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="color: #F59E0B;">🖨️</div>
+        <h3>Locandine e flyer già pronti</h3>
+        <p>Quattro formati PDF pronti da stampare (A4 da banco, flyer A6, gift card, foglio a 6 coupon) con nove temi grafici, il tuo logo e quello dell'eventuale partner.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="color: #EC4899;">🤝</div>
+        <h3>Offerte in partnership</h3>
+        <p>Co-branding a due loghi: proponi la tua offerta ai clienti di un'altra attività e misura quanti arrivano davvero.</p>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top: 3rem;">
+      <a href="/coupon/" class="btn btn-primary">Scopri i coupon di Ticketto</a>
     </div>
   </section>
 
@@ -406,12 +446,14 @@
         <h3>Free</h3>
         <p class="desc">Perfetto per testare la piattaforma o per piccoli eventi gratuiti.</p>
         <div class="price-amount">€0<span>/mese</span></div>
+        <p class="billing-note">Gratis per sempre, senza carta di credito</p>
         <ul class="price-features">
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 1 evento attivo</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fino a 50 partecipanti</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Check-in via smartphone (web app)</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Email di conferma automatica</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Eventi online con link Zoom/Meet protetto</li>
+          <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 1 campagna coupon attiva (25 voucher)</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Supporto base</li>
         </ul>
         <a href="/signup" class="btn btn-outline" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
@@ -421,6 +463,7 @@
         <h3>Pro</h3>
         <p class="desc">Per professionisti e agenzie in rapida crescita.</p>
         <div class="price-amount">€29<span>/mese</span></div>
+        <p class="billing-note">oppure <strong>€249/anno</strong> — risparmi 99 €</p>
         <ul class="price-features">
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 10 eventi attivi</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Fino a 500 partecipanti</li>
@@ -434,6 +477,8 @@
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Notifiche real-time a ogni iscritto</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Esportazione badge PDF (10 per foglio A4)</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Importazione partecipanti da CSV</li>
+          <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Team fino a 5 membri</li>
+          <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 5 campagne coupon (250 voucher l'una)</li>
         </ul>
         <a href="/login" class="btn btn-primary">Prova la versione Pro</a>
       </div>
@@ -442,11 +487,13 @@
         <h3>Business</h3>
         <p class="desc">Nessun limite per grandi festival e corporate event.</p>
         <div class="price-amount">€79<span>/mese</span></div>
+        <p class="billing-note">oppure <strong>€699/anno</strong> — risparmi 249 €</p>
         <ul class="price-features">
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Eventi e partecipanti illimitati</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Tutto il piano Pro, più:</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Stampa termica zero-tap (Zebra/Brother ZPL)</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Team di gestione illimitato</li>
+          <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Campagne coupon e voucher illimitati</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Esportazione dati avanzata</li>
           <li><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Account Manager dedicato</li>
         </ul>
@@ -473,6 +520,7 @@
       <nav class="footer-col" aria-label="Prodotto">
         <h3>Prodotto</h3>
         <a href="/#piattaforma">Piattaforma</a>
+        <a href="/coupon/">Coupon e promozioni</a>
         <a href="/prezzi/">Prezzi</a>
         <a href="/blog/">Blog</a>
       </nav>

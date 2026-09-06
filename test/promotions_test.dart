@@ -263,9 +263,9 @@ void main() {
       );
 
       // Single Campaign URL for all printed cards, flyers, and desk stands
-      const origin = 'https://eventflow-3541b.web.app';
+      const origin = 'https://ticketto.it';
       final campaignUrl = '$origin/p/c/${promo.id}';
-      expect(campaignUrl, equals('https://eventflow-3541b.web.app/p/c/devero_fitup_2026'));
+      expect(campaignUrl, equals('https://ticketto.it/p/c/devero_fitup_2026'));
 
       // First customer scans campaign QR and registers
       final seq1 = promo.currentSequence + 1;

@@ -15,9 +15,9 @@
   --border-soft: #F1F5F9;                                                                                                                                                 
                                                                                                                                                                           
   /* Accent (coerente con home) */
-  --accent: #6C63FF;                                                                                                                                                      
-  --accent-dark: #4F46E5;                                                                                                                                                 
-  --accent-light: #EEEDFF;
+  --accent: #0E6B52;                                                                                                                                                      
+  --accent-dark: #0A503D;                                                                                                                                                 
+  --accent-light: #E2F2EC;
                                                                                                                                                                           
   /* Stato */                                                                                                                                                             
   --success: #10B981;
@@ -66,14 +66,19 @@ h1, h2, h3, h4 { font-family: var(--font-display); color: var(--navy-900); line-
 .nav-links .link:hover { color: var(--accent); }
 .nav-links .link[aria-current="page"] { color: var(--accent); font-weight: 700; }
 .btn { display: inline-block; padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 600; font-size: 0.95rem; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; border: 2px solid transparent; }
-.btn-primary { background: var(--accent); color: #fff !important; box-shadow: 0 8px 20px rgba(108,99,255,0.25); border-color: var(--accent); }
-.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 12px 24px rgba(108,99,255,0.35); text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff !important; box-shadow: 0 8px 20px rgba(14, 107, 82,0.25); border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 12px 24px rgba(14, 107, 82,0.35); text-decoration: none; }
 .btn-outline { background: transparent; color: var(--accent) !important; border-color: var(--accent); }
 .btn-outline:hover { background: var(--accent-light); text-decoration: none; }
                                                                                                                                                                           
 .nav-toggle { display: none; flex-direction: column; gap: 4px; background: transparent; border: 0; padding: 10px; }                                                       
 .nav-toggle span { width: 22px; height: 2px; background: var(--navy-900); border-radius: 2px; }                                                                           
                                                                                                                                                                           
+@media (min-width: 881px) and (max-width: 1180px) {
+  .nav-links { gap: 1.2rem; }
+  .nav-links .btn { padding: 0.7rem 1.1rem; }
+}
+
 @media (max-width: 880px) {                                                                                                                                               
   .nav-toggle { display: flex; }                                                                                                                                          
   .nav-links { position: absolute; top: var(--nav-h); left: 0; right: 0; flex-direction: column; background: #fff; padding: 1.2rem 5% 2rem; gap: 1rem; border-bottom: 1px 

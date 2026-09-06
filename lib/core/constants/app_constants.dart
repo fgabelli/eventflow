@@ -1,3 +1,10 @@
+// Application global configuration
+class AppConfig {
+  static const appName = 'Ticketto';
+  static const officialDomain = 'ticketto.it';
+  static const baseUrl = 'https://ticketto.it';
+}
+
 // Firestore collection names
 class Collections {
   static const organizations = 'organizations';

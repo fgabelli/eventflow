@@ -7,6 +7,9 @@
         "indexes": "firestore.indexes.json"
     },
     "hosting": {
+        "predeploy": [
+            "bash predeploy_guard.sh"
+        ],
         "public": "build/web",
         "ignore": [
             "firebase.json",
@@ -14,6 +17,15 @@
             "**/node_modules/**"
         ],
         "headers": [
+            {
+                "source": "/flutter_service_worker.js",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache, no-store, must-revalidate"
+                    }
+                ]
+            },
             {
                 "source": "/robots.txt",
                 "headers": [
@@ -77,6 +89,10 @@
                 "destination": "/chi-siamo/index.html"
             },
             {
+                "source": "/coupon",
+                "destination": "/coupon/index.html"
+            },
+            {
                 "source": "/en",
                 "destination": "/en/index.html"
             },
@@ -91,6 +107,10 @@
             {
                 "source": "/en/about",
                 "destination": "/en/about/index.html"
+            },
+            {
+                "source": "/en/coupons",
+                "destination": "/en/coupons/index.html"
             },
             {
                 "source": "/en/privacy",

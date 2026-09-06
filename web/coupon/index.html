@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <!-- Google Consent Mode v2 + gtag -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied',
+      'analytics_storage':'denied','wait_for_update': 500
+    });
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-417739561"></script>
+  <script>gtag('js', new Date()); gtag('config', 'AW-417739561'); gtag('config', 'G-JS3J7696GM');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coupon e Voucher Digitali per Locali e Attività | Ticketto</title>
+  <meta name="description" content="Crea coupon e voucher digitali per palestre, SPA, hotel, ristoranti e negozi: link di ritiro, QR univoco per ogni cliente, riscatto alla cassa e stampa PDF professionale (locandina A4, flyer, gift card). Inizia gratis.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0E6B52">
+  <link rel="canonical" href="https://ticketto.it/coupon/">
+  <link rel="alternate" hreflang="it" href="https://ticketto.it/coupon/" />
+  <link rel="alternate" hreflang="en" href="https://ticketto.it/en/coupons/" />
+  <link rel="alternate" hreflang="x-default" href="https://ticketto.it/en/coupons/" />
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:title" content="Coupon e voucher digitali per il tuo locale | Ticketto">
+  <meta property="og:description" content="Campagne promozionali con voucher numerati, QR univoco per ogni cliente e materiale di stampa pronto per la tipografia. Senza grafico, senza commissioni di piattaforma.">
+  <meta property="og:url" content="https://ticketto.it/coupon/">
+  <meta property="og:image" content="https://ticketto.it/images/hero.webp">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/layout.css?v=2">
+
+  <style>
+    :root {
+      --primary: #0E6B52;
+      --primary-dark: #0A503D;
+      --primary-light: #E2F2EC;
+      --text-dark: #0F172A;
+      --text-main: #334155;
+      --text-muted: #64748B;
+      --bg-light: #F8FAFC;
+      --border: #E2E8F0;
+      --success: #10B981;
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; color: var(--text-main); line-height: 1.6; background: #fff; }
+    h1, h2, h3, h4, .nav-brand { font-family: 'Outfit', sans-serif; color: var(--text-dark); }
+    a { text-decoration: none; color: var(--primary); }
+
+    .header-section { padding: 160px 5% 70px; text-align: center; background: radial-gradient(circle at top, var(--primary-light) 0%, transparent 70%); }
+    .header-section .eyebrow { display: inline-block; background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 6px 16px; font-size: 0.9rem; font-weight: 600; color: var(--primary-dark); margin-bottom: 1.5rem; }
+    .header-section h1 { font-size: clamp(2.2rem, 4vw, 3.6rem); font-weight: 900; line-height: 1.1; margin-bottom: 1.2rem; }
+    .header-section p.lead { font-size: 1.15rem; color: var(--text-muted); max-width: 720px; margin: 0 auto 2.2rem; }
+    .header-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+    .section-padding { padding: 80px 5%; }
+    .section-header { max-width: 760px; margin: 0 auto 3rem; text-align: center; }
+    .section-header h2 { font-size: clamp(1.9rem, 3vw, 2.5rem); font-weight: 800; margin-bottom: 0.8rem; }
+    .section-header p { color: var(--text-muted); font-size: 1.05rem; }
+
+    .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+    .step-card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 2rem 1.8rem; }
+    .step-num { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 800; font-family: 'Outfit', sans-serif; display: flex; align-items: center; justify-content: center; margin-bottom: 1.2rem; }
+    .step-card h3 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .step-card p { font-size: 0.95rem; color: var(--text-muted); }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1100px; margin: 0 auto; }
+    .info-card { background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 2rem; }
+    .info-card .icon { font-size: 1.8rem; margin-bottom: 1rem; display: block; }
+    .info-card h3 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .info-card p { font-size: 0.95rem; color: var(--text-muted); }
+    .info-card .meta { display: inline-block; margin-top: 0.8rem; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--primary-dark); background: var(--primary-light); border-radius: 999px; padding: 3px 10px; }
+
+    .themes-block { max-width: 1100px; margin: 0 auto; }
+    .themes-block h3.group-title { font-size: 1.1rem; margin: 2.5rem 0 1rem; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; color: var(--text-muted); font-family: 'Inter', sans-serif; font-weight: 700; }
+    .theme-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .theme-item { border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem 1.4rem; background: #fff; display: flex; gap: 0.9rem; align-items: flex-start; }
+    .swatch { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+    .theme-item strong { display: block; font-family: 'Outfit', sans-serif; color: var(--text-dark); font-size: 1rem; }
+    .theme-item span { font-size: 0.88rem; color: var(--text-muted); }
+
+    .plans-table-wrap { max-width: 900px; margin: 0 auto; overflow-x: auto; border: 1px solid var(--border); border-radius: 20px; }
+    table.plans { width: 100%; border-collapse: collapse; min-width: 620px; background: #fff; }
+    table.plans th, table.plans td { padding: 1rem 1.2rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    table.plans thead th { font-family: 'Outfit', sans-serif; font-weight: 800; color: var(--text-dark); background: var(--bg-light); }
+    table.plans td:not(:first-child), table.plans th:not(:first-child) { text-align: center; }
+    table.plans tbody tr:last-child td { border-bottom: none; }
+    table.plans .yes { color: var(--success); font-weight: 700; }
+    table.plans .no { color: var(--text-muted); }
+
+    .use-cases { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; max-width: 900px; margin: 0 auto; }
+    .use-case { border: 1px solid var(--border); border-radius: 999px; padding: 0.6rem 1.2rem; font-size: 0.95rem; background: #fff; color: var(--text-main); }
+
+    .faq-section { max-width: 800px; margin: 0 auto; padding: 0 5% 100px; }
+    .faq-section h2 { text-align: center; font-size: 2.2rem; margin-bottom: 3rem; }
+    .faq-item { margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; }
+    .faq-item h3 { font-size: 1.15rem; margin-bottom: 0.5rem; font-weight: 700; }
+    .faq-item p { color: var(--text-muted); }
+
+    .cta-section { background: var(--text-dark); color: #fff; padding: 80px 5%; text-align: center; }
+    .cta-section h2 { color: #fff; font-size: clamp(1.9rem, 3vw, 2.6rem); margin-bottom: 1rem; }
+    .cta-section p { color: #CBD5E1; max-width: 620px; margin: 0 auto 2rem; }
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://ticketto.it/coupon/",
+        "name": "Coupon e voucher digitali per locali e attività",
+        "description": "Modulo di Ticketto per creare campagne promozionali con coupon e voucher digitali: link pubblico di ritiro, QR univoco per cliente, riscatto alla cassa e materiale di stampa pronto.",
+        "inLanguage": "it-IT",
+        "isPartOf": { "@type": "WebSite", "name": "Ticketto", "url": "https://ticketto.it/" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "Ticketto — Coupon e Promozioni",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "url": "https://ticketto.it/coupon/",
+        "description": "Crea campagne di coupon e voucher digitali con codici progressivi univoci, pagina pubblica di ritiro, validazione QR alla cassa e stampa PDF in 4 formati con 9 temi grafici.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR",
+          "availability": "https://schema.org/InStock",
+          "url": "https://ticketto.it/prezzi/"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Cosa serve al cliente per usare il coupon?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Solo il telefono. Il cliente apre il link della campagna (o inquadra il QR code sulla locandina), lascia i suoi dati e riceve subito il suo voucher personale con codice univoco e QR code. Non deve installare nessuna app."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Come si riscatta il coupon in cassa?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Dal pannello web scansioni il QR code del cliente con la fotocamera o con un lettore barcode. In alternativa cerchi il codice del voucher a mano e lo segni come riscattato. Il sistema blocca automaticamente i voucher già usati o scaduti."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Posso far pagare l'offerta online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sì, dal piano Pro in su puoi incassare online con Stripe al momento del ritiro del voucher. Sul piano Free l'offerta è disponibile in modalità \"paga in sede\": il cliente ritira il voucher e salda direttamente da te."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Devo farmi fare la grafica dei volantini da un grafico?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Ticketto genera i PDF pronti per la stampa in 4 formati (locandina da banco A4, flyer A6, biglietto da visita 85x55 mm e foglio A4 con 6 coupon e linee di taglio), con 9 temi grafici tra cui scegliere, il tuo logo, quello dell'eventuale partner e i tuoi contatti nel piede."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Posso fare una promozione in partnership con un'altra attività?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sì. Le offerte partner supportano il co-branding: sul materiale stampato compaiono entrambi i loghi, così puoi proporre l'offerta della tua attività ai clienti di un partner (per esempio una SPA che riserva un trattamento ai soci di una palestra)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quanti coupon posso emettere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sul piano Free: 1 campagna attiva e fino a 25 voucher. Sul piano Pro: 5 campagne attive e fino a 250 voucher per campagna. Sul piano Business: campagne e voucher illimitati."
+            }
+          }
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ticketto.it/" },
+          { "@type": "ListItem", "position": 2, "name": "Coupon e promozioni", "item": "https://ticketto.it/coupon/" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <header class="site-header" role="banner">
+    <a class="nav-brand" href="/" aria-label="Ticketto — Home">
+      <img src="/icons/Icon-192.png" alt="" width="36" height="36" decoding="async" />
+      <span>Ticketto</span>
+    </a>
+    <nav class="nav-links" aria-label="Navigazione principale">
+      <a href="/#piattaforma" class="link">Piattaforma</a>
+      <a href="/coupon/" class="link" aria-current="page">Coupon</a>
+      <a href="/prezzi/" class="link">Prezzi</a>
+      <a href="/blog/" class="link">Blog</a>
+      <a href="/chi-siamo/" class="link">Chi siamo</a>
+      <a href="https://ticketto.it/en/coupons/" class="link" hreflang="en" aria-label="English version">EN</a>
+      <a href="/login" class="btn btn-outline">Accedi</a>
+      <a href="/signup" class="btn btn-primary" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
+    </nav>
+    <button class="nav-toggle" aria-label="Apri menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <main>
+
+  <div class="header-section">
+    <span class="eyebrow">🎟️ Novità — Coupon, voucher e offerte partner</span>
+    <h1>Le tue promozioni,<br>con un coupon che sai chi ha usato</h1>
+    <p class="lead">Crea un'offerta per il tuo locale, condividi un link o un QR code, e ogni cliente riceve il <strong>suo</strong> voucher numerato. Lo riscatti alla cassa in due secondi e ti resti in mano l'elenco di chi è venuto davvero. Volantini e locandine te li genera Ticketto, pronti da stampare.</p>
+    <div class="header-buttons">
+      <a href="/signup" class="btn btn-primary" onclick="gtag('event','cta_click',{cta_label:'Crea la tua promozione',source:document.location.pathname});">Crea la tua promozione gratis</a>
+      <a href="#come-funziona" class="btn btn-outline">Scopri come funziona</a>
+    </div>
+  </div>
+
+  <section id="come-funziona" class="section-padding">
+    <div class="section-header">
+      <h2>Dalla promo al cliente in cassa, in 4 passaggi</h2>
+      <p>Niente blocchetti di carta, niente fogli Excel, niente coupon fotocopiati che girano all'infinito.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Crei l'offerta</h3>
+        <p>Scegli il tipo di promozione, quanti voucher emettere, entro quando ci si può registrare e per quanto tempo il voucher resta valido dopo il ritiro.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>La distribuisci</h3>
+        <p>Ottieni un link pubblico e un QR code della campagna. Li metti su Instagram, in chat, sul sito, oppure li stampi su locandina e volantini.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Il cliente ritira il suo voucher</h3>
+        <p>Pagina di ritiro pensata per il telefono: il cliente lascia i suoi dati e riceve subito un voucher personale con codice progressivo univoco e QR code.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>Riscatti alla cassa</h3>
+        <p>Scansioni il QR con la fotocamera o con un lettore barcode, oppure cerchi il codice a mano dal pannello web. Voucher già usati e scaduti vengono bloccati da soli.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding" style="background: var(--bg-light);">
+    <div class="section-header">
+      <h2>Il tipo di offerta lo scegli tu</h2>
+      <p>Sei formati di promozione già pronti, da configurare in un minuto.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="info-card">
+        <span class="icon">🎁</span>
+        <h3>2x1 — Due per uno</h3>
+        <p>Il classico "porta un amico": ideale per riempire le fasce vuote e far provare il locale a chi non ti conosce.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">📉</span>
+        <h3>Sconto percentuale</h3>
+        <p>Un -20% o -50% sul servizio o sull'acquisto, con la percentuale ben visibile sul voucher e sul materiale stampato.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">💶</span>
+        <h3>Sconto fisso in euro</h3>
+        <p>Un buono da 10 €, 25 € o 50 € da scalare al momento del conto. Perfetto come regalo o come leva sul primo acquisto.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">🏷️</span>
+        <h3>Prezzo promozionale</h3>
+        <p>Il servizio a un prezzo fisso dedicato alla campagna, invece che a listino.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">✨</span>
+        <h3>Ingresso o trattamento omaggio</h3>
+        <p>Un regalo di benvenuto a costo zero per il cliente: la maniera più diretta di far entrare gente nuova dalla porta.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">🧩</span>
+        <h3>Offerta personalizzata</h3>
+        <p>Scrivi tu i termini della promozione, se non rientra in nessuno dei formati standard.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding">
+    <div class="section-header">
+      <h2>Due scadenze separate, come nel mondo vero</h2>
+      <p>Una cosa è il tempo che dai per prenotare l'offerta, un'altra è quanto tempo il cliente ha per venire a usarla.</p>
+    </div>
+    <div class="cards-grid" style="max-width: 820px;">
+      <div class="info-card">
+        <span class="icon">🗓️</span>
+        <h3>Scadenza della campagna</h3>
+        <p>La data entro cui si può ancora ritirare il coupon online. Dopo, il link smette di emettere nuovi voucher — utile per le promo legate a un periodo ("solo per tutto settembre").</p>
+        <span class="meta">Opzionale</span>
+      </div>
+      <div class="info-card">
+        <span class="icon">⏳</span>
+        <h3>Validità del voucher</h3>
+        <p>Quanto dura il voucher a partire dal ritiro: 6 mesi, 1 anno, o la durata che decidi. Ogni cliente ha quindi la sua data di scadenza, stampata in chiaro sul voucher.</p>
+        <span class="meta">Per cliente</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding" style="background: var(--bg-light);">
+    <div class="section-header">
+      <h2>Il materiale da stampare te lo generiamo noi</h2>
+      <p>Quattro formati PDF vettoriali pronti per la stampante dell'ufficio o per la tipografia, con il tuo logo, i tuoi contatti e il QR code della campagna.</p>
+    </div>
+    <div class="cards-grid">
+      <div class="info-card">
+        <span class="icon">🖼️</span>
+        <h3>Locandina da banco A4</h3>
+        <p>210 × 297 mm, verticale, con QR code grande e leggibile. Da mettere in un espositore in plexiglass alla reception o accanto alla cassa.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">💳</span>
+        <h3>Biglietto da visita / gift card</h3>
+        <p>85 × 55 mm, formato tascabile. È il file master da mandare in tipografia (Pixartprinting, Vistaprint e simili) per una gift card vera e propria.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">📄</span>
+        <h3>Flyer A6</h3>
+        <p>105 × 148 mm, il volantino da banco: perfetto da lasciare alla reception dei partner o da mettere nelle buste.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">✂️</span>
+        <h3>Foglio A4 con 6 coupon</h3>
+        <p>Griglia 2 × 3 con linee di taglio tratteggiate: stampi in ufficio, tagli con la taglierina e hai sei coupon pronti da distribuire.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">⬇️</span>
+        <h3>QR code da scaricare</h3>
+        <p>Puoi anche scaricare il solo QR code della campagna in PNG, per metterlo dentro una tua grafica, una storia Instagram o un manifesto già impaginato.</p>
+      </div>
+      <div class="info-card">
+        <span class="icon">🤝</span>
+        <h3>Co-branding con il partner</h3>
+        <p>Sul materiale possono comparire due loghi: il tuo e quello dell'attività partner. Così proponi la tua offerta ai clienti di qualcun altro, con una grafica che parla a entrambi.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding">
+    <div class="section-header">
+      <h2>Nove temi grafici, zero lavoro di grafica</h2>
+      <p>Tre stili per il tuo settore e sei per le ricorrenze dell'anno, quando i voucher regalo vendono di più.</p>
+    </div>
+    <div class="themes-block">
+      <h3 class="group-title">Stili per settore</h3>
+      <div class="theme-list">
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#FFFFFF,#E2E8F0);"></span>
+          <div><strong>Clean Modern</strong><span>Chiaro, minimale, essenziale. Universale — e il più economico da stampare.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#1F2933,#A3E635);"></span>
+          <div><strong>Sport &amp; Dynamic</strong><span>Nero grafite e verde lime ad alto contrasto. Palestre, fitness, sport.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#1E293B,#D4AF37);"></span>
+          <div><strong>Luxury Dark &amp; Gold</strong><span>Blu ardesia e finiture oro. SPA, hotel, ristoranti, esperienze di pregio.</span></div>
+        </div>
+      </div>
+
+      <h3 class="group-title">Ricorrenze e regali</h3>
+      <div class="theme-list">
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#7F1D1D,#D4AF37);"></span>
+          <div><strong>Natale &amp; Festività</strong><span>Rosso granata e oro caldo, per cene, voucher e regali di Natale.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#4C0519,#F9A8D4);"></span>
+          <div><strong>San Valentino &amp; Coppia</strong><span>Bordeaux vellutato e accenti rosa, per esperienze per due.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#1E1B4B,#FBBF24);"></span>
+          <div><strong>Compleanno &amp; Party</strong><span>Blu notte festivo con accenti oro brillante.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#0B0B0B,#C9A227);"></span>
+          <div><strong>Anniversario &amp; Gold</strong><span>Nero ossidiana e oro metallizzato, per edizioni speciali.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#F5E1E4,#B0616F);"></span>
+          <div><strong>Festa della Mamma</strong><span>Rosa antico e crema, per regali delicati e coccole.</span></div>
+        </div>
+        <div class="theme-item">
+          <span class="swatch" style="background: linear-gradient(135deg,#0F3B4C,#A9743A);"></span>
+          <div><strong>Festa del Papà</strong><span>Blu petrolio e cuoio cognac, per tempo libero, sport ed esperienze.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-padding" style="background: var(--bg-light);">
+    <div class="section-header">
+      <h2>Pensato per chi ha un locale, non un ufficio marketing</h2>
+      <p>Se incassi al banco e vuoi sapere quante persone ti ha portato davvero una promozione, questo modulo è per te.</p>
+    </div>
+    <div class="use-cases">
+      <span class="use-case">🏋️ Palestre e centri fitness</span>
+      <span class="use-case">💆 SPA e centri benessere</span>
+      <span class="use-case">🏨 Hotel e B&amp;B</span>
+      <span class="use-case">🍽️ Ristoranti, bar e lidi</span>
+      <span class="use-case">💇 Saloni e centri estetici</span>
+      <span class="use-case">🛍️ Negozi e retail</span>
+      <span class="use-case">🎓 Scuole e corsi</span>
+      <span class="use-case">🤝 Reti di attività partner</span>
+    </div>
+  </section>
+
+  <section class="section-padding">
+    <div class="section-header">
+      <h2>Quanti coupon puoi emettere</h2>
+      <p>Il modulo promozioni è incluso in tutti i piani, stampa compresa. Cambiano i volumi e l'incasso online.</p>
+    </div>
+    <div class="plans-table-wrap">
+      <table class="plans">
+        <thead>
+          <tr>
+            <th scope="col">&nbsp;</th>
+            <th scope="col">Free</th>
+            <th scope="col">Pro</th>
+            <th scope="col">Business</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Campagne attive</th>
+            <td>1</td>
+            <td>5</td>
+            <td class="yes">Illimitate</td>
+          </tr>
+          <tr>
+            <th scope="row">Voucher per campagna</th>
+            <td>25</td>
+            <td>250</td>
+            <td class="yes">Illimitati</td>
+          </tr>
+          <tr>
+            <th scope="row">Pagina pubblica di ritiro + QR univoco</th>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+          </tr>
+          <tr>
+            <th scope="row">Riscatto alla cassa (QR o codice)</th>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+          </tr>
+          <tr>
+            <th scope="row">Stampa PDF (4 formati, 9 temi)</th>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+          </tr>
+          <tr>
+            <th scope="row">Incasso online con Stripe</th>
+            <td class="no">Solo "paga in sede"</td>
+            <td class="yes">✓</td>
+            <td class="yes">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="text-align:center; margin-top: 1.8rem;"><a href="/prezzi/" class="link" style="font-weight:600;">Vedi tutti i piani e i prezzi →</a></p>
+  </section>
+
+  <section class="cta-section">
+    <h2>La prossima promozione, con i nomi di chi è venuto</h2>
+    <p>Crei la campagna in cinque minuti, stampi la locandina e la metti in cassa. Il piano Free basta per provarla sul serio: nessuna carta di credito richiesta.</p>
+    <a href="/signup" class="btn btn-primary" onclick="gtag('event','cta_click',{cta_label:'Inizia gratis',source:document.location.pathname});">Inizia gratis</a>
+  </section>
+
+  <div class="faq-section" style="padding-top: 80px;">
+    <h2>Domande frequenti</h2>
+    <div class="faq-item">
+      <h3>Cosa serve al cliente per usare il coupon?</h3>
+      <p>Solo il telefono. Apre il link della campagna o inquadra il QR code sulla locandina, lascia i suoi dati e riceve subito il suo voucher personale con codice univoco (per esempio <strong>SPA-0024</strong>) e QR code. Non deve installare nessuna app.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Come si riscatta il coupon in cassa?</h3>
+      <p>Dal pannello web scansioni il QR code del cliente con la fotocamera dello smartphone o con un lettore barcode. Se il cliente ha stampato il codice o te lo detta, lo cerchi a mano e lo segni come riscattato. I voucher già usati o scaduti vengono bloccati automaticamente, quindi lo stesso coupon non può girare due volte.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Posso far pagare l'offerta online?</h3>
+      <p>Sì, dal piano <strong>Pro</strong> in su puoi incassare online con Stripe già al momento del ritiro del voucher, e il sistema tiene traccia di cosa è stato pagato online e cosa in sede. Sul piano <strong>Free</strong> la promozione funziona in modalità "paga in sede": il cliente ritira il voucher e salda direttamente da te.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Devo farmi fare la grafica dei volantini?</h3>
+      <p>No. Ticketto genera i PDF pronti per la stampa in quattro formati — locandina da banco A4, flyer A6, biglietto da visita 85 × 55 mm e foglio A4 con sei coupon e linee di taglio — con nove temi grafici tra cui scegliere, il tuo logo, l'eventuale logo del partner e i tuoi contatti (indirizzo, telefono, sito e WhatsApp) nel piede. Se preferisci usare una tua grafica, scarichi solo il QR code in PNG.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Posso fare una promozione insieme a un'altra attività?</h3>
+      <p>Sì, è proprio il caso delle <strong>offerte partner</strong>: sul materiale stampato compaiono entrambi i loghi, così puoi riservare la tua offerta ai clienti di un'altra attività — per esempio una SPA che dedica un trattamento ai soci di una palestra — e vedere quanti di quei clienti si presentano davvero.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Quanti coupon posso emettere?</h3>
+      <p>Sul piano <strong>Free</strong> una campagna attiva e fino a 25 voucher; sul <strong>Pro</strong> cinque campagne attive e fino a 250 voucher per campagna; sul <strong>Business</strong> campagne e voucher illimitati. I limiti valgono sulle campagne attive: quando una promozione è chiusa, liberi lo slot.</p>
+    </div>
+    <div class="faq-item">
+      <h3>Che differenza c'è con la parte eventi di Ticketto?</h3>
+      <p>Sono due modi di usare la stessa piattaforma. Con gli <a href="/#piattaforma">eventi</a> gestisci iscrizioni e check-in di una data precisa; con le promozioni gestisci un'offerta che il cliente può usare quando vuole, entro la scadenza. In entrambi i casi il risultato è lo stesso: sai chi si è presentato, con nome e contatto.</p>
+    </div>
+  </div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="/icons/Icon-192.png" alt="Ticketto" width="40" height="40" />
+        <p>La piattaforma di biglietteria e check-in eventi.</p>
+      </div>
+      <nav class="footer-col" aria-label="Prodotto">
+        <h3>Prodotto</h3>
+        <a href="/#piattaforma">Piattaforma</a>
+        <a href="/coupon/">Coupon e promozioni</a>
+        <a href="/prezzi/">Prezzi</a>
+        <a href="/blog/">Blog</a>
+      </nav>
+      <nav class="footer-col" aria-label="Azienda">
+        <h3>Azienda</h3>
+        <a href="/chi-siamo/">Chi siamo</a>
+        <a href="/blog/autori/fabio-gabelli/">Autore</a>
+        <a href="mailto:info@ticketto.it">Contatti</a>
+      </nav>
+  </div>
+    <div class="footer-bottom" style="display: flex; flex-direction: column; gap: 0.8rem; align-items: center;">
+      <div class="legal-links" style="display: flex; gap: 1.5rem; justify-content: center; font-size: 0.95rem;">
+        <a href="/privacy/" style="color: inherit; text-decoration: none;">Privacy Policy</a>
+        <a href="/terms/" style="color: inherit; text-decoration: none;">Termini di servizio</a>
+      </div>
+      <small>© 2026 Ticketto — un prodotto <strong>Bitle S.r.l.s.</strong> · P.IVA 12847530966</small>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelector('.nav-toggle')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!open));
+      document.querySelector('.nav-links').classList.toggle('is-open', !open);
+    });
+  </script>
+
+</body>
+</html>
