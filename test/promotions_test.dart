@@ -360,5 +360,56 @@ void main() {
       );
       expect(cardBytes.isNotEmpty, isTrue);
     });
+
+    test('CouponVisualTheme themes and multi-format PDF generation', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+
+      expect(CouponVisualTheme.values.length, equals(3));
+      expect(CouponVisualTheme.luxurySpa.label, contains('Luxury'));
+      expect(CouponVisualTheme.sportDynamic.label, contains('Sport'));
+      expect(CouponVisualTheme.modernMinimal.label, contains('Clean'));
+
+      final promo = PromotionModel(
+        id: 'promo_theme_test',
+        orgId: 'devero_spa',
+        title: '2x1 SPA FitUP Lissone',
+        partnerName: 'FitUP Lissone',
+        codePrefix: 'FIT',
+        totalVouchers: 500,
+        validityDays: 365,
+      );
+
+      for (final theme in CouponVisualTheme.values) {
+        // Test businessCard format for each theme
+        final cardDoc = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.businessCard,
+          theme: theme,
+        );
+        expect(cardDoc.isNotEmpty, isTrue, reason: 'Business card for ${theme.name} should generate valid bytes');
+
+        // Test flyerA6 format for each theme
+        final flyerDoc = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.flyerA6,
+          theme: theme,
+        );
+        expect(flyerDoc.isNotEmpty, isTrue, reason: 'Flyer A6 for ${theme.name} should generate valid bytes');
+
+        // Test a4Grid format for each theme
+        final gridDoc = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.a4Grid,
+          theme: theme,
+        );
+        expect(gridDoc.isNotEmpty, isTrue, reason: 'A4 Grid for ${theme.name} should generate valid bytes');
+      }
+    });
   });
 }
