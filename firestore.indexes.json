@@ -189,6 +189,38 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "vouchers",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "promoId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "vouchers",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "promoId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "sequenceNumber",
+                    "order": "ASCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

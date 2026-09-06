@@ -213,6 +213,11 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
           'claimedPhone': claimedVoucher.claimedPhone,
           'paymentStatus': claimedVoucher.paymentStatus.name,
         });
+
+        batch.update(db.collection(Collections.promotions).doc(promo.id), {
+          'claimedCount': FieldValue.increment(1),
+          'updatedAt': Timestamp.now(),
+        });
       } else {
         // Just-in-time sequential voucher creation
         final freshPromoSnap = await db.collection(Collections.promotions).doc(promo.id).get();
@@ -245,15 +250,10 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
 
         batch.update(db.collection(Collections.promotions).doc(freshPromo.id), {
           'currentSequence': nextSeq,
+          'claimedCount': FieldValue.increment(1),
+          'updatedAt': Timestamp.now(),
         });
       }
-
-      // Increment claimed count in promotion
-      final promoRef = db.collection(Collections.promotions).doc(promo.id);
-      batch.update(promoRef, {
-        'claimedCount': FieldValue.increment(1),
-        'updatedAt': Timestamp.now(),
-      });
 
       await batch.commit();
 
