@@ -627,3 +627,277 @@ class Attendee {
     );
   }
 }
+
+// ─── Promotion / Offer Model ────────────────────────────────────────
+
+class PromotionModel {
+  final String id;
+  final String orgId;
+  final String title;
+  final String? description;
+  final String? partnerName;
+  final String codePrefix;
+  final int currentSequence;
+  final int totalVouchers;
+  final int claimedCount;
+  final int redeemedCount;
+  final DateTime expirationDate;
+  final OfferType offerType;
+  final double? discountValue;
+  final double? price;
+  final PromotionPaymentMethod paymentMethod;
+  final String? linkedEventId;
+  final PromotionStatus status;
+  final String? primaryColor;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  PromotionModel({
+    required this.id,
+    required this.orgId,
+    required this.title,
+    this.description,
+    this.partnerName,
+    required this.codePrefix,
+    this.currentSequence = 0,
+    this.totalVouchers = 0,
+    this.claimedCount = 0,
+    this.redeemedCount = 0,
+    required this.expirationDate,
+    this.offerType = OfferType.twoForOne,
+    this.discountValue,
+    this.price,
+    this.paymentMethod = PromotionPaymentMethod.atVenue,
+    this.linkedEventId,
+    this.status = PromotionStatus.active,
+    this.primaryColor,
+    DateTime? createdAt,
+    this.updatedAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  bool get isExpired => DateTime.now().isAfter(expirationDate);
+  bool get isActive => status == PromotionStatus.active && !isExpired;
+  bool get isTwoForOne => offerType == OfferType.twoForOne;
+  int get availableCount => (totalVouchers - claimedCount).clamp(0, totalVouchers);
+  double get redemptionRate => totalVouchers > 0 ? (redeemedCount / totalVouchers) : 0;
+  double get claimRate => totalVouchers > 0 ? (claimedCount / totalVouchers) : 0;
+
+  factory PromotionModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return PromotionModel(
+      id: doc.id,
+      orgId: data['orgId'] ?? '',
+      title: data['title'] ?? '',
+      description: data['description'],
+      partnerName: data['partnerName'],
+      codePrefix: data['codePrefix'] ?? 'PROMO',
+      currentSequence: data['currentSequence'] ?? 0,
+      totalVouchers: data['totalVouchers'] ?? 0,
+      claimedCount: data['claimedCount'] ?? 0,
+      redeemedCount: data['redeemedCount'] ?? 0,
+      expirationDate: (data['expirationDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 30)),
+      offerType: OfferType.values.firstWhere(
+        (t) => t.name == data['offerType'],
+        orElse: () => OfferType.twoForOne,
+      ),
+      discountValue: (data['discountValue'] as num?)?.toDouble(),
+      price: (data['price'] as num?)?.toDouble(),
+      paymentMethod: PromotionPaymentMethod.values.firstWhere(
+        (m) => m.name == data['paymentMethod'],
+        orElse: () => PromotionPaymentMethod.atVenue,
+      ),
+      linkedEventId: data['linkedEventId'],
+      status: PromotionStatus.values.firstWhere(
+        (s) => s.name == data['status'],
+        orElse: () => PromotionStatus.active,
+      ),
+      primaryColor: data['primaryColor'],
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() => {
+    'orgId': orgId,
+    'title': title,
+    'description': description,
+    'partnerName': partnerName,
+    'codePrefix': codePrefix.toUpperCase().trim(),
+    'currentSequence': currentSequence,
+    'totalVouchers': totalVouchers,
+    'claimedCount': claimedCount,
+    'redeemedCount': redeemedCount,
+    'expirationDate': Timestamp.fromDate(expirationDate),
+    'offerType': offerType.name,
+    'discountValue': discountValue,
+    'price': price,
+    'paymentMethod': paymentMethod.name,
+    'linkedEventId': linkedEventId,
+    'status': status.name,
+    'primaryColor': primaryColor,
+    'createdAt': Timestamp.fromDate(createdAt),
+    'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+  };
+
+  PromotionModel copyWith({
+    String? title,
+    String? description,
+    String? partnerName,
+    String? codePrefix,
+    int? currentSequence,
+    int? totalVouchers,
+    int? claimedCount,
+    int? redeemedCount,
+    DateTime? expirationDate,
+    OfferType? offerType,
+    double? discountValue,
+    double? price,
+    PromotionPaymentMethod? paymentMethod,
+    String? linkedEventId,
+    PromotionStatus? status,
+    String? primaryColor,
+    DateTime? updatedAt,
+  }) {
+    return PromotionModel(
+      id: id,
+      orgId: orgId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      partnerName: partnerName ?? this.partnerName,
+      codePrefix: codePrefix ?? this.codePrefix,
+      currentSequence: currentSequence ?? this.currentSequence,
+      totalVouchers: totalVouchers ?? this.totalVouchers,
+      claimedCount: claimedCount ?? this.claimedCount,
+      redeemedCount: redeemedCount ?? this.redeemedCount,
+      expirationDate: expirationDate ?? this.expirationDate,
+      offerType: offerType ?? this.offerType,
+      discountValue: discountValue ?? this.discountValue,
+      price: price ?? this.price,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      linkedEventId: linkedEventId ?? this.linkedEventId,
+      status: status ?? this.status,
+      primaryColor: primaryColor ?? this.primaryColor,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+}
+
+// ─── Voucher Model ──────────────────────────────────────────────────
+
+class VoucherModel {
+  final String id;
+  final String promoId;
+  final String orgId;
+  final String code; // e.g. "FIT-0001"
+  final int sequenceNumber;
+  final VoucherStatus status;
+  final DateTime? claimedAt;
+  final String? claimedFirstName;
+  final String? claimedLastName;
+  final String? claimedEmail;
+  final String? claimedPhone;
+  final DateTime? redeemedAt;
+  final String? redeemedByUserId;
+  final VoucherPaymentStatus paymentStatus;
+  final DateTime createdAt;
+
+  VoucherModel({
+    required this.id,
+    required this.promoId,
+    required this.orgId,
+    required this.code,
+    required this.sequenceNumber,
+    this.status = VoucherStatus.available,
+    this.claimedAt,
+    this.claimedFirstName,
+    this.claimedLastName,
+    this.claimedEmail,
+    this.claimedPhone,
+    this.redeemedAt,
+    this.redeemedByUserId,
+    this.paymentStatus = VoucherPaymentStatus.notRequired,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  String get claimedFullName => '${claimedFirstName ?? ''} ${claimedLastName ?? ''}'.trim();
+  bool get isAvailable => status == VoucherStatus.available;
+  bool get isClaimed => status == VoucherStatus.claimed;
+  bool get isRedeemed => status == VoucherStatus.redeemed;
+  bool get isCancelled => status == VoucherStatus.cancelled;
+
+  factory VoucherModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return VoucherModel(
+      id: doc.id,
+      promoId: data['promoId'] ?? '',
+      orgId: data['orgId'] ?? '',
+      code: data['code'] ?? '',
+      sequenceNumber: data['sequenceNumber'] ?? 0,
+      status: VoucherStatus.values.firstWhere(
+        (s) => s.name == data['status'],
+        orElse: () => VoucherStatus.available,
+      ),
+      claimedAt: (data['claimedAt'] as Timestamp?)?.toDate(),
+      claimedFirstName: data['claimedFirstName'],
+      claimedLastName: data['claimedLastName'],
+      claimedEmail: data['claimedEmail'],
+      claimedPhone: data['claimedPhone'],
+      redeemedAt: (data['redeemedAt'] as Timestamp?)?.toDate(),
+      redeemedByUserId: data['redeemedByUserId'],
+      paymentStatus: VoucherPaymentStatus.values.firstWhere(
+        (p) => p.name == data['paymentStatus'],
+        orElse: () => VoucherPaymentStatus.notRequired,
+      ),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toFirestore() => {
+    'promoId': promoId,
+    'orgId': orgId,
+    'code': code,
+    'sequenceNumber': sequenceNumber,
+    'status': status.name,
+    'claimedAt': claimedAt != null ? Timestamp.fromDate(claimedAt!) : null,
+    'claimedFirstName': claimedFirstName,
+    'claimedLastName': claimedLastName,
+    'claimedEmail': claimedEmail,
+    'claimedPhone': claimedPhone,
+    'redeemedAt': redeemedAt != null ? Timestamp.fromDate(redeemedAt!) : null,
+    'redeemedByUserId': redeemedByUserId,
+    'paymentStatus': paymentStatus.name,
+    'createdAt': Timestamp.fromDate(createdAt),
+  };
+
+  VoucherModel copyWith({
+    VoucherStatus? status,
+    DateTime? claimedAt,
+    String? claimedFirstName,
+    String? claimedLastName,
+    String? claimedEmail,
+    String? claimedPhone,
+    DateTime? redeemedAt,
+    String? redeemedByUserId,
+    VoucherPaymentStatus? paymentStatus,
+  }) {
+    return VoucherModel(
+      id: id,
+      promoId: promoId,
+      orgId: orgId,
+      code: code,
+      sequenceNumber: sequenceNumber,
+      status: status ?? this.status,
+      claimedAt: claimedAt ?? this.claimedAt,
+      claimedFirstName: claimedFirstName ?? this.claimedFirstName,
+      claimedLastName: claimedLastName ?? this.claimedLastName,
+      claimedEmail: claimedEmail ?? this.claimedEmail,
+      claimedPhone: claimedPhone ?? this.claimedPhone,
+      redeemedAt: redeemedAt ?? this.redeemedAt,
+      redeemedByUserId: redeemedByUserId ?? this.redeemedByUserId,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      createdAt: createdAt,
+    );
+  }
+}
+

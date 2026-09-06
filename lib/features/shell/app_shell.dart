@@ -46,6 +46,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   static const _navItems = [
     _NavItem(icon: Icons.dashboard_rounded, labelKey: 'nav_dashboard', path: '/'),
     _NavItem(icon: Icons.event_rounded, labelKey: 'nav_events', path: '/events'),
+    _NavItem(icon: Icons.local_offer_rounded, labelKey: 'nav_promotions', path: '/promotions'),
     _NavItem(icon: Icons.people_rounded, labelKey: 'nav_attendees', path: '/attendees'),
     _NavItem(icon: Icons.qr_code_scanner_rounded, labelKey: 'nav_checkin', path: '/checkin'),
   ];

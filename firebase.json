@@ -109,7 +109,67 @@
                 "destination": "/app.html"
             },
             {
-                "source": "**",
+                "source": "/p/**",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/promotions",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/promotions/**",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/register/**",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/feedback/**",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/events",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/events/**",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/attendees",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/checkin",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/settings",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/team",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/subscription",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/create-org",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/cookies",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/contacts",
+                "destination": "/app.html"
+            },
+            {
+                "source": "/about",
                 "destination": "/app.html"
             }
         ]

@@ -320,3 +320,89 @@ bool canAddAttendee(BuildContext context, SubscriptionPlan plan, int currentAtte
 
   return false;
 }
+
+/// Check promotion campaign limits - returns true if within limits
+bool canCreatePromotion(BuildContext context, SubscriptionPlan plan, int currentPromotionCount) {
+  if (plan.isUnlimitedPromotions) return true;
+  if (currentPromotionCount < plan.maxActivePromotions) return true;
+
+  showDialog(
+    context: context,
+    builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.local_offer_outlined, color: AppColors.warning, size: 32),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Limite offerte raggiunto',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Il piano ${plan.label} permette massimo ${plan.maxActivePromotions} promozione/i attiva/e.\nPassa a un piano superiore per crearne di più.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Chiudi'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      context.go('/subscription');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Vedi Piani', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  return false;
+}
+
+/// Check if online payment is allowed for promotions
+bool canUseOnlinePaymentForPromotion(BuildContext context, SubscriptionPlan plan) =>
+    checkFeatureAccess(
+      context: context,
+      currentPlan: plan,
+      requiredPlan: SubscriptionPlan.pro,
+      featureName: 'Incasso online per le promozioni',
+    );
+

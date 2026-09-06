@@ -1,4 +1,5 @@
 import 'dart:html' as html;
+// ignore: uri_does_not_exist
 import 'dart:js_util' as js_util;
 
 /// Web implementation: reads consent state from localStorage.

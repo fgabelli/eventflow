@@ -79,5 +79,26 @@ service cloud.firestore {
       allow update: if isAuth() && isOrgStaff(resource.data.orgId);
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
     }
+
+    // ─── Promotions & Offers ────────────────────────────────────
+    match /promotions/{promoId} {
+      // Public read for customer voucher claim page
+      allow read: if true;
+      allow create: if isAuth() && isOrgAdmin(request.resource.data.orgId);
+      allow update: if (isAuth() && isOrgStaff(resource.data.orgId))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedCount', 'updatedAt']));
+      allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
+    }
+
+    // ─── Vouchers ───────────────────────────────────────────────
+    match /vouchers/{voucherId} {
+      // Public read for customer voucher claim page
+      allow read: if true;
+      allow create: if isAuth() && isOrgStaff(request.resource.data.orgId);
+      // Staff update (redemption/management) OR customer self-claim
+      allow update: if (isAuth() && isOrgStaff(resource.data.orgId))
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedAt', 'claimedFirstName', 'claimedLastName', 'claimedEmail', 'claimedPhone', 'paymentStatus']));
+      allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
+    }
   }
 }

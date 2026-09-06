@@ -13,6 +13,9 @@ import 'package:eventflow/features/settings/presentation/screens/settings_screen
 import 'package:eventflow/features/settings/presentation/screens/team_screen.dart';
 import 'package:eventflow/features/registration/presentation/screens/public_registration_screen.dart';
 import 'package:eventflow/features/subscription/presentation/screens/subscription_screen.dart';
+import 'package:eventflow/features/promotions/presentation/screens/promotions_screen.dart';
+import 'package:eventflow/features/promotions/presentation/screens/promotion_detail_screen.dart';
+import 'package:eventflow/features/promotions/presentation/screens/public_voucher_claim_screen.dart';
 
 import 'package:eventflow/features/legal/presentation/screens/privacy_screen.dart';
 import 'package:eventflow/features/legal/presentation/screens/terms_screen.dart';
@@ -45,6 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Public routes: skip ALL auth checks
       if (path.startsWith('/register') ||
+          path.startsWith('/p/') ||
           path == '/privacy' ||
           path == '/terms' ||
           path == '/cookies' ||
@@ -82,6 +86,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       // ─── Public routes (no auth required) ──────────────────
+      GoRoute(
+        path: '/p/:code',
+        builder: (_, state) => PublicVoucherClaimScreen(
+          code: state.pathParameters['code']!,
+        ),
+      ),
       GoRoute(
         path: '/register/:eventId',
         builder: (_, state) => PublicRegistrationScreen(
@@ -141,6 +151,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/events/:id',
             builder: (_, state) => EventDetailScreen(
               eventId: state.pathParameters['id']!,
+            ),
+          ),
+          GoRoute(
+            path: '/promotions',
+            builder: (_, state) => const PromotionsScreen(),
+          ),
+          GoRoute(
+            path: '/promotions/:id',
+            builder: (_, state) => PromotionDetailScreen(
+              promotionId: state.pathParameters['id']!,
             ),
           ),
           GoRoute(
