@@ -316,13 +316,34 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                   onPressed: _isGenerating ? null : () => Navigator.of(context).pop(),
                   child: const Text('Annulla'),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: _isGenerating ? null : () async {
+                    setState(() => _isGenerating = true);
+                    try {
+                      await PromotionPdfService.downloadQrCode(
+                        promotion: widget.promo,
+                      );
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Errore: $e')),
+                        );
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isGenerating = false);
+                    }
+                  },
+                  icon: const Icon(Icons.qr_code_rounded, size: 18),
+                  label: const Text('Scarica QR'),
+                ),
+                const SizedBox(width: 10),
                 ElevatedButton.icon(
                   onPressed: _isGenerating ? null : _startPrint,
                   icon: _isGenerating
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.picture_as_pdf_rounded, size: 18),
-                  label: Text(_isGenerating ? 'Generazione...' : 'Scarica / Stampa PDF'),
+                  label: Text(_isGenerating ? 'Generazione...' : 'Scarica PDF'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

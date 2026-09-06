@@ -1587,4 +1587,75 @@ class PromotionPdfService {
       name: 'Coupon_${promotion.codePrefix}_${format.name}_${theme.name}.pdf',
     );
   }
+
+  /// Downloads a clean page with just the QR code, suitable for use in external design tools.
+  static Future<void> downloadQrCode({
+    required PromotionModel promotion,
+    String? baseUrl,
+  }) async {
+    final pdf = pw.Document();
+    final fontRegular = await PdfGoogleFonts.interRegular();
+    final fontBold = await PdfGoogleFonts.interBold();
+
+    final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
+    final claimUrl = '$origin/p/c/${promotion.id}';
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(40),
+        build: (context) {
+          return pw.Center(
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.Text(
+                  promotion.title,
+                  style: pw.TextStyle(font: fontBold, fontSize: 18),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.SizedBox(height: 8),
+                if (promotion.codePrefix.isNotEmpty)
+                  pw.Text(
+                    'Codice: ${promotion.codePrefix}',
+                    style: pw.TextStyle(font: fontRegular, fontSize: 12, color: PdfColors.grey700),
+                  ),
+                pw.SizedBox(height: 30),
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(16),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.BarcodeWidget(
+                    barcode: pw.Barcode.qrCode(),
+                    data: claimUrl,
+                    width: 300,
+                    height: 300,
+                    color: PdfColors.black,
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Text(
+                  claimUrl,
+                  style: pw.TextStyle(font: fontRegular, fontSize: 10, color: PdfColors.grey600),
+                ),
+                pw.SizedBox(height: 6),
+                pw.Text(
+                  'Inquadra il QR Code con la fotocamera per attivare il pass',
+                  style: pw.TextStyle(font: fontRegular, fontSize: 9, color: PdfColors.grey500),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    final pdfBytes = await pdf.save();
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat _) async => pdfBytes,
+      name: 'QRCode_${promotion.codePrefix}.pdf',
+    );
+  }
 }
