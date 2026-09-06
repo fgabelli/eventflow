@@ -52,6 +52,10 @@ class _ThemePalette {
   final PdfColor badgeText;
   final PdfColor codeBg;
   final PdfColor codeText;
+  // Stepped tonal surfaces for depth without gradients
+  final PdfColor surfaceLevel0; // Deepest canvas
+  final PdfColor surfaceLevel1; // Card body / sections
+  final PdfColor surfaceLevel2; // Recessed panels (QR area, code pill bg)
 
   const _ThemePalette({
     required this.primaryBg,
@@ -66,58 +70,71 @@ class _ThemePalette {
     required this.badgeText,
     required this.codeBg,
     required this.codeText,
+    required this.surfaceLevel0,
+    required this.surfaceLevel1,
+    required this.surfaceLevel2,
   });
 
   factory _ThemePalette.fromTheme(CouponVisualTheme theme) {
     switch (theme) {
       case CouponVisualTheme.luxurySpa:
         return _ThemePalette(
-          primaryBg: PdfColor.fromHex('0F172A'),     // Dark slate navy
+          primaryBg: PdfColor.fromHex('0F172A'),
           qrSectionBg: PdfColors.white,
           textPrimary: PdfColors.white,
-          textSecondary: PdfColor.fromHex('94A3B8'), // Slate-400
-          accentColor: PdfColor.fromHex('D97706'),   // Warm Amber/Gold
+          textSecondary: PdfColor.fromHex('94A3B8'),
+          accentColor: PdfColor.fromHex('D97706'),
           accentText: PdfColors.white,
-          borderColor: PdfColor.fromHex('334155'),   // Slate-700
-          dividerColor: PdfColor.fromHex('CBD5E1'),  // Slate-300
-          badgeBg: PdfColor.fromHex('1E293B'),       // Slate-800
-          badgeText: PdfColor.fromHex('FCD34D'),     // Amber-300
-          codeBg: PdfColor.fromHex('D97706'),        // Amber-600 gold
+          borderColor: PdfColor.fromHex('334155'),
+          dividerColor: PdfColor.fromHex('475569'),
+          badgeBg: PdfColor.fromHex('1E293B'),
+          badgeText: PdfColor.fromHex('FCD34D'),
+          codeBg: PdfColor.fromHex('D97706'),
           codeText: PdfColors.white,
+          surfaceLevel0: PdfColor.fromHex('0B1120'),
+          surfaceLevel1: PdfColor.fromHex('1E293B'),
+          surfaceLevel2: PdfColor.fromHex('0F172A'),
         );
       case CouponVisualTheme.sportDynamic:
         return _ThemePalette(
-          primaryBg: PdfColor.fromHex('09090B'),     // Graphite black
+          primaryBg: PdfColor.fromHex('09090B'),
           qrSectionBg: PdfColors.white,
           textPrimary: PdfColors.white,
-          textSecondary: PdfColor.fromHex('A1A1AA'), // Cool grey
-          accentColor: PdfColor.fromHex('84CC16'),   // Lime Green
-          accentText: PdfColor.fromHex('09090B'),    // Dark on lime
-          borderColor: PdfColor.fromHex('27272A'),   // Dark grey
-          dividerColor: PdfColor.fromHex('E4E4E7'),
+          textSecondary: PdfColor.fromHex('A1A1AA'),
+          accentColor: PdfColor.fromHex('84CC16'),
+          accentText: PdfColor.fromHex('09090B'),
+          borderColor: PdfColor.fromHex('27272A'),
+          dividerColor: PdfColor.fromHex('3F3F46'),
           badgeBg: PdfColor.fromHex('18181B'),
-          badgeText: PdfColor.fromHex('A3E635'),     // Bright lime
-          codeBg: PdfColor.fromHex('84CC16'),        // Lime
+          badgeText: PdfColor.fromHex('A3E635'),
+          codeBg: PdfColor.fromHex('84CC16'),
           codeText: PdfColor.fromHex('09090B'),
+          surfaceLevel0: PdfColor.fromHex('09090B'),
+          surfaceLevel1: PdfColor.fromHex('18181B'),
+          surfaceLevel2: PdfColor.fromHex('27272A'),
         );
       case CouponVisualTheme.modernMinimal:
         return _ThemePalette(
-          primaryBg: PdfColor.fromHex('F8FAFC'),     // Clean slate-50
+          primaryBg: PdfColor.fromHex('F8FAFC'),
           qrSectionBg: PdfColors.white,
-          textPrimary: PdfColor.fromHex('0F172A'),   // Dark slate-900
-          textSecondary: PdfColor.fromHex('64748B'), // Slate-500
-          accentColor: PdfColor.fromHex('4338CA'),   // Indigo-700
+          textPrimary: PdfColor.fromHex('0F172A'),
+          textSecondary: PdfColor.fromHex('64748B'),
+          accentColor: PdfColor.fromHex('4338CA'),
           accentText: PdfColors.white,
-          borderColor: PdfColor.fromHex('CBD5E1'),   // Slate-300
-          dividerColor: PdfColor.fromHex('E2E8F0'),
-          badgeBg: PdfColor.fromHex('EEF2FF'),       // Indigo-50
-          badgeText: PdfColor.fromHex('4338CA'),     // Indigo-700
-          codeBg: PdfColor.fromHex('4338CA'),        // Indigo-700
+          borderColor: PdfColor.fromHex('E2E8F0'),
+          dividerColor: PdfColor.fromHex('CBD5E1'),
+          badgeBg: PdfColor.fromHex('EEF2FF'),
+          badgeText: PdfColor.fromHex('4338CA'),
+          codeBg: PdfColor.fromHex('4338CA'),
           codeText: PdfColors.white,
+          surfaceLevel0: PdfColors.white,
+          surfaceLevel1: PdfColor.fromHex('F8FAFC'),
+          surfaceLevel2: PdfColor.fromHex('EEF2FF'),
         );
     }
   }
 }
+
 
 class PromotionPdfService {
   /// Resolves an image from base64 data URL or HTTP URL
@@ -304,7 +321,7 @@ class PromotionPdfService {
   }
 
   /// 1. Locandina da Banco A4 (210 x 297 mm)
-  /// Ideale per leggio, espositore in plexiglass da banco reception o parete partner.
+  /// Double-hairline banknote frame, hero photo, large QR, editorial typography.
   static Future<Uint8List> generateDeskStandPoster({
     required PromotionModel promotion,
     required String orgName,
@@ -329,328 +346,311 @@ class PromotionPdfService {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme != CouponVisualTheme.modernMinimal;
 
-    pw.ImageProvider? flyerBgImage;
+    pw.ImageProvider? heroBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
+      heroBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
     } else if (theme == CouponVisualTheme.sportDynamic) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
+      heroBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
     }
 
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(20),
+        margin: const pw.EdgeInsets.all(18),
         build: (context) {
+          // Double-hairline banknote frame
           return pw.Container(
+            padding: const pw.EdgeInsets.all(3),
             decoration: pw.BoxDecoration(
-              color: isDark ? palette.primaryBg : PdfColors.white,
-              borderRadius: pw.BorderRadius.circular(16),
-              border: pw.Border.all(color: palette.accentColor, width: 2),
+              border: pw.Border.all(color: palette.accentColor, width: 0.8),
+              borderRadius: pw.BorderRadius.circular(8),
             ),
-            child: pw.Column(
-              children: [
-                // 1. TOP HERO: Photographic Visual Banner (AI generated photo!)
-                if (flyerBgImage != null)
-                  pw.Container(
-                    height: 250,
-                    width: double.infinity,
-                    child: pw.ClipRRect(
-                      horizontalRadius: 14,
-                      verticalRadius: 14,
-                      child: pw.Stack(
-                        children: [
-                          pw.Positioned.fill(
-                            child: pw.Image(flyerBgImage, fit: pw.BoxFit.cover),
-                          ),
-                          // Floating translucent exclusivity badge
-                          pw.Positioned(
-                            top: 14,
-                            right: 14,
-                            child: pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                              decoration: pw.BoxDecoration(
-                                color: PdfColor(0.04, 0.05, 0.08, 0.75),
-                                borderRadius: pw.BorderRadius.circular(20),
-                                border: pw.Border.all(color: palette.accentColor, width: 1),
+            child: pw.Container(
+              decoration: pw.BoxDecoration(
+                color: palette.surfaceLevel0,
+                border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                borderRadius: pw.BorderRadius.circular(6),
+              ),
+              child: pw.Column(
+                children: [
+                  // 1. HERO PHOTO BANNER (top ~35%)
+                  pw.Expanded(
+                    flex: 35,
+                    child: pw.Container(
+                      width: double.infinity,
+                      child: pw.ClipRRect(
+                        horizontalRadius: 5.5,
+                        verticalRadius: 5.5,
+                        child: pw.Stack(
+                          children: [
+                            // Background: photo or solid surface
+                            pw.Positioned.fill(
+                              child: pw.Container(color: palette.surfaceLevel1),
+                            ),
+                            if (heroBgImage != null)
+                              pw.Positioned.fill(
+                                child: pw.Image(heroBgImage, fit: pw.BoxFit.cover),
                               ),
-                              child: pw.Text(
-                                'PROMOZIONE ESCLUSIVA',
-                                style: pw.TextStyle(
-                                  font: fontBold,
-                                  fontSize: 8.5,
-                                  color: palette.badgeText,
-                                  letterSpacing: 1.2,
+                            // Floating badge (top-right)
+                            pw.Positioned(
+                              top: 16,
+                              right: 16,
+                              child: pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                decoration: pw.BoxDecoration(
+                                  color: palette.surfaceLevel0,
+                                  borderRadius: pw.BorderRadius.circular(4),
+                                  border: pw.Border.all(color: palette.accentColor, width: 0.5),
+                                ),
+                                child: pw.Text(
+                                  promotion.isPartnership ? 'CONVENZIONE PARTNER' : 'PROMOZIONE ESCLUSIVA',
+                                  style: pw.TextStyle(
+                                    font: fontBold,
+                                    fontSize: 8,
+                                    color: palette.badgeText,
+                                    letterSpacing: 2.0,
+                                  ),
                                 ),
                               ),
                             ),
+                            // Co-branding lockup (bottom-left)
+                            pw.Positioned(
+                              bottom: 14,
+                              left: 16,
+                              child: pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: pw.BoxDecoration(
+                                  color: palette.surfaceLevel0,
+                                  borderRadius: pw.BorderRadius.circular(4),
+                                ),
+                                child: _buildHeaderLogos(
+                                  orgLogoImage: orgLogoImage,
+                                  partnerLogoImage: partnerLogoImage,
+                                  orgName: orgName,
+                                  promotion: promotion,
+                                  fontBold: fontBold,
+                                  fontSemiBold: fontSemiBold,
+                                  logoHeight: 22,
+                                  overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                                  textLightColor: isDark ? PdfColors.white : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 2. MAIN PROPOSITION (middle ~30%)
+                  pw.Expanded(
+                    flex: 30,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      child: pw.Column(
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        children: [
+                          // Category pill
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel1,
+                              borderRadius: pw.BorderRadius.circular(4),
+                              border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                            ),
+                            child: pw.Text(
+                              promotion.offerType.label.toUpperCase(),
+                              style: pw.TextStyle(
+                                font: fontBold,
+                                fontSize: 10,
+                                color: palette.badgeText,
+                                letterSpacing: 2.0,
+                              ),
+                            ),
+                          ),
+                          pw.SizedBox(height: 14),
+                          // Headline
+                          pw.Text(
+                            promotion.title,
+                            style: pw.TextStyle(
+                              font: fontBold,
+                              fontSize: 28,
+                              color: palette.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                          if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
+                            pw.SizedBox(height: 10),
+                            pw.Container(
+                              constraints: const pw.BoxConstraints(maxWidth: 420),
+                              child: pw.Text(
+                                promotion.description!,
+                                style: pw.TextStyle(
+                                  font: fontRegular,
+                                  fontSize: 11,
+                                  color: palette.textSecondary,
+                                  lineSpacing: 2.0,
+                                ),
+                                textAlign: pw.TextAlign.center,
+                                maxLines: 3,
+                              ),
+                            ),
+                          ],
+                          if (promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
+                            pw.SizedBox(height: 8),
+                            pw.Text(
+                              'Riservata ai soci ${promotion.partnerName!}',
+                              style: pw.TextStyle(
+                                font: fontSemiBold,
+                                fontSize: 10,
+                                color: palette.accentColor,
+                                letterSpacing: 0.5,
+                              ),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Hairline divider
+                  pw.Container(
+                    margin: const pw.EdgeInsets.symmetric(horizontal: 40),
+                    height: 0.5,
+                    color: palette.borderColor,
+                  ),
+
+                  // 3. SCAN HUB (bottom ~35%)
+                  pw.Expanded(
+                    flex: 35,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                      child: pw.Column(
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        children: [
+                          // QR + Instructions row
+                          pw.Container(
+                            padding: const pw.EdgeInsets.all(16),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel1,
+                              borderRadius: pw.BorderRadius.circular(8),
+                            ),
+                            child: pw.Row(
+                              crossAxisAlignment: pw.CrossAxisAlignment.center,
+                              children: [
+                                // QR on white ground
+                                pw.Container(
+                                  padding: const pw.EdgeInsets.all(10),
+                                  decoration: pw.BoxDecoration(
+                                    color: PdfColors.white,
+                                    borderRadius: pw.BorderRadius.circular(6),
+                                    border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                                  ),
+                                  child: pw.BarcodeWidget(
+                                    barcode: pw.Barcode.qrCode(),
+                                    data: claimUrl,
+                                    width: 140,
+                                    height: 140,
+                                    color: PdfColors.black,
+                                  ),
+                                ),
+                                pw.SizedBox(width: 24),
+                                // Instructions
+                                pw.Expanded(
+                                  child: pw.Column(
+                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                    mainAxisSize: pw.MainAxisSize.min,
+                                    children: [
+                                      pw.Text(
+                                        'ATTIVA IL TUO PASS',
+                                        style: pw.TextStyle(
+                                          font: fontBold,
+                                          fontSize: 16,
+                                          color: palette.accentColor,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                      pw.SizedBox(height: 8),
+                                      pw.Text(
+                                        'Inquadra il QR code con la fotocamera dello smartphone per registrarti e sbloccare la convenzione.',
+                                        style: pw.TextStyle(
+                                          font: fontRegular,
+                                          fontSize: 10,
+                                          color: palette.textSecondary,
+                                          lineSpacing: 1.5,
+                                        ),
+                                      ),
+                                      pw.SizedBox(height: 12),
+                                      // Validity info
+                                      pw.Container(
+                                        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                        decoration: pw.BoxDecoration(
+                                          color: palette.surfaceLevel2,
+                                          borderRadius: pw.BorderRadius.circular(4),
+                                        ),
+                                        child: pw.Text(
+                                          expDateStr != null
+                                              ? 'Attiva entro il $expDateStr  •  Valido ${promotion.validityDays} giorni'
+                                              : 'Validità: ${promotion.validityDays} giorni dall\'attivazione',
+                                          style: pw.TextStyle(
+                                            font: fontSemiBold,
+                                            fontSize: 9,
+                                            color: palette.badgeText,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          pw.SizedBox(height: 12),
+
+                          // 3-step inline footer
+                          pw.Text(
+                            '1. Inquadra il QR   •   2. Inserisci nome ed email   •   3. Mostra il pass alla reception',
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 8,
+                              color: palette.textSecondary,
+                              letterSpacing: 0.3,
+                            ),
+                            textAlign: pw.TextAlign.center,
                           ),
                         ],
                       ),
                     ),
-                  )
-                else
-                  // Minimal / Clean fallback header banner
+                  ),
+
+                  // Bottom brand bar
                   pw.Container(
                     width: double.infinity,
-                    height: 90,
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                     decoration: pw.BoxDecoration(
-                      color: palette.primaryBg,
-                      borderRadius: const pw.BorderRadius.vertical(top: pw.Radius.circular(14)),
+                      color: palette.surfaceLevel1,
+                      borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(5.5)),
                     ),
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: pw.Center(
-                      child: pw.Text(
-                        'PROMOZIONE ESCLUSIVA',
-                        style: pw.TextStyle(
-                          font: fontBold,
-                          fontSize: 12,
-                          color: palette.badgeText,
-                          letterSpacing: 2.0,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // 2. CO-BRANDING HEADER BAR (Devero SPA | FitUP Lissone - NO "x"!)
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: pw.BoxDecoration(
-                    color: isDark ? PdfColor.fromHex('0B1120') : PdfColor.fromHex('F8FAFC'),
-                    border: pw.Border(
-                      bottom: pw.BorderSide(color: palette.borderColor, width: 1),
-                    ),
-                  ),
-                  child: pw.Column(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: [
-                      _buildHeaderLogos(
-                        orgLogoImage: orgLogoImage,
-                        partnerLogoImage: partnerLogoImage,
-                        orgName: orgName,
-                        promotion: promotion,
-                        fontBold: fontBold,
-                        fontSemiBold: fontSemiBold,
-                        logoHeight: 32,
-                        alignment: pw.MainAxisAlignment.center,
-                        overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                        textLightColor: isDark ? PdfColors.white : null,
-                      ),
-                      pw.SizedBox(height: 6),
-                      pw.Text(
-                        promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty
-                            ? 'CONVENZIONE ESCLUSIVA RISERVATA AI SOCI ${promotion.partnerName!.toUpperCase()}'
-                            : 'PROMOZIONE UFFICIALE RISERVATA AI CLIENTI',
-                        style: pw.TextStyle(
-                          font: fontBold,
-                          fontSize: 9.5,
-                          color: palette.badgeText,
-                          letterSpacing: 1.2,
-                        ),
-                        textAlign: pw.TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 3. MAIN OFFER CONTENT & QR SECTION
-                pw.Expanded(
-                  child: pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    child: pw.Column(
+                    child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        // Offer Headline and Description
-                        pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-                              decoration: pw.BoxDecoration(
-                                color: palette.badgeBg,
-                                borderRadius: pw.BorderRadius.circular(20),
-                                border: pw.Border.all(color: palette.accentColor, width: 1),
-                              ),
-                              child: pw.Text(
-                                promotion.offerType.label.toUpperCase(),
-                                style: pw.TextStyle(
-                                  font: fontBold,
-                                  fontSize: 11,
-                                  color: palette.badgeText,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                            ),
-                            pw.SizedBox(height: 10),
-                            pw.Text(
-                              promotion.title,
-                              style: pw.TextStyle(
-                                font: fontBold,
-                                fontSize: 22,
-                                color: isDark ? PdfColors.white : palette.primaryBg,
-                              ),
-                              textAlign: pw.TextAlign.center,
-                            ),
-                            if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
-                              pw.SizedBox(height: 8),
-                              pw.Container(
-                                constraints: const pw.BoxConstraints(maxWidth: 460),
-                                child: pw.Text(
-                                  promotion.description!,
-                                  style: pw.TextStyle(
-                                    font: fontRegular,
-                                    fontSize: 10.5,
-                                    color: isDark ? PdfColor.fromHex('CBD5E1') : PdfColor.fromHex('475569'),
-                                  ),
-                                  textAlign: pw.TextAlign.center,
-                                  maxLines: 3,
-                                ),
-                              ),
-                            ],
-                          ],
+                        pw.Text(
+                          'Eventflow  •  Piattaforma Gestione Pass & Convenzioni',
+                          style: pw.TextStyle(font: fontRegular, fontSize: 7, color: palette.textSecondary),
                         ),
-
-                        // Large Actionable QR Placard
-                        pw.Container(
-                          width: double.infinity,
-                          padding: const pw.EdgeInsets.all(16),
-                          decoration: pw.BoxDecoration(
-                            color: isDark ? PdfColor.fromHex('1E293B') : PdfColor.fromHex('F8FAFC'),
-                            borderRadius: pw.BorderRadius.circular(14),
-                            border: pw.Border.all(color: palette.accentColor, width: 1.5),
-                          ),
-                          child: pw.Row(
-                            crossAxisAlignment: pw.CrossAxisAlignment.center,
-                            children: [
-                              // White QR square with Accent Border
-                              pw.Container(
-                                padding: const pw.EdgeInsets.all(8),
-                                decoration: pw.BoxDecoration(
-                                  color: PdfColors.white,
-                                  borderRadius: pw.BorderRadius.circular(10),
-                                  border: pw.Border.all(color: palette.accentColor, width: 1.2),
-                                ),
-                                child: pw.Column(
-                                  mainAxisSize: pw.MainAxisSize.min,
-                                  children: [
-                                    pw.BarcodeWidget(
-                                      barcode: pw.Barcode.qrCode(),
-                                      data: claimUrl,
-                                      width: 90,
-                                      height: 90,
-                                      color: PdfColors.black,
-                                    ),
-                                    pw.SizedBox(height: 4),
-                                    pw.Text(
-                                      'INQUADRA CON LO SMARTPHONE',
-                                      style: pw.TextStyle(
-                                        font: fontBold,
-                                        fontSize: 6,
-                                        color: PdfColors.grey800,
-                                        letterSpacing: 0.4,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              pw.SizedBox(width: 18),
-                              // Scan instructions & validity
-                              pw.Expanded(
-                                child: pw.Column(
-                                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                  mainAxisSize: pw.MainAxisSize.min,
-                                  children: [
-                                    pw.Text(
-                                      'ATTIVA IL TUO PASS DIGITALE',
-                                      style: pw.TextStyle(
-                                        font: fontBold,
-                                        fontSize: 13,
-                                        color: isDark ? palette.accentColor : palette.primaryBg,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    pw.SizedBox(height: 5),
-                                    pw.Text(
-                                      'Punta la fotocamera del tuo smartphone sul codice QR per registrarti in pochi secondi e sbloccare la convenzione.',
-                                      style: pw.TextStyle(
-                                        font: fontRegular,
-                                        fontSize: 9.5,
-                                        color: isDark ? PdfColor.fromHex('CBD5E1') : PdfColor.fromHex('334155'),
-                                      ),
-                                    ),
-                                    pw.SizedBox(height: 10),
-                                    pw.Container(
-                                      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: pw.BoxDecoration(
-                                        color: palette.badgeBg,
-                                        borderRadius: pw.BorderRadius.circular(6),
-                                        border: pw.Border.all(color: palette.borderColor, width: 0.8),
-                                      ),
-                                      child: pw.Text(
-                                        expDateStr != null
-                                            ? 'Attiva entro il $expDateStr • Valido ${promotion.validityDays} giorni'
-                                            : 'Validità: ${promotion.validityDays} giorni dall\'attivazione',
-                                        style: pw.TextStyle(
-                                          font: fontSemiBold,
-                                          fontSize: 8.5,
-                                          color: palette.badgeText,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        // 4. FOOTER: 3 STEPS
-                        pw.Container(
-                          width: double.infinity,
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: pw.BoxDecoration(
-                            color: isDark ? PdfColor.fromHex('0B1120') : PdfColor.fromHex('F1F5F9'),
-                            borderRadius: pw.BorderRadius.circular(10),
-                            border: pw.Border.all(color: palette.borderColor, width: 0.8),
-                          ),
-                          child: pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildStepItem('1. INQUADRA', 'Apri la fotocamera dello smartphone', fontBold, fontRegular, palette, isDark: isDark),
-                              _buildStepItem('2. REGISTRATI', 'Inserisci nome e email in 10 secondi', fontBold, fontRegular, palette, isDark: isDark),
-                              _buildStepItem('3. CHECK-IN', 'Mostra il pass digitale alla reception', fontBold, fontRegular, palette, isDark: isDark),
-                            ],
-                          ),
+                        pw.Text(
+                          'eventflow.it',
+                          style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.accentColor),
                         ),
                       ],
                     ),
                   ),
-                ),
-
-                // Bottom Brand Bar
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: pw.BoxDecoration(
-                    color: isDark ? PdfColor.fromHex('060913') : PdfColor.fromHex('E2E8F0'),
-                    borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(14)),
-                  ),
-                  child: pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Text(
-                        'Eventflow • Piattaforma Gestione Pass & Convenzioni',
-                        style: pw.TextStyle(font: fontRegular, fontSize: 7, color: isDark ? PdfColor.fromHex('94A3B8') : PdfColor.fromHex('64748B')),
-                      ),
-                      pw.Text(
-                        'eventflow.it',
-                        style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.accentColor),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -659,33 +659,8 @@ class PromotionPdfService {
 
     return pdf.save();
   }
-
-  static pw.Widget _buildStepItem(
-    String title,
-    String desc,
-    pw.Font fontBold,
-    pw.Font fontRegular,
-    _ThemePalette palette, {
-    bool isDark = false,
-  }) {
-    return pw.Container(
-      width: 140,
-      child: pw.Column(
-        children: [
-          pw.Text(title, style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: isDark ? PdfColors.white : palette.primaryBg)),
-          pw.SizedBox(height: 2),
-          pw.Text(
-            desc,
-            style: pw.TextStyle(font: fontRegular, fontSize: 7, color: isDark ? PdfColor.fromHex('CBD5E1') : PdfColors.grey600),
-            textAlign: pw.TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Reusable Split-Card Widget with ticket notch and high-contrast QR section.
-  /// Used for standard business card (85x55mm) and for A4 grid sheets.
+  /// Reusable Split-Card Widget: brand spine + ticket notch + clean QR stub.
+  /// Used for standard business card (85x55mm). Min font: 6.5pt.
   static pw.Widget _buildSplitBusinessCard({
     required PromotionModel promotion,
     required String orgName,
@@ -703,39 +678,48 @@ class PromotionPdfService {
   }) {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme != CouponVisualTheme.modernMinimal;
+    // Page background for ticket notch cutouts
+    final pageBg = isGridItem ? PdfColors.white : (isDark ? palette.surfaceLevel0 : PdfColors.white);
 
     return pw.Container(
       decoration: pw.BoxDecoration(
-        color: palette.primaryBg,
+        color: palette.surfaceLevel0,
         border: isGridItem
             ? pw.Border.all(color: PdfColors.grey400, width: 0.5, style: pw.BorderStyle.dashed)
             : null,
       ),
       child: pw.Stack(
         children: [
-          // 1. Full-bleed background photo as subtle texture
+          // Subtle background texture
           if (ticketBgImage != null)
             pw.Positioned.fill(
               child: pw.Opacity(
-                opacity: isDark ? 0.20 : 0.12,
+                opacity: isDark ? 0.15 : 0.08,
                 child: pw.Image(ticketBgImage, fit: pw.BoxFit.cover),
               ),
             ),
 
-          // 3. Crisp Card Content Layout
+          // Main content with brand spine
           pw.Positioned.fill(
             child: pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                // Left 63%: Partner branding & Offer info
+                // Brand spine (accent color bar on left edge)
+                pw.Container(
+                  width: 3,
+                  color: palette.accentColor,
+                ),
+
+                // Left body (62%): branding + offer
                 pw.Expanded(
-                  flex: 63,
+                  flex: 62,
                   child: pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                    padding: const pw.EdgeInsets.fromLTRB(7, 5, 4, 5),
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
+                        // Header: logo + partner
                         _buildHeaderLogos(
                           orgLogoImage: orgLogoImage,
                           partnerLogoImage: partnerLogoImage,
@@ -743,30 +727,22 @@ class PromotionPdfService {
                           promotion: promotion,
                           fontBold: fontBold,
                           fontSemiBold: fontSemiBold,
-                          logoHeight: 14,
+                          logoHeight: 12,
                           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                           textLightColor: isDark ? PdfColors.white : null,
                         ),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                          decoration: pw.BoxDecoration(
-                            color: palette.badgeBg,
-                            borderRadius: pw.BorderRadius.circular(2),
-                            border: pw.Border.all(color: palette.accentColor, width: 0.5),
-                          ),
-                          child: pw.Text(
-                            promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty
-                                ? 'CONVENZIONE ${promotion.partnerName!.toUpperCase()}'
-                                : promotion.offerType.label.toUpperCase(),
-                            style: pw.TextStyle(font: fontBold, fontSize: 5.5, color: palette.badgeText, letterSpacing: 0.3),
-                            maxLines: 1,
-                          ),
-                        ),
+                        // Offer headline
                         pw.Text(
                           promotion.title,
-                          style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: isDark ? PdfColors.white : palette.textPrimary),
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 11,
+                            color: palette.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
                           maxLines: 2,
                         ),
+                        // Footer: code + validity
                         pw.Row(
                           children: [
                             pw.Container(
@@ -776,14 +752,28 @@ class PromotionPdfService {
                                 borderRadius: pw.BorderRadius.circular(2),
                               ),
                               child: pw.Text(
-                                'CODICE: ${promotion.codePrefix}',
-                                style: pw.TextStyle(font: fontBold, fontSize: 6.5, color: palette.codeText, letterSpacing: 0.5),
+                                'COD: ${promotion.codePrefix}',
+                                style: pw.TextStyle(
+                                  font: fontBold,
+                                  fontSize: 7,
+                                  color: palette.codeText,
+                                  letterSpacing: 1.2,
+                                ),
                               ),
                             ),
                             pw.SizedBox(width: 4),
-                            pw.Text(
-                              'Valido ${promotion.validityDays} gg',
-                              style: pw.TextStyle(font: fontRegular, fontSize: 5, color: isDark ? PdfColor.fromHex('CBD5E1') : palette.textSecondary),
+                            pw.Expanded(
+                              child: pw.Text(
+                                expDateStr != null
+                                    ? 'Scad. $expDateStr'
+                                    : '${promotion.validityDays} gg',
+                                style: pw.TextStyle(
+                                  font: fontRegular,
+                                  fontSize: 6.5,
+                                  color: palette.textSecondary,
+                                ),
+                                maxLines: 1,
+                              ),
                             ),
                           ],
                         ),
@@ -792,67 +782,53 @@ class PromotionPdfService {
                   ),
                 ),
 
-
-                // Right 37%: Dedicated QR Stub (100% Centered!)
+                // Right stub (38%): QR area
                 pw.Expanded(
-                  flex: 37,
+                  flex: 38,
                   child: pw.Container(
-                    color: isDark ? PdfColor(0.04, 0.05, 0.08, 0.55) : PdfColors.white,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                    color: palette.surfaceLevel1,
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
                     child: pw.Column(
                       mainAxisAlignment: pw.MainAxisAlignment.center,
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         pw.Text(
-                          'ATTIVA IL PASS',
+                          'INQUADRA IL QR',
                           style: pw.TextStyle(
                             font: fontBold,
-                            fontSize: 5,
-                            color: isDark ? palette.accentColor : palette.primaryBg,
-                            letterSpacing: 0.4,
+                            fontSize: 6.5,
+                            color: palette.accentColor,
+                            letterSpacing: 1.0,
                           ),
                           textAlign: pw.TextAlign.center,
                         ),
-                        pw.SizedBox(height: 2.5),
-                        // Clean White Square with Theme Border
+                        pw.SizedBox(height: 3),
+                        // QR on white ground with quiet zone
                         pw.Container(
-                          padding: const pw.EdgeInsets.all(3),
+                          padding: const pw.EdgeInsets.all(4),
                           decoration: pw.BoxDecoration(
                             color: PdfColors.white,
-                            borderRadius: pw.BorderRadius.circular(3),
-                            border: pw.Border.all(color: palette.accentColor, width: 1),
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(color: palette.borderColor, width: 0.5),
                           ),
                           child: pw.BarcodeWidget(
                             barcode: pw.Barcode.qrCode(),
                             data: claimUrl,
-                            width: 27,
-                            height: 27,
+                            width: 34,
+                            height: 34,
                             color: PdfColors.black,
                           ),
                         ),
-                        pw.SizedBox(height: 2.5),
+                        pw.SizedBox(height: 3),
                         pw.Text(
-                          'INQUADRA CON FOTOCAMERA',
+                          'Attiva il pass',
                           style: pw.TextStyle(
-                            font: fontSemiBold,
-                            fontSize: 3.8,
-                            color: isDark ? PdfColors.white : PdfColors.grey700,
-                            letterSpacing: 0.2,
+                            font: fontRegular,
+                            fontSize: 6.5,
+                            color: palette.textSecondary,
                           ),
                           textAlign: pw.TextAlign.center,
                         ),
-                        if (expDateStr != null) ...[
-                          pw.SizedBox(height: 1),
-                          pw.Text(
-                            'Entro il $expDateStr',
-                            style: pw.TextStyle(
-                              font: fontRegular,
-                              fontSize: 3.5,
-                              color: isDark ? PdfColor.fromHex('F87171') : PdfColors.red800,
-                            ),
-                            textAlign: pw.TextAlign.center,
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -860,11 +836,48 @@ class PromotionPdfService {
               ],
             ),
           ),
+
+          // Ticket notch cutouts (semicircles at the divider line, ~62% from left)
+          pw.Positioned(
+            top: -5,
+            right: 0,
+            child: pw.SizedBox(
+              width: 56, // ~38% of 148pt (85mm card width)
+              child: pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Container(
+                  width: 10,
+                  height: 10,
+                  decoration: pw.BoxDecoration(
+                    color: pageBg,
+                    shape: pw.BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          pw.Positioned(
+            bottom: -5,
+            right: 0,
+            child: pw.SizedBox(
+              width: 56,
+              child: pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Container(
+                  width: 10,
+                  height: 10,
+                  decoration: pw.BoxDecoration(
+                    color: pageBg,
+                    shape: pw.BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
-
   /// 2. Standard European Business Card format (85 x 55 mm)
   /// Ready for online print shops (Pixartprinting, Vistaprint, Flyeralarm, Moo).
   /// Contiene il QR Code unico di campagna: tutti i biglietti stampati sono identici.
@@ -930,9 +943,8 @@ class PromotionPdfService {
     return pdf.save();
   }
 
-  /// 3. Flyer A6 Format (105 x 148 mm)
-  /// Ideale per desk reception, bancone ed espositori partner.
-  /// Contiene il QR Code unico di campagna: tutte le copie stampate sono identiche.
+  /// 3. Flyer A6 (105 x 148 mm) — vertical boutique certificate with 4-zone flow.
+  /// Double-hairline frame, editorial typography, min font 7pt.
   static Future<Uint8List> generateFlyersA6({
     required PromotionModel promotion,
     List<VoucherModel>? vouchers,
@@ -968,265 +980,284 @@ class PromotionPdfService {
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a6,
-        margin: const pw.EdgeInsets.all(10),
+        margin: const pw.EdgeInsets.all(8),
         build: (context) {
+          // Double-hairline frame
           return pw.Container(
+            padding: const pw.EdgeInsets.all(2),
             decoration: pw.BoxDecoration(
-              color: isDark ? palette.primaryBg : PdfColors.white,
-              borderRadius: pw.BorderRadius.circular(10),
-              border: pw.Border.all(color: palette.accentColor, width: 1.5),
+              border: pw.Border.all(color: palette.accentColor, width: 0.8),
+              borderRadius: pw.BorderRadius.circular(6),
             ),
-            child: pw.Column(
-              children: [
-                // 1. Top Hero Photo Banner
-                if (flyerBgImage != null)
-                  pw.Container(
-                    height: 120,
-                    width: double.infinity,
-                    child: pw.ClipRRect(
-                      horizontalRadius: 8.5,
-                      verticalRadius: 8.5,
-                      child: pw.Stack(
-                        children: [
-                          pw.Positioned.fill(
-                            child: pw.Image(flyerBgImage, fit: pw.BoxFit.cover),
-                          ),
-                          pw.Positioned(
-                            top: 8,
-                            right: 8,
-                            child: pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: pw.BoxDecoration(
-                                color: PdfColor(0.04, 0.05, 0.08, 0.75),
-                                borderRadius: pw.BorderRadius.circular(12),
-                                border: pw.Border.all(color: palette.accentColor, width: 0.8),
-                              ),
-                              child: pw.Text(
-                                'PROMOZIONE ESCLUSIVA',
-                                style: pw.TextStyle(
-                                  font: fontBold,
-                                  fontSize: 5.5,
-                                  color: palette.badgeText,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  pw.Container(
-                    width: double.infinity,
-                    height: 48,
-                    decoration: pw.BoxDecoration(
-                      color: palette.primaryBg,
-                      borderRadius: const pw.BorderRadius.vertical(top: pw.Radius.circular(8.5)),
-                    ),
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: pw.Center(
-                      child: pw.Text(
-                        'PROMOZIONE ESCLUSIVA',
-                        style: pw.TextStyle(
-                          font: fontBold,
-                          fontSize: 8,
-                          color: palette.badgeText,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // 2. Co-branding bar (hairline divider, NO 'x')
-                pw.Container(
-                  width: double.infinity,
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: pw.BoxDecoration(
-                    color: isDark ? PdfColor.fromHex('0B1120') : PdfColor.fromHex('F8FAFC'),
-                    border: pw.Border(
-                      bottom: pw.BorderSide(color: palette.borderColor, width: 0.8),
-                    ),
-                  ),
-                  child: pw.Column(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: [
-                      _buildHeaderLogos(
-                        orgLogoImage: orgLogoImage,
-                        partnerLogoImage: partnerLogoImage,
-                        orgName: orgName,
-                        promotion: promotion,
-                        fontBold: fontBold,
-                        fontSemiBold: fontSemiBold,
-                        logoHeight: 18,
-                        alignment: pw.MainAxisAlignment.center,
-                        overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                        textLightColor: isDark ? PdfColors.white : null,
-                      ),
-                      pw.SizedBox(height: 3),
-                      pw.Text(
-                        promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty
-                            ? 'CONVENZIONE ESCLUSIVA SOCI ${promotion.partnerName!.toUpperCase()}'
-                            : 'PROMOZIONE UFFICIALE',
-                        style: pw.TextStyle(
-                          font: fontBold,
-                          fontSize: 6,
-                          color: palette.badgeText,
-                          letterSpacing: 0.8,
-                        ),
-                        textAlign: pw.TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 3. Main Content
-                pw.Expanded(
-                  child: pw.Padding(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: pw.Column(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        // Badge & Title
-                        pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+            child: pw.Container(
+              decoration: pw.BoxDecoration(
+                color: palette.surfaceLevel0,
+                border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                borderRadius: pw.BorderRadius.circular(4),
+              ),
+              child: pw.Column(
+                children: [
+                  // ZONE 1: Hero visual (25%)
+                  pw.Expanded(
+                    flex: 25,
+                    child: pw.Container(
+                      width: double.infinity,
+                      child: pw.ClipRRect(
+                        horizontalRadius: 3.5,
+                        verticalRadius: 3.5,
+                        child: pw.Stack(
                           children: [
-                            pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                              decoration: pw.BoxDecoration(
-                                color: palette.badgeBg,
-                                borderRadius: pw.BorderRadius.circular(10),
-                                border: pw.Border.all(color: palette.accentColor, width: 0.8),
+                            pw.Positioned.fill(
+                              child: pw.Container(color: palette.surfaceLevel1),
+                            ),
+                            if (flyerBgImage != null)
+                              pw.Positioned.fill(
+                                child: pw.Image(flyerBgImage, fit: pw.BoxFit.cover),
                               ),
-                              child: pw.Text(
-                                promotion.offerType.label.toUpperCase(),
-                                style: pw.TextStyle(
-                                  font: fontBold,
-                                  fontSize: 6.5,
-                                  color: palette.badgeText,
-                                  letterSpacing: 0.6,
+                            // Badge
+                            pw.Positioned(
+                              top: 8,
+                              right: 8,
+                              child: pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: pw.BoxDecoration(
+                                  color: palette.surfaceLevel0,
+                                  borderRadius: pw.BorderRadius.circular(3),
+                                  border: pw.Border.all(color: palette.accentColor, width: 0.5),
+                                ),
+                                child: pw.Text(
+                                  promotion.isPartnership ? 'CONVENZIONE' : 'ESCLUSIVA',
+                                  style: pw.TextStyle(
+                                    font: fontBold,
+                                    fontSize: 7,
+                                    color: palette.badgeText,
+                                    letterSpacing: 1.5,
+                                  ),
                                 ),
                               ),
                             ),
-                            pw.SizedBox(height: 4),
-                            pw.Text(
-                              promotion.title,
+                            // Co-branding
+                            pw.Positioned(
+                              bottom: 8,
+                              left: 8,
+                              child: pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                                decoration: pw.BoxDecoration(
+                                  color: palette.surfaceLevel0,
+                                  borderRadius: pw.BorderRadius.circular(3),
+                                ),
+                                child: _buildHeaderLogos(
+                                  orgLogoImage: orgLogoImage,
+                                  partnerLogoImage: partnerLogoImage,
+                                  orgName: orgName,
+                                  promotion: promotion,
+                                  fontBold: fontBold,
+                                  fontSemiBold: fontSemiBold,
+                                  logoHeight: 14,
+                                  overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                                  textLightColor: isDark ? PdfColors.white : null,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ZONE 2: Offer content (35%)
+                  pw.Expanded(
+                    flex: 35,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      child: pw.Column(
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        crossAxisAlignment: pw.CrossAxisAlignment.center,
+                        children: [
+                          // Category pill
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel1,
+                              borderRadius: pw.BorderRadius.circular(3),
+                              border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                            ),
+                            child: pw.Text(
+                              promotion.offerType.label.toUpperCase(),
                               style: pw.TextStyle(
                                 font: fontBold,
-                                fontSize: 11,
-                                color: isDark ? PdfColors.white : palette.primaryBg,
+                                fontSize: 7.5,
+                                color: palette.badgeText,
+                                letterSpacing: 1.8,
+                              ),
+                            ),
+                          ),
+                          pw.SizedBox(height: 6),
+                          // Title
+                          pw.Text(
+                            promotion.title,
+                            style: pw.TextStyle(
+                              font: fontBold,
+                              fontSize: 18,
+                              color: palette.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                            maxLines: 2,
+                          ),
+                          if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              promotion.description!,
+                              style: pw.TextStyle(
+                                font: fontRegular,
+                                fontSize: 8.5,
+                                color: palette.textSecondary,
+                                lineSpacing: 1.5,
                               ),
                               textAlign: pw.TextAlign.center,
                               maxLines: 2,
                             ),
                           ],
-                        ),
-
-                        // QR Callout Card
-                        pw.Container(
-                          width: double.infinity,
-                          padding: const pw.EdgeInsets.all(8),
-                          decoration: pw.BoxDecoration(
-                            color: isDark ? PdfColor.fromHex('1E293B') : PdfColor.fromHex('F8FAFC'),
-                            borderRadius: pw.BorderRadius.circular(8),
-                            border: pw.Border.all(color: palette.accentColor, width: 1),
-                          ),
-                          child: pw.Row(
-                            crossAxisAlignment: pw.CrossAxisAlignment.center,
-                            children: [
-                              pw.Container(
-                                padding: const pw.EdgeInsets.all(4),
-                                decoration: pw.BoxDecoration(
-                                  color: PdfColors.white,
-                                  borderRadius: pw.BorderRadius.circular(6),
-                                  border: pw.Border.all(color: palette.accentColor, width: 0.8),
-                                ),
-                                child: pw.BarcodeWidget(
-                                  barcode: pw.Barcode.qrCode(),
-                                  data: claimUrl,
-                                  width: 52,
-                                  height: 52,
-                                  color: PdfColors.black,
-                                ),
+                          if (promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              'Riservata ai soci ${promotion.partnerName!}',
+                              style: pw.TextStyle(
+                                font: fontSemiBold,
+                                fontSize: 7.5,
+                                color: palette.accentColor,
                               ),
-                              pw.SizedBox(width: 10),
-                              pw.Expanded(
-                                child: pw.Column(
-                                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                  mainAxisSize: pw.MainAxisSize.min,
-                                  children: [
-                                    pw.Text(
-                                      'ATTIVA IL PASS',
-                                      style: pw.TextStyle(
-                                        font: fontBold,
-                                        fontSize: 7.5,
-                                        color: isDark ? palette.accentColor : palette.primaryBg,
-                                        letterSpacing: 0.4,
-                                      ),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Hairline divider
+                  pw.Container(
+                    margin: const pw.EdgeInsets.symmetric(horizontal: 20),
+                    height: 0.5,
+                    color: palette.borderColor,
+                  ),
+
+                  // ZONE 3: QR panel (28%)
+                  pw.Expanded(
+                    flex: 28,
+                    child: pw.Padding(
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: pw.Container(
+                        padding: const pw.EdgeInsets.all(8),
+                        decoration: pw.BoxDecoration(
+                          color: palette.surfaceLevel1,
+                          borderRadius: pw.BorderRadius.circular(6),
+                        ),
+                        child: pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+                          children: [
+                            // QR code
+                            pw.Container(
+                              padding: const pw.EdgeInsets.all(5),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(4),
+                                border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                              ),
+                              child: pw.BarcodeWidget(
+                                barcode: pw.Barcode.qrCode(),
+                                data: claimUrl,
+                                width: 68,
+                                height: 68,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                            pw.SizedBox(width: 10),
+                            // Instructions
+                            pw.Expanded(
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                mainAxisAlignment: pw.MainAxisAlignment.center,
+                                mainAxisSize: pw.MainAxisSize.min,
+                                children: [
+                                  pw.Text(
+                                    'ATTIVA IL PASS',
+                                    style: pw.TextStyle(
+                                      font: fontBold,
+                                      fontSize: 9,
+                                      color: palette.accentColor,
+                                      letterSpacing: 1.0,
                                     ),
-                                    pw.SizedBox(height: 2),
-                                    pw.Text(
-                                      'Inquadra con la fotocamera dello smartphone per riscattare l\'offerta.',
-                                      style: pw.TextStyle(
-                                        font: fontRegular,
-                                        fontSize: 6,
-                                        color: isDark ? PdfColor.fromHex('CBD5E1') : PdfColor.fromHex('475569'),
-                                      ),
+                                  ),
+                                  pw.SizedBox(height: 3),
+                                  pw.Text(
+                                    'Inquadra il QR con la fotocamera per registrarti.',
+                                    style: pw.TextStyle(
+                                      font: fontRegular,
+                                      fontSize: 7.5,
+                                      color: palette.textSecondary,
                                     ),
-                                    pw.SizedBox(height: 4),
-                                    pw.Text(
+                                  ),
+                                  pw.SizedBox(height: 5),
+                                  pw.Container(
+                                    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                    decoration: pw.BoxDecoration(
+                                      color: palette.surfaceLevel2,
+                                      borderRadius: pw.BorderRadius.circular(3),
+                                    ),
+                                    child: pw.Text(
                                       expDateStr != null
-                                          ? 'Entro $expDateStr • Valido ${promotion.validityDays} gg'
+                                          ? 'Entro $expDateStr  •  ${promotion.validityDays} gg'
                                           : 'Valido ${promotion.validityDays} giorni',
                                       style: pw.TextStyle(
                                         font: fontSemiBold,
-                                        fontSize: 5.5,
+                                        fontSize: 7,
                                         color: palette.badgeText,
                                       ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ZONE 4: Footer (12%)
+                  pw.Container(
+                    width: double.infinity,
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    decoration: pw.BoxDecoration(
+                      color: palette.surfaceLevel1,
+                      borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(3.5)),
+                    ),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(
+                          '1. Inquadra  •  2. Registrati  •  3. Mostra pass',
+                          style: pw.TextStyle(
+                            font: fontRegular,
+                            fontSize: 7,
+                            color: palette.textSecondary,
                           ),
                         ),
-
-                        // Mini 3 steps footer
-                        pw.Container(
-                          width: double.infinity,
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                          decoration: pw.BoxDecoration(
-                            color: isDark ? PdfColor.fromHex('0B1120') : PdfColor.fromHex('F1F5F9'),
-                            borderRadius: pw.BorderRadius.circular(6),
-                          ),
-                          child: pw.Row(
-                            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                            children: [
-                              pw.Text(
-                                '1. Inquadra  2. Registrati  3. Mostra pass',
-                                style: pw.TextStyle(
-                                  font: fontRegular,
-                                  fontSize: 5,
-                                  color: isDark ? PdfColor.fromHex('CBD5E1') : PdfColors.grey700,
-                                ),
-                              ),
-                              pw.Text(
-                                'ticketto.it',
-                                style: pw.TextStyle(
-                                  font: fontBold,
-                                  fontSize: 5,
-                                  color: palette.accentColor,
-                                ),
-                              ),
-                            ],
+                        pw.Text(
+                          'eventflow.it',
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 7,
+                            color: palette.accentColor,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -1236,8 +1267,229 @@ class PromotionPdfService {
     return pdf.save();
   }
 
-  /// 4. Foglio A4 a griglia (6 coupon identici con linee di ritaglio tratteggiate)
-  /// Ideale per stampare comodamente con la stampante dell'ufficio.
+  /// Grid coupon item — dedicated layout for ~95×85mm cells (NOT 85×55mm business card).
+  /// Wider aspect ratio, larger fonts, bigger QR.
+  static pw.Widget _buildGridCouponItem({
+    required PromotionModel promotion,
+    required String orgName,
+    required pw.ImageProvider? orgLogoImage,
+    required pw.ImageProvider? partnerLogoImage,
+    required String claimUrl,
+    required String? expDateStr,
+    required pw.Font fontRegular,
+    required pw.Font fontBold,
+    required pw.Font fontSemiBold,
+    required CouponVisualTheme theme,
+    bool? overridePartnerLogoDarkBg,
+    pw.ImageProvider? ticketBgImage,
+  }) {
+    final palette = _ThemePalette.fromTheme(theme);
+    final isDark = theme != CouponVisualTheme.modernMinimal;
+
+    return pw.Container(
+      decoration: pw.BoxDecoration(
+        color: palette.surfaceLevel0,
+        border: pw.Border.all(color: PdfColors.grey400, width: 0.5, style: pw.BorderStyle.dashed),
+      ),
+      child: pw.Stack(
+        children: [
+          // Subtle background texture
+          if (ticketBgImage != null)
+            pw.Positioned.fill(
+              child: pw.Opacity(
+                opacity: isDark ? 0.12 : 0.06,
+                child: pw.Image(ticketBgImage, fit: pw.BoxFit.cover),
+              ),
+            ),
+
+          // Content
+          pw.Positioned.fill(
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                // Brand spine
+                pw.Container(
+                  width: 4,
+                  color: palette.accentColor,
+                ),
+
+                // Left section (65%): branding + offer
+                pw.Expanded(
+                  flex: 65,
+                  child: pw.Padding(
+                    padding: const pw.EdgeInsets.fromLTRB(10, 8, 6, 8),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Top: logo lockup
+                        _buildHeaderLogos(
+                          orgLogoImage: orgLogoImage,
+                          partnerLogoImage: partnerLogoImage,
+                          orgName: orgName,
+                          promotion: promotion,
+                          fontBold: fontBold,
+                          fontSemiBold: fontSemiBold,
+                          logoHeight: 16,
+                          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                          textLightColor: isDark ? PdfColors.white : null,
+                        ),
+                        // Headline
+                        pw.Text(
+                          promotion.title,
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 14,
+                            color: palette.textPrimary,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 2,
+                        ),
+                        // Description (if available, 1 line)
+                        if (promotion.description != null && promotion.description!.trim().isNotEmpty)
+                          pw.Text(
+                            promotion.description!,
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 7.5,
+                              color: palette.textSecondary,
+                            ),
+                            maxLines: 1,
+                          ),
+                        // Code + validity
+                        pw.Row(
+                          children: [
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: pw.BoxDecoration(
+                                color: palette.codeBg,
+                                borderRadius: pw.BorderRadius.circular(2),
+                              ),
+                              child: pw.Text(
+                                'COD: ${promotion.codePrefix}',
+                                style: pw.TextStyle(
+                                  font: fontBold,
+                                  fontSize: 8.5,
+                                  color: palette.codeText,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ),
+                            pw.SizedBox(width: 6),
+                            pw.Text(
+                              expDateStr != null
+                                  ? 'Scad. $expDateStr'
+                                  : '${promotion.validityDays} gg',
+                              style: pw.TextStyle(
+                                font: fontRegular,
+                                fontSize: 7,
+                                color: palette.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Right section (35%): QR stub
+                pw.Expanded(
+                  flex: 35,
+                  child: pw.Container(
+                    color: palette.surfaceLevel1,
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Column(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Text(
+                          'SCAN PER ATTIVARE',
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 7,
+                            color: palette.accentColor,
+                            letterSpacing: 1.0,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(5),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.white,
+                            borderRadius: pw.BorderRadius.circular(3),
+                            border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                          ),
+                          child: pw.BarcodeWidget(
+                            barcode: pw.Barcode.qrCode(),
+                            data: claimUrl,
+                            width: 42,
+                            height: 42,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Attiva il pass digitale',
+                          style: pw.TextStyle(
+                            font: fontRegular,
+                            fontSize: 7,
+                            color: palette.textSecondary,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Ticket notches at the stub boundary
+          pw.Positioned(
+            top: -5,
+            right: 0,
+            child: pw.SizedBox(
+              width: 70, // ~35% of cell width
+              child: pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const pw.BoxDecoration(
+                    color: PdfColors.white,
+                    shape: pw.BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          pw.Positioned(
+            bottom: -5,
+            right: 0,
+            child: pw.SizedBox(
+              width: 70,
+              child: pw.Align(
+                alignment: pw.Alignment.centerLeft,
+                child: pw.Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const pw.BoxDecoration(
+                    color: PdfColors.white,
+                    shape: pw.BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 4. Foglio A4 a griglia (6 coupon identici) — uses dedicated grid layout widget.
   static Future<Uint8List> generateCouponSheet({
     required PromotionModel promotion,
     List<VoucherModel>? vouchers,
@@ -1282,7 +1534,7 @@ class PromotionPdfService {
             crossAxisSpacing: 10,
             mainAxisSpacing: 12,
             children: List.generate(itemsPerPage, (_) {
-              return _buildSplitBusinessCard(
+              return _buildGridCouponItem(
                 promotion: promotion,
                 orgName: orgName,
                 orgLogoImage: orgLogoImage,
@@ -1294,7 +1546,6 @@ class PromotionPdfService {
                 fontSemiBold: fontSemiBold,
                 theme: theme,
                 overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                isGridItem: true,
                 ticketBgImage: ticketBgImage,
               );
             }),
@@ -1305,6 +1556,7 @@ class PromotionPdfService {
 
     return pdf.save();
   }
+
 
   /// Triggers standard printing dialog / PDF download
   static Future<void> printCoupons({
