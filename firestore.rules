@@ -86,7 +86,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAuth() && isOrgAdmin(request.resource.data.orgId);
       allow update: if (isAuth() && isOrgStaff(resource.data.orgId))
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedCount', 'updatedAt']));
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedCount', 'currentSequence', 'updatedAt']));
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
     }
 
@@ -94,7 +94,10 @@ service cloud.firestore {
     match /vouchers/{voucherId} {
       // Public read for customer voucher claim page
       allow read: if true;
-      allow create: if isAuth() && isOrgStaff(request.resource.data.orgId);
+      // Allow staff creation OR public customer just-in-time claim creation
+      allow create: if (isAuth() && isOrgStaff(request.resource.data.orgId))
+        || (request.resource.data.status == 'claimed'
+            && request.resource.data.keys().hasAll(['promoId', 'orgId', 'code', 'status', 'claimedFirstName', 'claimedLastName', 'claimedEmail', 'expiresAt']));
       // Staff update (redemption/management) OR customer self-claim (only available vouchers)
       allow update: if (isAuth() && isOrgStaff(resource.data.orgId))
         || (resource.data.status == 'available'

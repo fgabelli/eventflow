@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -8,9 +9,14 @@ import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 
 class PublicVoucherClaimScreen extends StatefulWidget {
-  final String code;
+  final String? code;
+  final String? promoId;
 
-  const PublicVoucherClaimScreen({super.key, required this.code});
+  const PublicVoucherClaimScreen({
+    super.key,
+    this.code,
+    this.promoId,
+  });
 
   @override
   State<PublicVoucherClaimScreen> createState() => _PublicVoucherClaimScreenState();
@@ -138,9 +144,140 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
     }
   }
 
+  Future<void> _submitCampaignClaim(PromotionModel promo) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+      _claimError = null;
+    });
+
+    try {
+      final db = FirebaseFirestore.instance;
+
+      if (promo.isRegistrationClosed) {
+        setState(() {
+          _claimError = 'Il termine per attivare questa convenzione è scaduto. Non è più possibile registrare nuovi coupon.';
+          _isSubmitting = false;
+        });
+        return;
+      }
+
+      if (promo.totalVouchers > 0 && promo.claimedCount >= promo.totalVouchers) {
+        setState(() {
+          _claimError = 'I voucher disponibili per questa promozione sono esauriti.';
+          _isSubmitting = false;
+        });
+        return;
+      }
+
+      // Check if there are pre-minted available vouchers for this promo
+      final availableSnap = await db
+          .collection(Collections.vouchers)
+          .where('promoId', isEqualTo: promo.id)
+          .where('status', isEqualTo: VoucherStatus.available.name)
+          .orderBy('sequenceNumber')
+          .limit(1)
+          .get();
+
+      final now = DateTime.now();
+      final voucherExpiresAt = now.add(Duration(days: promo.validityDays));
+      final batch = db.batch();
+
+      VoucherModel claimedVoucher;
+
+      if (availableSnap.docs.isNotEmpty) {
+        final voucherDoc = availableSnap.docs.first;
+        final voucher = VoucherModel.fromFirestore(voucherDoc);
+
+        claimedVoucher = voucher.copyWith(
+          status: VoucherStatus.claimed,
+          claimedAt: now,
+          expiresAt: voucherExpiresAt,
+          claimedFirstName: _firstNameCtrl.text.trim(),
+          claimedLastName: _lastNameCtrl.text.trim(),
+          claimedEmail: _emailCtrl.text.trim().toLowerCase(),
+          claimedPhone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+          paymentStatus: promo.paymentMethod == PromotionPaymentMethod.online
+              ? VoucherPaymentStatus.paidOnline
+              : VoucherPaymentStatus.pending,
+        );
+
+        batch.update(voucherDoc.reference, {
+          'status': claimedVoucher.status.name,
+          'claimedAt': Timestamp.fromDate(now),
+          'expiresAt': Timestamp.fromDate(voucherExpiresAt),
+          'claimedFirstName': claimedVoucher.claimedFirstName,
+          'claimedLastName': claimedVoucher.claimedLastName,
+          'claimedEmail': claimedVoucher.claimedEmail,
+          'claimedPhone': claimedVoucher.claimedPhone,
+          'paymentStatus': claimedVoucher.paymentStatus.name,
+        });
+      } else {
+        // Just-in-time sequential voucher creation
+        final freshPromoSnap = await db.collection(Collections.promotions).doc(promo.id).get();
+        final freshPromo = freshPromoSnap.exists ? PromotionModel.fromFirestore(freshPromoSnap) : promo;
+        final nextSeq = freshPromo.currentSequence + 1;
+        final codeNumber = nextSeq.toString().padLeft(4, '0');
+        final voucherCode = '${freshPromo.codePrefix}-$codeNumber';
+        final voucherDocId = '${freshPromo.orgId}_$voucherCode';
+        final voucherRef = db.collection(Collections.vouchers).doc(voucherDocId);
+
+        claimedVoucher = VoucherModel(
+          id: voucherDocId,
+          promoId: freshPromo.id,
+          orgId: freshPromo.orgId,
+          code: voucherCode,
+          sequenceNumber: nextSeq,
+          status: VoucherStatus.claimed,
+          claimedAt: now,
+          expiresAt: voucherExpiresAt,
+          claimedFirstName: _firstNameCtrl.text.trim(),
+          claimedLastName: _lastNameCtrl.text.trim(),
+          claimedEmail: _emailCtrl.text.trim().toLowerCase(),
+          claimedPhone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+          paymentStatus: freshPromo.paymentMethod == PromotionPaymentMethod.online
+              ? VoucherPaymentStatus.paidOnline
+              : VoucherPaymentStatus.pending,
+        );
+
+        batch.set(voucherRef, claimedVoucher.toFirestore());
+
+        batch.update(db.collection(Collections.promotions).doc(freshPromo.id), {
+          'currentSequence': nextSeq,
+        });
+      }
+
+      // Increment claimed count in promotion
+      final promoRef = db.collection(Collections.promotions).doc(promo.id);
+      batch.update(promoRef, {
+        'claimedCount': FieldValue.increment(1),
+        'updatedAt': Timestamp.now(),
+      });
+
+      await batch.commit();
+
+      setState(() {
+        _claimedVoucher = claimedVoucher;
+        _isClaimedSuccess = true;
+        _isSubmitting = false;
+      });
+    } catch (e) {
+      setState(() {
+        _claimError = 'Si è verificato un errore durante l\'attivazione: $e';
+        _isSubmitting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cleanCode = widget.code.trim().toUpperCase();
+    if (widget.promoId != null && widget.promoId!.trim().isNotEmpty) {
+      return _buildCampaignScreen(widget.promoId!.trim());
+    }
+
+    final rawCode = (widget.code ?? '').trim();
+    final cleanCode = rawCode.toUpperCase();
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -155,49 +292,56 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildNotFoundState(cleanCode);
+          if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+            final voucherDoc = snapshot.data!.docs.first;
+            final voucher = _claimedVoucher ?? VoucherModel.fromFirestore(voucherDoc);
+            return _buildVoucherScreen(voucher);
           }
 
-          final voucherDoc = snapshot.data!.docs.first;
-          final voucher = _claimedVoucher ?? VoucherModel.fromFirestore(voucherDoc);
+          // Fallback: check if the parameter is a promoId (e.g. /p/PROMO_DOC_ID)
+          return _buildCampaignScreen(rawCode);
+        },
+      ),
+    );
+  }
+
+  Widget _buildCampaignScreen(String promoId) {
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection(Collections.promotions).doc(promoId).get(),
+        builder: (context, promoSnap) {
+          if (promoSnap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!promoSnap.hasData || !promoSnap.data!.exists) {
+            return _buildNotFoundState(promoId);
+          }
+
+          final promo = PromotionModel.fromFirestore(promoSnap.data!);
 
           return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance.collection(Collections.promotions).doc(voucher.promoId).get(),
-            builder: (context, promoSnap) {
-              if (promoSnap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+            future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).get(),
+            builder: (context, orgSnap) {
+              Organization? org;
+              if (orgSnap.hasData && orgSnap.data!.exists) {
+                org = Organization.fromFirestore(orgSnap.data!);
               }
 
-              if (!promoSnap.hasData || !promoSnap.data!.exists) {
-                return _buildNotFoundState(cleanCode);
+              if (_isClaimedSuccess && _claimedVoucher != null) {
+                return _buildSuccessState(_claimedVoucher!, promo, org);
               }
 
-              final promo = PromotionModel.fromFirestore(promoSnap.data!);
+              if (promo.isRegistrationClosed) {
+                return _buildExpiredState(promo, org);
+              }
 
-              return FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).get(),
-                builder: (context, orgSnap) {
-                  Organization? org;
-                  if (orgSnap.hasData && orgSnap.data!.exists) {
-                    org = Organization.fromFirestore(orgSnap.data!);
-                  }
+              if (promo.totalVouchers > 0 && promo.claimedCount >= promo.totalVouchers) {
+                return _buildSoldOutState(promo, org);
+              }
 
-                  if (_isClaimedSuccess || voucher.isClaimed) {
-                    return _buildSuccessState(voucher, promo, org);
-                  }
-
-                  if (voucher.isRedeemed) {
-                    return _buildAlreadyRedeemedState(voucher, promo, org);
-                  }
-
-                  if (promo.isExpired) {
-                    return _buildExpiredState(promo, org);
-                  }
-
-                  return _buildClaimForm(voucher, promo, org);
-                },
-              );
+              return _buildClaimForm(null, promo, org);
             },
           );
         },
@@ -205,7 +349,48 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
     );
   }
 
-  Widget _buildClaimForm(VoucherModel voucher, PromotionModel promo, Organization? org) {
+  Widget _buildVoucherScreen(VoucherModel voucher) {
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection(Collections.promotions).doc(voucher.promoId).get(),
+      builder: (context, promoSnap) {
+        if (promoSnap.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!promoSnap.hasData || !promoSnap.data!.exists) {
+          return _buildNotFoundState(voucher.code);
+        }
+
+        final promo = PromotionModel.fromFirestore(promoSnap.data!);
+
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).get(),
+          builder: (context, orgSnap) {
+            Organization? org;
+            if (orgSnap.hasData && orgSnap.data!.exists) {
+              org = Organization.fromFirestore(orgSnap.data!);
+            }
+
+            if (_isClaimedSuccess || voucher.isClaimed) {
+              return _buildSuccessState(voucher, promo, org);
+            }
+
+            if (voucher.isRedeemed) {
+              return _buildAlreadyRedeemedState(voucher, promo, org);
+            }
+
+            if (promo.isRegistrationClosed) {
+              return _buildExpiredState(promo, org);
+            }
+
+            return _buildClaimForm(voucher, promo, org);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildClaimForm(VoucherModel? voucher, PromotionModel promo, Organization? org) {
     final expDateStr = promo.expirationDate != null ? DateFormat('dd/MM/yyyy').format(promo.expirationDate!) : null;
 
     return Center(
@@ -217,7 +402,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Org Header
-              _buildOrgHeader(org),
+              _buildOrgHeader(org, promo),
 
               // Offer Banner Card
               Container(
@@ -257,7 +442,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            voucher.code,
+                            voucher != null ? voucher.code : 'CONVENZIONE',
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
                           ),
                         ),
@@ -434,7 +619,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : () => _submitClaim(voucher, promo),
+                  onPressed: _isSubmitting ? null : () => voucher != null ? _submitClaim(voucher, promo) : _submitCampaignClaim(promo),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -473,7 +658,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildOrgHeader(org),
+              _buildOrgHeader(org, promo),
               Container(
                 width: 72,
                 height: 72,
@@ -644,7 +829,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildOrgHeader(org),
+            _buildOrgHeader(org, promo),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -677,7 +862,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildOrgHeader(org),
+            _buildOrgHeader(org, promo),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -693,6 +878,37 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
               expDateStr != null
                   ? 'Il termine per attivare questa convenzione è scaduto il $expDateStr. Non è più possibile registrare nuovi coupon.'
                   : 'Le registrazioni per questa promozione sono concluse.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            _buildFooter(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSoldOutState(PromotionModel promo, Organization? org) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildOrgHeader(org, promo),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.inventory_2_outlined, size: 56, color: AppColors.warning),
+            ),
+            const SizedBox(height: 24),
+            Text('Disponibilità Esaurita', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text(
+              'Tutti i coupon previsti per questa convenzione sono stati assegnati.',
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -733,8 +949,38 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
     );
   }
 
-  Widget _buildOrgHeader(Organization? org) {
+  Widget _buildOrgHeader(Organization? org, [PromotionModel? promo]) {
     if (org == null) return const SizedBox(height: 16);
+
+    Widget buildPartnerLogoWidget(String logoData) {
+      if (logoData.startsWith('data:image')) {
+        final commaIdx = logoData.indexOf(',');
+        if (commaIdx != -1) {
+          try {
+            final bytes = base64Decode(logoData.substring(commaIdx + 1));
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(bytes, width: 36, height: 36, fit: BoxFit.cover),
+            );
+          } catch (_) {}
+        }
+      } else if (logoData.startsWith('http://') || logoData.startsWith('https://')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            logoData,
+            width: 36,
+            height: 36,
+            fit: BoxFit.cover,
+            errorBuilder: (ctx, err, stack) => const Icon(Icons.handshake_outlined, size: 20),
+          ),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    final hasPartner = promo != null && ((promo.partnerName != null && promo.partnerName!.trim().isNotEmpty) || (promo.partnerLogoUrl != null && promo.partnerLogoUrl!.trim().isNotEmpty));
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Row(
@@ -754,11 +1000,26 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Text(
             org.name,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
+          if (hasPartner) ...[
+            const SizedBox(width: 10),
+            const Text('✕', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textTertiary)),
+            const SizedBox(width: 10),
+            if (promo.partnerLogoUrl != null && promo.partnerLogoUrl!.trim().isNotEmpty) ...[
+              buildPartnerLogoWidget(promo.partnerLogoUrl!),
+              const SizedBox(width: 8),
+            ],
+            if (promo.partnerName != null && promo.partnerName!.trim().isNotEmpty) ...[
+              Text(
+                promo.partnerName!,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+            ],
+          ],
         ],
       ),
     );

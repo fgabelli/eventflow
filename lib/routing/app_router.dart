@@ -36,8 +36,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   // Listen to auth changes and trigger redirect re-evaluation
   // (NOT watch — watch would recreate the entire GoRouter and lose the current URL)
-  ref.listen(authStateProvider, (_, __) => notifier.notify());
-  ref.listen(appUserProvider, (_, __) => notifier.notify());
+  ref.listen(authStateProvider, (previous, next) => notifier.notify());
+  ref.listen(appUserProvider, (previous, next) => notifier.notify());
 
   return GoRouter(
     initialLocation: '/',
@@ -87,9 +87,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       // ─── Public routes (no auth required) ──────────────────
       GoRoute(
+        path: '/p/c/:promoId',
+        builder: (_, state) => PublicVoucherClaimScreen(
+          promoId: state.pathParameters['promoId'],
+        ),
+      ),
+      GoRoute(
         path: '/p/:code',
         builder: (_, state) => PublicVoucherClaimScreen(
-          code: state.pathParameters['code']!,
+          code: state.pathParameters['code'],
         ),
       ),
       GoRoute(

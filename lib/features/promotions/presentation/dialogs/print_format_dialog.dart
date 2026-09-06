@@ -20,7 +20,7 @@ class PrintFormatDialog extends StatefulWidget {
 }
 
 class _PrintFormatDialogState extends State<PrintFormatDialog> {
-  CouponPrintFormat _selectedFormat = CouponPrintFormat.businessCard;
+  CouponPrintFormat _selectedFormat = CouponPrintFormat.deskStandA4;
   bool _isGenerating = false;
 
   Future<void> _startPrint() async {

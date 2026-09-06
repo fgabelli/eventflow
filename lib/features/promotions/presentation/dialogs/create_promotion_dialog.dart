@@ -13,11 +13,13 @@ import 'package:eventflow/core/utils/feature_gate.dart';
 class CreatePromotionDialog extends ConsumerStatefulWidget {
   final Organization org;
   final List<PromotionModel> existingPromotions;
+  final PromotionModel? initialPromo;
 
   const CreatePromotionDialog({
     super.key,
     required this.org,
     required this.existingPromotions,
+    this.initialPromo,
   });
 
   @override
@@ -47,6 +49,38 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
   String? _selectedEventId;
   bool _isSaving = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.initialPromo;
+    if (p != null) {
+      _titleCtrl.text = p.title;
+      _descriptionCtrl.text = p.description ?? '';
+      _partnerCtrl.text = p.partnerName ?? '';
+      _partnerLogoCtrl.text = p.partnerLogoUrl ?? '';
+      _prefixCtrl.text = p.codePrefix;
+      _quantityCtrl.text = p.totalVouchers.toString();
+      _priceCtrl.text = p.price != null ? p.price!.toStringAsFixed(2) : '';
+      _discountValueCtrl.text = p.discountValue != null ? p.discountValue!.toStringAsFixed(0) : '';
+      _isPartnership = (p.partnerName != null && p.partnerName!.trim().isNotEmpty) ||
+          (p.partnerLogoUrl != null && p.partnerLogoUrl!.trim().isNotEmpty);
+      _selectedOfferType = p.offerType;
+      _selectedPaymentMethod = p.paymentMethod;
+      _hasRegistrationDeadline = p.hasRegistrationDeadline;
+      if (p.expirationDate != null) {
+        _expirationDate = p.expirationDate!;
+      }
+      _validityDays = p.validityDays;
+      if ([7, 14, 30, 60, 90, 180, 365].contains(p.validityDays)) {
+        _isCustomValidity = false;
+      } else {
+        _isCustomValidity = true;
+        _customValidityCtrl.text = p.validityDays.toString();
+      }
+      _selectedEventId = p.linkedEventId;
+    }
+  }
 
   @override
   void dispose() {
@@ -128,31 +162,35 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final isEdit = widget.initialPromo != null;
     final plan = widget.org.plan;
-    final prefix = _prefixCtrl.text.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-    final quantity = int.tryParse(_quantityCtrl.text.trim()) ?? 25;
 
-    // Check plan limits
-    if (!plan.isUnlimitedVouchers && quantity > plan.maxVouchersPerPromotion) {
-      setState(() {
-        _errorMessage = 'Il tuo piano ${plan.label} permette massimo ${plan.maxVouchersPerPromotion} voucher per offerta.';
-      });
-      return;
+    if (!isEdit) {
+      final prefix = _prefixCtrl.text.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      final quantity = int.tryParse(_quantityCtrl.text.trim()) ?? 25;
+
+      // Check plan limits
+      if (!plan.isUnlimitedVouchers && quantity > plan.maxVouchersPerPromotion) {
+        setState(() {
+          _errorMessage = 'Il tuo piano ${plan.label} permette massimo ${plan.maxVouchersPerPromotion} voucher per offerta.';
+        });
+        return;
+      }
+
+      // Check unique prefix across active promotions of this organization
+      final prefixExists = widget.existingPromotions.any(
+        (p) => p.codePrefix == prefix && p.status == PromotionStatus.active,
+      );
+      if (prefixExists) {
+        setState(() {
+          _errorMessage = 'Esiste già una promozione attiva con il prefisso "$prefix". Scegline uno diverso.';
+        });
+        return;
+      }
     }
 
     if (_selectedPaymentMethod == PromotionPaymentMethod.online && !plan.canOnlinePromotionPayment) {
       canUseOnlinePaymentForPromotion(context, plan);
-      return;
-    }
-
-    // Check unique prefix across active promotions of this organization
-    final prefixExists = widget.existingPromotions.any(
-      (p) => p.codePrefix == prefix && p.status == PromotionStatus.active,
-    );
-    if (prefixExists) {
-      setState(() {
-        _errorMessage = 'Esiste già una promozione attiva con il prefisso "$prefix". Scegline uno diverso.';
-      });
       return;
     }
 
@@ -163,11 +201,44 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
 
     try {
       final db = FirebaseFirestore.instance;
-      final promoDocRef = db.collection(Collections.promotions).doc();
-
       final finalValidityDays = _isCustomValidity
           ? (int.tryParse(_customValidityCtrl.text.trim()) ?? 30)
           : _validityDays;
+
+      if (isEdit) {
+        final promoId = widget.initialPromo!.id;
+        final updatedData = <String, dynamic>{
+          'title': _titleCtrl.text.trim(),
+          'description': _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
+          'partnerName': _isPartnership && _partnerCtrl.text.trim().isNotEmpty ? _partnerCtrl.text.trim() : null,
+          'partnerLogoUrl': _isPartnership && _partnerLogoCtrl.text.trim().isNotEmpty ? _partnerLogoCtrl.text.trim() : null,
+          'offerType': _selectedOfferType.name,
+          'discountValue': double.tryParse(_discountValueCtrl.text.trim()),
+          'price': double.tryParse(_priceCtrl.text.trim()),
+          'paymentMethod': _selectedPaymentMethod.name,
+          'validityDays': finalValidityDays,
+          'expirationDate': _hasRegistrationDeadline ? Timestamp.fromDate(_expirationDate) : null,
+          'linkedEventId': _selectedEventId,
+          'updatedAt': Timestamp.now(),
+        };
+
+        await db.collection(Collections.promotions).doc(promoId).update(updatedData);
+
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Promozione aggiornata con successo!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+        return;
+      }
+
+      final prefix = _prefixCtrl.text.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
+      final quantity = int.tryParse(_quantityCtrl.text.trim()) ?? 25;
+      final promoDocRef = db.collection(Collections.promotions).doc();
 
       final promo = PromotionModel(
         id: promoDocRef.id,
@@ -249,6 +320,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isEdit = widget.initialPromo != null;
     final plan = widget.org.plan;
     final maxVouchers = plan.isUnlimitedVouchers ? 500 : plan.maxVouchersPerPromotion;
 
@@ -273,7 +345,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.local_offer_rounded, color: AppColors.primary, size: 24),
+                      child: Icon(isEdit ? Icons.edit_note_rounded : Icons.local_offer_rounded, color: AppColors.primary, size: 24),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -281,12 +353,14 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            AppLocalizations.of(context)['new_promotion_btn'],
+                            isEdit ? 'Modifica Offerta / Convenzione' : AppLocalizations.of(context)['new_promotion_btn'],
                             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Crea una convenzione e genera coupon con QR code sequenziali',
+                            isEdit
+                                ? 'Aggiorna dettagli, logo partner, scadenza accordo e condizioni'
+                                : 'Crea una convenzione e genera coupon con QR code sequenziali',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -550,80 +624,114 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                   const SizedBox(height: 16),
                 ],
 
-                // Code Prefix & Quantity to generate
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: TextFormField(
-                        controller: _prefixCtrl,
-                        decoration: InputDecoration(
-                          labelText: '${AppLocalizations.of(context)['code_prefix']} *',
-                          hintText: 'es. FIT',
-                          prefixIcon: const Icon(Icons.tag_rounded),
-                          helperText: 'Prefisso univoco (solo lettere/cifre)',
-                        ),
-                        textCapitalization: TextCapitalization.characters,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Inserisci un prefisso';
-                          if (v.trim().length < 2) return 'Minimo 2 caratteri';
-                          return null;
-                        },
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 3,
-                      child: TextFormField(
-                        controller: _quantityCtrl,
-                        decoration: InputDecoration(
-                          labelText: '${AppLocalizations.of(context)['vouchers_quantity']} *',
-                          hintText: 'es. 25',
-                          prefixIcon: const Icon(Icons.format_list_numbered_rounded),
-                          helperText: 'Max $maxVouchers (piano ${plan.label})',
-                        ),
-                        keyboardType: TextInputType.number,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'Obbligatorio';
-                          final num = int.tryParse(v.trim());
-                          if (num == null || num <= 0) return 'Numero non valido';
-                          if (!plan.isUnlimitedVouchers && num > plan.maxVouchersPerPromotion) {
-                            return 'Max ${plan.maxVouchersPerPromotion}';
-                          }
-                          return null;
-                        },
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Visual code preview banner
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                if (isEdit) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.confirmation_number_outlined, color: AppColors.primary, size: 22),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            'Serie generata: ${_prefixCtrl.text.trim().toUpperCase()}-0001 ... ${_prefixCtrl.text.trim().toUpperCase()}-${(_quantityCtrl.text.trim().padLeft(4, '0'))}',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Serie Voucher: ${widget.initialPromo!.codePrefix} • ${widget.initialPromo!.totalVouchers} Voucher Generati',
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'I codici già emessi restano invariati (${widget.initialPromo!.claimedCount} attivati, ${widget.initialPromo!.redeemedCount} riscattati). Per generare ulteriori coupon, usa il pulsante "Aggiungi Voucher" nella schermata di dettaglio.',
+                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
+                ] else ...[
+                  // Code Prefix & Quantity to generate
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: TextFormField(
+                          controller: _prefixCtrl,
+                          decoration: InputDecoration(
+                            labelText: '${AppLocalizations.of(context)['code_prefix']} *',
+                            hintText: 'es. FIT',
+                            prefixIcon: const Icon(Icons.tag_rounded),
+                            helperText: 'Prefisso univoco (solo lettere/cifre)',
+                          ),
+                          textCapitalization: TextCapitalization.characters,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Inserisci un prefisso';
+                            if (v.trim().length < 2) return 'Minimo 2 caratteri';
+                            return null;
+                          },
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          controller: _quantityCtrl,
+                          decoration: InputDecoration(
+                            labelText: '${AppLocalizations.of(context)['vouchers_quantity']} *',
+                            hintText: 'es. 25',
+                            prefixIcon: const Icon(Icons.format_list_numbered_rounded),
+                            helperText: 'Max $maxVouchers (piano ${plan.label})',
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return 'Obbligatorio';
+                            final num = int.tryParse(v.trim());
+                            if (num == null || num <= 0) return 'Numero non valido';
+                            if (!plan.isUnlimitedVouchers && num > plan.maxVouchersPerPromotion) {
+                              return 'Max ${plan.maxVouchersPerPromotion}';
+                            }
+                            return null;
+                          },
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Visual code preview banner
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.15)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Serie generata: ${_prefixCtrl.text.trim().toUpperCase()}-0001 ... ${_prefixCtrl.text.trim().toUpperCase()}-${(_quantityCtrl.text.trim().padLeft(4, '0'))}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
 
                 // Voucher Validity Duration from Registration
                 Container(
@@ -865,8 +973,10 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                       onPressed: _isSaving ? null : _submit,
                       icon: _isSaving
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.check_rounded, size: 18),
-                      label: Text(_isSaving ? 'Generazione voucher...' : 'Crea Offerta e Voucher'),
+                          : Icon(isEdit ? Icons.save_outlined : Icons.check_rounded, size: 18),
+                      label: Text(_isSaving
+                          ? (isEdit ? 'Salvataggio...' : 'Generazione voucher...')
+                          : (isEdit ? 'Salva Modifiche' : 'Crea Offerta e Voucher')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,

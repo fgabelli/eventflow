@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +12,7 @@ import 'package:eventflow/core/models.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/features/promotions/presentation/dialogs/redeem_voucher_dialog.dart';
 import 'package:eventflow/features/promotions/presentation/dialogs/print_format_dialog.dart';
+import 'package:eventflow/features/promotions/presentation/dialogs/create_promotion_dialog.dart';
 
 class PromotionDetailScreen extends ConsumerStatefulWidget {
   final String promotionId;
@@ -29,6 +32,208 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _openEditDialog(Organization org, PromotionModel promo) {
+    showDialog(
+      context: context,
+      builder: (ctx) => CreatePromotionDialog(
+        org: org,
+        existingPromotions: const [],
+        initialPromo: promo,
+      ),
+    );
+  }
+
+  Future<void> _confirmDeletePromotion(Organization org, PromotionModel promo) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28),
+            SizedBox(width: 12),
+            Expanded(child: Text('Eliminare la promozione?')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sei sicuro di voler eliminare l\'offerta "${promo.title}"?'),
+            const SizedBox(height: 12),
+            Text(
+              'Verranno eliminati permanentemente la promozione e tutti i ${promo.totalVouchers} voucher generati.',
+              style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Questa operazione è irreversibile.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Elimina Definitivamente'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Eliminazione voucher in corso...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final db = FirebaseFirestore.instance;
+      final vouchersSnap = await db
+          .collection(Collections.vouchers)
+          .where('promoId', isEqualTo: promo.id)
+          .get();
+
+      WriteBatch batch = db.batch();
+      int count = 0;
+      for (final doc in vouchersSnap.docs) {
+        batch.delete(doc.reference);
+        count++;
+        if (count >= 400) {
+          await batch.commit();
+          batch = db.batch();
+          count = 0;
+        }
+      }
+      if (count > 0) {
+        await batch.commit();
+      }
+
+      await db.collection(Collections.promotions).doc(promo.id).delete();
+
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Promozione "${promo.title}" eliminata con successo.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.go('/promotions');
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore durante l\'eliminazione: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showCampaignQrDialog(PromotionModel promo, Organization org) {
+    final campaignUrl = 'https://eventflow-3541b.web.app/p/c/${promo.id}';
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'QR CODE UNICO DI CAMPAGNA',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 0.8),
+              ),
+              const SizedBox(height: 4),
+              Text(promo.title, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13), textAlign: TextAlign.center),
+              if (promo.partnerName != null && promo.partnerName!.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text('Partner: ${promo.partnerName!}', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+              const SizedBox(height: 20),
+              QrImageView(
+                data: campaignUrl,
+                version: QrVersions.auto,
+                size: 220,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: SelectableText(
+                  campaignUrl,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Tutti i coupon stampati usano questo QR. Alla prima scansione, il cliente si registra e ottiene il suo Pass sequenziale personale.',
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: campaignUrl));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Link di registrazione copiato negli appunti!')),
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 16),
+                    label: const Text('Copia Link'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                    child: const Text('Chiudi'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _openRedeemDialog(Organization org, {String? initialCode}) {
@@ -293,6 +498,13 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                 ),
                 actions: [
                   OutlinedButton.icon(
+                    onPressed: () => _openEditDialog(org, promo),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Modifica'),
+                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.textPrimary),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
                     onPressed: () => _openRedeemDialog(org),
                     icon: const Icon(Icons.point_of_sale_rounded, size: 16),
                     label: const Text('Convalida in Cassa'),
@@ -305,7 +517,13 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                     label: const Text('Stampa Coupon PDF'),
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _confirmDeletePromotion(org, promo),
+                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                    tooltip: 'Elimina Promozione',
+                  ),
+                  const SizedBox(width: 12),
                 ],
               ),
               body: SingleChildScrollView(
@@ -422,12 +640,40 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
     );
   }
 
+  Widget _buildPartnerLogoThumb(String logoData) {
+    try {
+      if (logoData.startsWith('data:image')) {
+        final commaIdx = logoData.indexOf(',');
+        if (commaIdx != -1) {
+          final bytes = base64Decode(logoData.substring(commaIdx + 1));
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(bytes, width: 44, height: 44, fit: BoxFit.contain),
+          );
+        }
+      } else if (logoData.startsWith('http://') || logoData.startsWith('https://')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            logoData,
+            width: 44,
+            height: 44,
+            fit: BoxFit.contain,
+            errorBuilder: (ctx, err, stack) => const Icon(Icons.handshake_outlined, size: 24, color: AppColors.primary),
+          ),
+        );
+      }
+    } catch (_) {}
+    return const Icon(Icons.handshake_outlined, size: 24, color: AppColors.primary);
+  }
+
   Widget _buildOverviewCard(Organization org, PromotionModel promo, List<VoucherModel> vouchers) {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final available = vouchers.where((v) => v.isAvailable).length;
     final claimed = vouchers.where((v) => v.isClaimed && !v.isExpired).length;
     final redeemed = vouchers.where((v) => v.isRedeemed).length;
     final expired = vouchers.where((v) => v.isExpired && !v.isRedeemed).length;
+    final campaignUrl = 'https://eventflow-3541b.web.app/p/c/${promo.id}';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -442,18 +688,63 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Riepilogo Offerta', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  if (promo.description != null && promo.description!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(promo.description!, style: Theme.of(context).textTheme.bodyMedium),
+              Expanded(
+                child: Row(
+                  children: [
+                    if (promo.partnerLogoUrl != null && promo.partnerLogoUrl!.trim().isNotEmpty) ...[
+                      Container(
+                        height: 52,
+                        width: 52,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: _buildPartnerLogoThumb(promo.partnerLogoUrl!),
+                      ),
+                      const SizedBox(width: 14),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text('Riepilogo Offerta', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                              if (promo.partnerName != null && promo.partnerName!.trim().isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    'Partner: ${promo.partnerName!}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (promo.description != null && promo.description!.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(promo.description!, style: Theme.of(context).textTheme.bodyMedium),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
-                ],
+                ),
               ),
               Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    tooltip: 'Modifica Offerta',
+                    onPressed: () => _openEditDialog(org, promo),
+                  ),
                   IconButton(
                     icon: Icon(promo.status == PromotionStatus.active ? Icons.pause_circle_outline : Icons.play_circle_outline),
                     tooltip: promo.status == PromotionStatus.active ? 'Metti in pausa' : 'Riattiva offerta',
@@ -486,6 +777,72 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                 promo.isRegistrationClosed ? AppColors.warning : AppColors.textPrimary,
               ),
             ],
+          ),
+          const SizedBox(height: 18),
+          const Divider(),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.qr_code_2_rounded, color: AppColors.primary, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'QR Code Unico di Campagna (Stampa Identica & Conio Dinamico)',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      const SizedBox(height: 2),
+                      SelectableText(
+                        campaignUrl,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: campaignUrl));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link di registrazione copiato negli appunti!')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded, size: 14),
+                  label: const Text('Copia Link'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: const TextStyle(fontSize: 12),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () => _showCampaignQrDialog(promo, org),
+                  icon: const Icon(Icons.fullscreen_rounded, size: 16),
+                  label: const Text('Ingrandisci QR'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    visualDensity: VisualDensity.compact,
+                    textStyle: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

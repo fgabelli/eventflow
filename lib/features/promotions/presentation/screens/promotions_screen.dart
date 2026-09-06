@@ -48,6 +48,131 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
     );
   }
 
+  void _openEditDialog(Organization org, PromotionModel promo, List<PromotionModel> promos) {
+    showDialog(
+      context: context,
+      builder: (ctx) => CreatePromotionDialog(
+        org: org,
+        existingPromotions: promos,
+        initialPromo: promo,
+      ),
+    );
+  }
+
+  Future<void> _confirmDeletePromotion(Organization org, PromotionModel promo) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 28),
+            SizedBox(width: 12),
+            Expanded(child: Text('Eliminare la promozione?')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Sei sicuro di voler eliminare l\'offerta "${promo.title}"?'),
+            const SizedBox(height: 12),
+            Text(
+              'Verranno eliminati permanentemente la promozione e tutti i ${promo.totalVouchers} voucher generati.',
+              style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Questa operazione è irreversibile.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annulla'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Elimina Definitivamente'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Eliminazione voucher in corso...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final db = FirebaseFirestore.instance;
+      final vouchersSnap = await db
+          .collection(Collections.vouchers)
+          .where('promoId', isEqualTo: promo.id)
+          .get();
+
+      WriteBatch batch = db.batch();
+      int count = 0;
+      for (final doc in vouchersSnap.docs) {
+        batch.delete(doc.reference);
+        count++;
+        if (count >= 400) {
+          await batch.commit();
+          batch = db.batch();
+          count = 0;
+        }
+      }
+      if (count > 0) {
+        await batch.commit();
+      }
+
+      await db.collection(Collections.promotions).doc(promo.id).delete();
+
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Promozione "${promo.title}" eliminata con successo.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore durante l\'eliminazione: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
   void _openRedeemDialog(Organization org, {String? initialCode}) {
     showDialog(
       context: context,
@@ -205,7 +330,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
             itemCount: promotions.length,
             itemBuilder: (context, index) {
               final promo = promotions[index];
-              return _buildPromotionCard(org, promo);
+              return _buildPromotionCard(org, promo, promotions);
             },
           ),
         ],
@@ -248,7 +373,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
     );
   }
 
-  Widget _buildPromotionCard(Organization org, PromotionModel promo) {
+  Widget _buildPromotionCard(Organization org, PromotionModel promo, List<PromotionModel> allPromos) {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final isExpired = promo.isExpired;
     final isActive = promo.isActive;
@@ -335,6 +460,40 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
                                 : AppColors.warning,
                       ),
                     ),
+                  ),
+                  const SizedBox(width: 4),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, size: 20, color: AppColors.textSecondary),
+                    tooltip: 'Opzioni offerta',
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _openEditDialog(org, promo, allPromos);
+                      } else if (value == 'delete') {
+                        _confirmDeletePromotion(org, promo);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
+                            SizedBox(width: 10),
+                            Text('Modifica Offerta'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                            SizedBox(width: 10),
+                            Text('Elimina Offerta', style: TextStyle(color: AppColors.error)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

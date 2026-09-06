@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/models.dart';
+import 'package:eventflow/features/promotions/data/promotion_pdf_service.dart';
 
 void main() {
   group('Promotions & Vouchers Unit Tests', () {
@@ -247,6 +248,72 @@ void main() {
           ? availableVoucher.isExpired
           : (availableVoucher.isExpired || closedPromo.isRegistrationClosed);
       expect(isAvailableVoucherExpiredAtDesk, isTrue, reason: 'Unclaimed coupon cannot be redeemed when agreement is closed');
+    });
+
+    test('Single campaign URL format and dynamic JIT voucher minting sequence', () {
+      final promo = PromotionModel(
+        id: 'devero_fitup_2026',
+        orgId: 'devero_spa',
+        title: '2x1 Ingresso SPA FitUP Lissone',
+        partnerName: 'FitUP Lissone',
+        codePrefix: 'FIT',
+        currentSequence: 0,
+        totalVouchers: 500,
+        validityDays: 365,
+      );
+
+      // Single Campaign URL for all printed cards, flyers, and desk stands
+      const origin = 'https://eventflow-3541b.web.app';
+      final campaignUrl = '$origin/p/c/${promo.id}';
+      expect(campaignUrl, equals('https://eventflow-3541b.web.app/p/c/devero_fitup_2026'));
+
+      // First customer scans campaign QR and registers
+      final seq1 = promo.currentSequence + 1;
+      final code1 = '${promo.codePrefix}-${seq1.toString().padLeft(4, '0')}';
+      expect(code1, equals('FIT-0001'));
+
+      final now = DateTime.now();
+      final voucher1 = VoucherModel(
+        id: '${promo.orgId}_$code1',
+        promoId: promo.id,
+        orgId: promo.orgId,
+        code: code1,
+        sequenceNumber: seq1,
+        status: VoucherStatus.claimed,
+        claimedAt: now,
+        expiresAt: now.add(Duration(days: promo.validityDays)),
+        claimedFirstName: 'Alessandro',
+        claimedLastName: 'Bianchi',
+        claimedEmail: 'alessandro@example.com',
+      );
+
+      expect(voucher1.code, equals('FIT-0001'));
+      expect(voucher1.isClaimed, isTrue);
+      expect(voucher1.isExpired, isFalse);
+      expect(voucher1.remainingDays, inInclusiveRange(364, 366));
+
+      // Second customer registers
+      final seq2 = seq1 + 1;
+      final code2 = '${promo.codePrefix}-${seq2.toString().padLeft(4, '0')}';
+      expect(code2, equals('FIT-0002'));
+
+      // 500th customer registers (cap reached)
+      final seq500 = 500;
+      final code500 = '${promo.codePrefix}-${seq500.toString().padLeft(4, '0')}';
+      expect(code500, equals('FIT-0500'));
+      expect(seq500 >= promo.totalVouchers, isTrue);
+    });
+
+    test('CouponPrintFormat values and dimensions', () {
+      expect(CouponPrintFormat.values.length, equals(4));
+      expect(CouponPrintFormat.deskStandA4.widthMm, equals(210));
+      expect(CouponPrintFormat.deskStandA4.heightMm, equals(297));
+      expect(CouponPrintFormat.businessCard.widthMm, equals(85));
+      expect(CouponPrintFormat.businessCard.heightMm, equals(55));
+      expect(CouponPrintFormat.flyerA6.widthMm, equals(105));
+      expect(CouponPrintFormat.flyerA6.heightMm, equals(148));
+      expect(CouponPrintFormat.a4Grid.widthMm, equals(210));
+      expect(CouponPrintFormat.a4Grid.heightMm, equals(297));
     });
   });
 }
