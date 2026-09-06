@@ -20,23 +20,81 @@ enum CouponPrintFormat {
   const CouponPrintFormat(this.label, this.description, this.widthMm, this.heightMm);
 }
 
+enum ThemeCategory {
+  base,
+  occasion,
+}
+
 enum CouponVisualTheme {
-  luxurySpa(
-    'Luxury SPA & Wellness',
-    'Sfondo scuro blu ardesia, accenti oro caldo e finiture di pregio. Ideale per SPA, hotel e wellness club.',
+  // Stili Base / Settoriali
+  modernMinimal(
+    'Clean Modern',
+    'Stile chiaro, minimale ed essenziale. Universale per qualsiasi settore o brand.',
+    category: ThemeCategory.base,
   ),
   sportDynamic(
     'Sport & Dynamic Energy',
-    'Contrasti netti nero grafite e accento verde lime fluo. Ideale per palestre, fitness e centri sportivi.',
+    'Contrasto ad alta energia nero grafite e verde lime fluo. Ideale per palestre, fitness e sport.',
+    category: ThemeCategory.base,
   ),
-  modernMinimal(
-    'Clean Modern Ticket',
-    'Finitura bianca moderna con accenti indaco e stile voucher regalo.',
+  luxurySpa(
+    'Luxury Dark & Gold',
+    'Sfondo blu ardesia con finiture in oro caldo. Ideale per SPA, hotel, ristoranti ed esperienze di pregio.',
+    category: ThemeCategory.base,
+  ),
+
+  // Ricorrenze & Feste
+  christmas(
+    'Natale & Festività',
+    'Rosso granata profondo, accenti oro caldo e finiture festive eleganti per cene, voucher e regali.',
+    category: ThemeCategory.occasion,
+    occasionTag: 'SPECIALE NATALE',
+  ),
+  valentine(
+    'San Valentino & Coppia',
+    'Borgogna vellutato, accenti rosa e oro caldo per regali romantici ed esperienze per due.',
+    category: ThemeCategory.occasion,
+    occasionTag: 'EDIZIONE SAN VALENTINO',
+  ),
+  birthday(
+    'Compleanno & Party',
+    'Blu notte festivo con accenti oro brillante e dettagli celebrativi per regali di compleanno.',
+    category: ThemeCategory.occasion,
+    occasionTag: 'BUON COMPLEANNO',
+  ),
+  anniversary(
+    'Anniversario & Gold',
+    'Obsidian Black puro e oro metallizzato imperiale per traguardi ed edizioni speciali di prestigio.',
+    category: ThemeCategory.occasion,
+    occasionTag: 'EDIZIONE ANNIVERSARIO',
+  ),
+  motherDay(
+    'Festa della Mamma',
+    'Rosa antico e crema calda con accenti bacca per regali delicati e coccole speciali.',
+    category: ThemeCategory.occasion,
+    occasionTag: 'FESTA DELLA MAMMA',
+  ),
+  fatherDay(
+    'Festa del Papà',
+    'Blu petrolio scuro, grigio antracite e accenti cuoio cognac per tempo libero, sport ed esperienze.',
+    category: ThemeCategory.occasion,
+    occasionTag: 'FESTA DEL PAPÀ',
   );
 
   final String label;
   final String description;
-  const CouponVisualTheme(this.label, this.description);
+  final ThemeCategory category;
+  final String? occasionTag;
+
+  const CouponVisualTheme(
+    this.label,
+    this.description, {
+    this.category = ThemeCategory.base,
+    this.occasionTag,
+  });
+
+  bool get isOccasion => category == ThemeCategory.occasion;
+  bool get isDark => this != modernMinimal && this != motherDay;
 }
 
 class _ThemePalette {
@@ -130,6 +188,114 @@ class _ThemePalette {
           surfaceLevel0: PdfColors.white,
           surfaceLevel1: PdfColor.fromHex('F8FAFC'),
           surfaceLevel2: PdfColor.fromHex('EEF2FF'),
+        );
+      case CouponVisualTheme.christmas:
+        return _ThemePalette(
+          primaryBg: PdfColor.fromHex('3B0A12'),
+          qrSectionBg: PdfColors.white,
+          textPrimary: PdfColors.white,
+          textSecondary: PdfColor.fromHex('E2C2C6'),
+          accentColor: PdfColor.fromHex('EAB308'),
+          accentText: PdfColor.fromHex('3B0A12'),
+          borderColor: PdfColor.fromHex('5C1D24'),
+          dividerColor: PdfColor.fromHex('782632'),
+          badgeBg: PdfColor.fromHex('2B070D'),
+          badgeText: PdfColor.fromHex('FDE047'),
+          codeBg: PdfColor.fromHex('EAB308'),
+          codeText: PdfColor.fromHex('3B0A12'),
+          surfaceLevel0: PdfColor.fromHex('220409'),
+          surfaceLevel1: PdfColor.fromHex('3B0A12'),
+          surfaceLevel2: PdfColor.fromHex('500E19'),
+        );
+      case CouponVisualTheme.valentine:
+        return _ThemePalette(
+          primaryBg: PdfColor.fromHex('2A0818'),
+          qrSectionBg: PdfColors.white,
+          textPrimary: PdfColors.white,
+          textSecondary: PdfColor.fromHex('E5B8D0'),
+          accentColor: PdfColor.fromHex('FB7185'),
+          accentText: PdfColor.fromHex('2A0818'),
+          borderColor: PdfColor.fromHex('4C1D33'),
+          dividerColor: PdfColor.fromHex('6B2147'),
+          badgeBg: PdfColor.fromHex('1D0511'),
+          badgeText: PdfColor.fromHex('FDA4AF'),
+          codeBg: PdfColor.fromHex('F43F5E'),
+          codeText: PdfColors.white,
+          surfaceLevel0: PdfColor.fromHex('1A030E'),
+          surfaceLevel1: PdfColor.fromHex('2A0818'),
+          surfaceLevel2: PdfColor.fromHex('3D1026'),
+        );
+      case CouponVisualTheme.birthday:
+        return _ThemePalette(
+          primaryBg: PdfColor.fromHex('111827'),
+          qrSectionBg: PdfColors.white,
+          textPrimary: PdfColors.white,
+          textSecondary: PdfColor.fromHex('9CA3AF'),
+          accentColor: PdfColor.fromHex('F59E0B'),
+          accentText: PdfColor.fromHex('111827'),
+          borderColor: PdfColor.fromHex('374151'),
+          dividerColor: PdfColor.fromHex('4B5563'),
+          badgeBg: PdfColor.fromHex('1F2937'),
+          badgeText: PdfColor.fromHex('FBBF24'),
+          codeBg: PdfColor.fromHex('F59E0B'),
+          codeText: PdfColor.fromHex('111827'),
+          surfaceLevel0: PdfColor.fromHex('0B0F17'),
+          surfaceLevel1: PdfColor.fromHex('1F2937'),
+          surfaceLevel2: PdfColor.fromHex('374151'),
+        );
+      case CouponVisualTheme.anniversary:
+        return _ThemePalette(
+          primaryBg: PdfColor.fromHex('0A0A0A'),
+          qrSectionBg: PdfColors.white,
+          textPrimary: PdfColors.white,
+          textSecondary: PdfColor.fromHex('A3A3A3'),
+          accentColor: PdfColor.fromHex('D4AF37'),
+          accentText: PdfColor.fromHex('0A0A0A'),
+          borderColor: PdfColor.fromHex('262626'),
+          dividerColor: PdfColor.fromHex('404040'),
+          badgeBg: PdfColor.fromHex('171717'),
+          badgeText: PdfColor.fromHex('FCD34D'),
+          codeBg: PdfColor.fromHex('D4AF37'),
+          codeText: PdfColor.fromHex('0A0A0A'),
+          surfaceLevel0: PdfColor.fromHex('050505'),
+          surfaceLevel1: PdfColor.fromHex('141414'),
+          surfaceLevel2: PdfColor.fromHex('1F1F1F'),
+        );
+      case CouponVisualTheme.motherDay:
+        return _ThemePalette(
+          primaryBg: PdfColor.fromHex('FFF8F6'),
+          qrSectionBg: PdfColors.white,
+          textPrimary: PdfColor.fromHex('2D1820'),
+          textSecondary: PdfColor.fromHex('7C5966'),
+          accentColor: PdfColor.fromHex('BE185D'),
+          accentText: PdfColors.white,
+          borderColor: PdfColor.fromHex('FCE7F0'),
+          dividerColor: PdfColor.fromHex('F3D0DF'),
+          badgeBg: PdfColor.fromHex('FDF2F8'),
+          badgeText: PdfColor.fromHex('BE185D'),
+          codeBg: PdfColor.fromHex('BE185D'),
+          codeText: PdfColors.white,
+          surfaceLevel0: PdfColors.white,
+          surfaceLevel1: PdfColor.fromHex('FFF8F6'),
+          surfaceLevel2: PdfColor.fromHex('FCE7F0'),
+        );
+      case CouponVisualTheme.fatherDay:
+        return _ThemePalette(
+          primaryBg: PdfColor.fromHex('0B192C'),
+          qrSectionBg: PdfColors.white,
+          textPrimary: PdfColors.white,
+          textSecondary: PdfColor.fromHex('94A3B8'),
+          accentColor: PdfColor.fromHex('EA580C'),
+          accentText: PdfColors.white,
+          borderColor: PdfColor.fromHex('1E3E62'),
+          dividerColor: PdfColor.fromHex('2C5282'),
+          badgeBg: PdfColor.fromHex('091422'),
+          badgeText: PdfColor.fromHex('FB923C'),
+          codeBg: PdfColor.fromHex('EA580C'),
+          codeText: PdfColors.white,
+          surfaceLevel0: PdfColor.fromHex('060E18'),
+          surfaceLevel1: PdfColor.fromHex('0F2238'),
+          surfaceLevel2: PdfColor.fromHex('1B3B5C'),
         );
     }
   }
@@ -410,7 +576,7 @@ class PromotionPdfService {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
     final palette = _ThemePalette.fromTheme(theme);
-    final isDark = theme != CouponVisualTheme.modernMinimal;
+    final isDark = theme.isDark;
 
     pw.ImageProvider? heroBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
@@ -528,7 +694,9 @@ class PromotionPdfService {
                               border: pw.Border.all(color: palette.borderColor, width: 0.5),
                             ),
                             child: pw.Text(
-                              promotion.offerType.label.toUpperCase(),
+                              theme.occasionTag != null
+                                  ? '${theme.occasionTag!}  |  ${promotion.offerType.label.toUpperCase()}'
+                                  : promotion.offerType.label.toUpperCase(),
                               style: pw.TextStyle(
                                 font: fontBold,
                                 fontSize: 10,
@@ -661,8 +829,8 @@ class PromotionPdfService {
                                         ),
                                         child: pw.Text(
                                           expDateStr != null
-                                              ? 'Attiva entro il $expDateStr  •  Valido ${promotion.validityDays} giorni'
-                                              : 'Validità: ${promotion.validityDays} giorni dall\'attivazione',
+                                              ? 'Attiva entro il $expDateStr  |  Validità: ${promotion.validityDescription} dalla registrazione'
+                                              : 'Validità: ${promotion.validityDescription} dalla registrazione',
                                           style: pw.TextStyle(
                                             font: fontSemiBold,
                                             fontSize: 9,
@@ -681,7 +849,7 @@ class PromotionPdfService {
 
                           // 3-step inline footer
                           pw.Text(
-                            '1. Inquadra il QR   •   2. Inserisci nome ed email   •   3. Mostra il pass alla reception',
+                            '1. Inquadra il QR   |   2. Inserisci nome ed email   |   3. Mostra il pass alla reception',
                             style: pw.TextStyle(
                               font: fontRegular,
                               fontSize: 8,
@@ -717,7 +885,7 @@ class PromotionPdfService {
                                 [
                                   orgName,
                                   if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
-                                ].join('  •  '),
+                                ].join('  |  '),
                                 style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.textPrimary),
                                 maxLines: 1,
                               ),
@@ -734,7 +902,7 @@ class PromotionPdfService {
                                         ),
                                       if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) ...[
                                         if (orgPhone != null && orgPhone.trim().isNotEmpty)
-                                          pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
+                                          pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
                                         _buildWhatsappSnippet(
                                           number: orgWhatsapp,
                                           waIcon: waIcon,
@@ -745,14 +913,14 @@ class PromotionPdfService {
                                       ],
                                       if (orgEmail != null && orgEmail.trim().isNotEmpty) ...[
                                         if ((orgPhone != null && orgPhone.trim().isNotEmpty) || (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty))
-                                          pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
+                                          pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
                                         pw.Text(
                                           orgEmail,
                                           style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary),
                                         ),
                                       ],
                                       if (orgWebsite != null && orgWebsite.trim().isNotEmpty) ...[
-                                        pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
+                                        pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
                                         pw.Text(
                                           orgWebsite,
                                           style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary),
@@ -805,7 +973,7 @@ class PromotionPdfService {
     pw.ImageProvider? waIcon,
   }) {
     final palette = _ThemePalette.fromTheme(theme);
-    final isDark = theme != CouponVisualTheme.modernMinimal;
+    final isDark = theme.isDark;
     // Page background for ticket notch cutouts
     final pageBg = isGridItem ? PdfColors.white : (isDark ? palette.surfaceLevel0 : PdfColors.white);
 
@@ -859,19 +1027,40 @@ class PromotionPdfService {
                           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                           textLightColor: isDark ? PdfColors.white : null,
                         ),
+                        // Occasion tag if present
+                        if (theme.occasionTag != null)
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel2,
+                              borderRadius: pw.BorderRadius.circular(2),
+                              border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                            ),
+                            child: pw.Text(
+                              theme.occasionTag!,
+                              style: pw.TextStyle(
+                                font: fontBold,
+                                fontSize: 4.8,
+                                color: palette.badgeText,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
                         // Offer headline
                         pw.Text(
                           promotion.title,
                           style: pw.TextStyle(
                             font: fontBold,
-                            fontSize: 11,
+                            fontSize: theme.occasionTag != null ? 10 : 11,
                             color: palette.textPrimary,
                             letterSpacing: -0.2,
                           ),
                           maxLines: 2,
                         ),
                         // Footer: code + validity
-                        pw.Row(
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          mainAxisSize: pw.MainAxisSize.min,
                           children: [
                             pw.Container(
                               padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
@@ -883,22 +1072,28 @@ class PromotionPdfService {
                                 'COD: ${promotion.codePrefix}',
                                 style: pw.TextStyle(
                                   font: fontBold,
-                                  fontSize: 7,
+                                  fontSize: 6.8,
                                   color: palette.codeText,
-                                  letterSpacing: 1.2,
+                                  letterSpacing: 1.0,
                                 ),
                               ),
                             ),
-                            pw.SizedBox(width: 4),
-                            pw.Expanded(
+                            pw.SizedBox(height: 2.5),
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                              decoration: pw.BoxDecoration(
+                                color: palette.surfaceLevel2,
+                                borderRadius: pw.BorderRadius.circular(2),
+                                border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                              ),
                               child: pw.Text(
                                 expDateStr != null
-                                    ? 'Scad. $expDateStr'
-                                    : '${promotion.validityDays} gg',
+                                    ? 'Entro $expDateStr | Validità ${promotion.validityDescription} dalla registrazione'
+                                    : 'Validità: ${promotion.validityDescription} dalla registrazione',
                                 style: pw.TextStyle(
-                                  font: fontRegular,
-                                  fontSize: 6.5,
-                                  color: palette.textSecondary,
+                                  font: fontSemiBold,
+                                  fontSize: 5.2,
+                                  color: palette.badgeText,
                                 ),
                                 maxLines: 1,
                               ),
@@ -926,7 +1121,7 @@ class PromotionPdfService {
                                         ),
                                       ),
                                     if (orgPhone != null && orgPhone.trim().isNotEmpty && orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty)
-                                      pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 4.8, color: palette.textSecondary)),
+                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 4.8, color: palette.textSecondary)),
                                     if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty)
                                       _buildWhatsappSnippet(
                                         number: orgWhatsapp,
@@ -943,7 +1138,7 @@ class PromotionPdfService {
                                     if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
                                     if (orgWebsite != null && orgWebsite.trim().isNotEmpty)
                                       orgWebsite.replaceAll(RegExp(r'^https?://'), '').replaceAll(RegExp(r'^www\.'), ''),
-                                  ].join('  •  '),
+                                  ].join('  |  '),
                                   style: pw.TextStyle(
                                     font: fontRegular,
                                     fontSize: 4.8,
@@ -1159,7 +1354,7 @@ class PromotionPdfService {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
     final palette = _ThemePalette.fromTheme(theme);
-    final isDark = theme != CouponVisualTheme.modernMinimal;
+    final isDark = theme.isDark;
 
     pw.ImageProvider? flyerBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
@@ -1276,7 +1471,9 @@ class PromotionPdfService {
                               border: pw.Border.all(color: palette.borderColor, width: 0.5),
                             ),
                             child: pw.Text(
-                              promotion.offerType.label.toUpperCase(),
+                              theme.occasionTag != null
+                                  ? '${theme.occasionTag!}  |  ${promotion.offerType.label.toUpperCase()}'
+                                  : promotion.offerType.label.toUpperCase(),
                               style: pw.TextStyle(
                                 font: fontBold,
                                 fontSize: 7.5,
@@ -1401,8 +1598,8 @@ class PromotionPdfService {
                                     ),
                                     child: pw.Text(
                                       expDateStr != null
-                                          ? 'Entro $expDateStr  •  ${promotion.validityDays} gg'
-                                          : 'Valido ${promotion.validityDays} giorni',
+                                          ? 'Entro $expDateStr  |  Validità: ${promotion.validityDescription} dalla registrazione'
+                                          : 'Validità: ${promotion.validityDescription} dalla registrazione',
                                       style: pw.TextStyle(
                                         font: fontSemiBold,
                                         fontSize: 7,
@@ -1457,7 +1654,7 @@ class PromotionPdfService {
                                       ),
                                     if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) ...[
                                       if (orgPhone != null && orgPhone.trim().isNotEmpty)
-                                        pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
+                                        pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
                                       _buildWhatsappSnippet(
                                         number: orgWhatsapp,
                                         waIcon: waIcon,
@@ -1468,14 +1665,14 @@ class PromotionPdfService {
                                     ],
                                     if (orgEmail != null && orgEmail.trim().isNotEmpty) ...[
                                       if ((orgPhone != null && orgPhone.trim().isNotEmpty) || (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty))
-                                        pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
+                                        pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
                                       pw.Text(
                                         orgEmail,
                                         style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary),
                                       ),
                                     ],
                                     if (orgWebsite != null && orgWebsite.trim().isNotEmpty) ...[
-                                      pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
+                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
                                       pw.Text(
                                         orgWebsite,
                                         style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary),
@@ -1531,7 +1728,7 @@ class PromotionPdfService {
     pw.ImageProvider? waIcon,
   }) {
     final palette = _ThemePalette.fromTheme(theme);
-    final isDark = theme != CouponVisualTheme.modernMinimal;
+    final isDark = theme.isDark;
 
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -1581,12 +1778,31 @@ class PromotionPdfService {
                           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                           textLightColor: isDark ? PdfColors.white : null,
                         ),
+                        // Occasion tag if present
+                        if (theme.occasionTag != null)
+                          pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel2,
+                              borderRadius: pw.BorderRadius.circular(2),
+                              border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                            ),
+                            child: pw.Text(
+                              theme.occasionTag!,
+                              style: pw.TextStyle(
+                                font: fontBold,
+                                fontSize: 5.5,
+                                color: palette.badgeText,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
                         // Headline
                         pw.Text(
                           promotion.title,
                           style: pw.TextStyle(
                             font: fontBold,
-                            fontSize: 14,
+                            fontSize: theme.occasionTag != null ? 13 : 14,
                             color: palette.textPrimary,
                             letterSpacing: -0.2,
                           ),
@@ -1623,14 +1839,22 @@ class PromotionPdfService {
                               ),
                             ),
                             pw.SizedBox(width: 6),
-                            pw.Text(
-                              expDateStr != null
-                                  ? 'Scad. $expDateStr'
-                                  : '${promotion.validityDays} gg',
-                              style: pw.TextStyle(
-                                font: fontRegular,
-                                fontSize: 7,
-                                color: palette.textSecondary,
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: pw.BoxDecoration(
+                                color: palette.surfaceLevel2,
+                                borderRadius: pw.BorderRadius.circular(3),
+                                border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                              ),
+                              child: pw.Text(
+                                expDateStr != null
+                                    ? 'Entro $expDateStr | Validità: ${promotion.validityDescription} dalla registrazione'
+                                    : 'Validità: ${promotion.validityDescription} dalla registrazione',
+                                style: pw.TextStyle(
+                                  font: fontSemiBold,
+                                  fontSize: 6.5,
+                                  color: palette.badgeText,
+                                ),
                               ),
                             ),
                           ],
@@ -1656,7 +1880,7 @@ class PromotionPdfService {
                                         ),
                                       ),
                                     if (orgPhone != null && orgPhone.trim().isNotEmpty && orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty)
-                                      pw.Text('  •  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.0, color: palette.textSecondary)),
+                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.0, color: palette.textSecondary)),
                                     if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty)
                                       _buildWhatsappSnippet(
                                         number: orgWhatsapp,
@@ -1673,7 +1897,7 @@ class PromotionPdfService {
                                     if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
                                     if (orgWebsite != null && orgWebsite.trim().isNotEmpty)
                                       orgWebsite.replaceAll(RegExp(r'^https?://'), '').replaceAll(RegExp(r'^www\.'), ''),
-                                  ].join('  •  '),
+                                  ].join('  |  '),
                                   style: pw.TextStyle(
                                     font: fontRegular,
                                     fontSize: 5.0,

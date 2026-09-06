@@ -364,10 +364,16 @@ void main() {
     test('CouponVisualTheme themes and multi-format PDF generation', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
 
-      expect(CouponVisualTheme.values.length, equals(3));
+      expect(CouponVisualTheme.values.length, equals(9));
       expect(CouponVisualTheme.luxurySpa.label, contains('Luxury'));
       expect(CouponVisualTheme.sportDynamic.label, contains('Sport'));
       expect(CouponVisualTheme.modernMinimal.label, contains('Clean'));
+      expect(CouponVisualTheme.christmas.label, contains('Natale'));
+      expect(CouponVisualTheme.valentine.label, contains('Valentino'));
+      expect(CouponVisualTheme.birthday.label, contains('Compleanno'));
+      expect(CouponVisualTheme.anniversary.label, contains('Anniversario'));
+      expect(CouponVisualTheme.motherDay.label, contains('Mamma'));
+      expect(CouponVisualTheme.fatherDay.label, contains('Papà'));
 
       final promo = PromotionModel(
         id: 'promo_theme_test',
@@ -409,6 +415,16 @@ void main() {
           theme: theme,
         );
         expect(gridDoc.isNotEmpty, isTrue, reason: 'A4 Grid for ${theme.name} should generate valid bytes');
+
+        // Test deskStandA4 format for each theme
+        final posterDoc = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.deskStandA4,
+          theme: theme,
+        );
+        expect(posterDoc.isNotEmpty, isTrue, reason: 'Desk stand A4 for ${theme.name} should generate valid bytes');
       }
     });
   });

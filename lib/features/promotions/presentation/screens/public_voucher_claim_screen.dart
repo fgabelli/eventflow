@@ -473,7 +473,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                         const Icon(Icons.timer_outlined, color: Colors.white70, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          'Validità: ${promo.validityDays} giorni dalla registrazione',
+                          'Validità: ${promo.validityDescription} dalla registrazione',
                           style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                         if (expDateStr != null) ...[

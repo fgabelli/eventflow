@@ -185,92 +185,69 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
-                    Row(
-                      children: CouponVisualTheme.values.map((theme) {
-                        final isSelected = _selectedTheme == theme;
-                        final (IconData icon, Color primaryCol, Color accentCol, String label) = switch (theme) {
-                          CouponVisualTheme.luxurySpa => (
-                            Icons.spa_rounded,
-                            const Color(0xFF0F172A),
-                            const Color(0xFFD97706),
-                            'Luxury SPA',
+                    // 1. Stili Base
+                    const Row(
+                      children: [
+                        Text(
+                          'STILI GENERALI & BRAND',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                            color: AppColors.textSecondary,
                           ),
-                          CouponVisualTheme.sportDynamic => (
-                            Icons.fitness_center_rounded,
-                            const Color(0xFF09090B),
-                            const Color(0xFF84CC16),
-                            'Sport Energy',
-                          ),
-                          CouponVisualTheme.modernMinimal => (
-                            Icons.confirmation_number_rounded,
-                            const Color(0xFFF1F5F9),
-                            const Color(0xFF4338CA),
-                            'Clean Modern',
-                          ),
-                        };
-
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedTheme = theme),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.card,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? AppColors.primary : AppColors.border,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        decoration: BoxDecoration(
-                                          color: primaryCol,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(color: AppColors.border, width: 0.5),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        width: 12,
-                                        height: 12,
-                                        decoration: BoxDecoration(
-                                          color: accentCol,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Icon(icon, size: 18, color: isSelected ? AppColors.primary : AppColors.textSecondary),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    label,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        CouponVisualTheme.modernMinimal,
+                        CouponVisualTheme.sportDynamic,
+                        CouponVisualTheme.luxurySpa,
+                      ].map((t) => Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: _buildThemeTile(t),
+                        ),
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 2. Occasioni & Ricorrenze
+                    const Row(
+                      children: [
+                        Text(
+                          'OCCASIONI & RICORRENZE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 1.45,
+                      children: [
+                        CouponVisualTheme.christmas,
+                        CouponVisualTheme.valentine,
+                        CouponVisualTheme.birthday,
+                        CouponVisualTheme.anniversary,
+                        CouponVisualTheme.motherDay,
+                        CouponVisualTheme.fatherDay,
+                      ].map((t) => _buildThemeTile(t)).toList(),
+                    ),
+                    const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: Text(
@@ -355,6 +332,124 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                   ),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeTile(CouponVisualTheme theme) {
+    final isSelected = _selectedTheme == theme;
+    final (IconData icon, Color primaryCol, Color accentCol, String label) = switch (theme) {
+      CouponVisualTheme.modernMinimal => (
+        Icons.confirmation_number_outlined,
+        const Color(0xFFF1F5F9),
+        const Color(0xFF4338CA),
+        'Clean Modern',
+      ),
+      CouponVisualTheme.sportDynamic => (
+        Icons.fitness_center_rounded,
+        const Color(0xFF09090B),
+        const Color(0xFF84CC16),
+        'Sport Energy',
+      ),
+      CouponVisualTheme.luxurySpa => (
+        Icons.spa_rounded,
+        const Color(0xFF0F172A),
+        const Color(0xFFD97706),
+        'Luxury Dark',
+      ),
+      CouponVisualTheme.christmas => (
+        Icons.ac_unit_rounded,
+        const Color(0xFF3B0A12),
+        const Color(0xFFEAB308),
+        'Natale & Feste',
+      ),
+      CouponVisualTheme.valentine => (
+        Icons.favorite_rounded,
+        const Color(0xFF2A0818),
+        const Color(0xFFFB7185),
+        'San Valentino',
+      ),
+      CouponVisualTheme.birthday => (
+        Icons.cake_rounded,
+        const Color(0xFF111827),
+        const Color(0xFFF59E0B),
+        'Compleanno',
+      ),
+      CouponVisualTheme.anniversary => (
+        Icons.workspace_premium_rounded,
+        const Color(0xFF0A0A0A),
+        const Color(0xFFD4AF37),
+        'Anniversario Gold',
+      ),
+      CouponVisualTheme.motherDay => (
+        Icons.local_florist_rounded,
+        const Color(0xFFFFF8F6),
+        const Color(0xFFBE185D),
+        'Festa Mamma',
+      ),
+      CouponVisualTheme.fatherDay => (
+        Icons.watch_rounded,
+        const Color(0xFF0B192C),
+        const Color(0xFFEA580C),
+        'Festa Papà',
+      ),
+    };
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTheme = theme),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.card,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: primaryCol,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.border, width: 0.5),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: accentCol,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            Icon(icon, size: 16, color: isSelected ? AppColors.primary : AppColors.textSecondary),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+              ),
             ),
           ],
         ),

@@ -770,7 +770,7 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
               _buildOverviewMetric('Riscattati', '$redeemed', AppColors.success),
               if (expired > 0)
                 _buildOverviewMetric('Scaduti', '$expired', AppColors.error),
-              _buildOverviewMetric('Validità', '${promo.validityDays} gg', const Color(0xFF8B5CF6)),
+              _buildOverviewMetric('Validità', promo.validityDescription, const Color(0xFF8B5CF6)),
               _buildOverviewMetric(
                 'Termine Registrazione',
                 promo.expirationDate != null ? dateFormat.format(promo.expirationDate!) : 'Aperto',

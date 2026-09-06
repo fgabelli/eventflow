@@ -707,6 +707,18 @@ class PromotionModel {
   int get availableCount => (totalVouchers - claimedCount).clamp(0, totalVouchers);
   double get redemptionRate => totalVouchers > 0 ? (redeemedCount / totalVouchers) : 0;
   double get claimRate => totalVouchers > 0 ? (claimedCount / totalVouchers) : 0;
+  String get validityDescription {
+    if (validityDays <= 0) return '';
+    if (validityDays % 365 == 0) {
+      final years = validityDays ~/ 365;
+      return years == 1 ? '1 anno' : '$years anni';
+    }
+    if (validityDays % 30 == 0 && validityDays <= 360) {
+      final months = validityDays ~/ 30;
+      return months == 1 ? '1 mese' : '$months mesi';
+    }
+    return validityDays == 1 ? '1 giorno' : '$validityDays giorni';
+  }
 
   factory PromotionModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
