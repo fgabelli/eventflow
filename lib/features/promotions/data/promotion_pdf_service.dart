@@ -304,6 +304,10 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          orgEmail: orgEmail,
+          orgPhone: orgPhone,
+          orgWhatsapp: orgWhatsapp,
+          orgWebsite: orgWebsite,
         );
       case CouponPrintFormat.flyerA6:
         return generateFlyersA6(
@@ -330,6 +334,10 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          orgEmail: orgEmail,
+          orgPhone: orgPhone,
+          orgWhatsapp: orgWhatsapp,
+          orgWebsite: orgWebsite,
         );
     }
   }
@@ -707,6 +715,10 @@ class PromotionPdfService {
     bool? overridePartnerLogoDarkBg,
     bool isGridItem = false,
     pw.ImageProvider? ticketBgImage,
+    String? orgPhone,
+    String? orgWhatsapp,
+    String? orgEmail,
+    String? orgWebsite,
   }) {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme != CouponVisualTheme.modernMinimal;
@@ -809,6 +821,22 @@ class PromotionPdfService {
                             ),
                           ],
                         ),
+                        // Compact contact info
+                        if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
+                          pw.Text(
+                            [
+                              if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
+                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
+                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
+                            ].join(' • '),
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 5.5,
+                              color: palette.textSecondary,
+                            ),
+                            maxLines: 1,
+                          ),
                       ],
                     ),
                   ),
@@ -922,6 +950,10 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? orgEmail,
+    String? orgPhone,
+    String? orgWhatsapp,
+    String? orgWebsite,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -967,6 +999,10 @@ class PromotionPdfService {
             overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
             isGridItem: false,
             ticketBgImage: ticketBgImage,
+            orgPhone: orgPhone,
+            orgWhatsapp: orgWhatsapp,
+            orgEmail: orgEmail,
+            orgWebsite: orgWebsite,
           );
         },
       ),
@@ -1329,6 +1365,10 @@ class PromotionPdfService {
     required CouponVisualTheme theme,
     bool? overridePartnerLogoDarkBg,
     pw.ImageProvider? ticketBgImage,
+    String? orgPhone,
+    String? orgWhatsapp,
+    String? orgEmail,
+    String? orgWebsite,
   }) {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme != CouponVisualTheme.modernMinimal;
@@ -1435,6 +1475,22 @@ class PromotionPdfService {
                             ),
                           ],
                         ),
+                        // Compact contact info
+                        if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
+                          pw.Text(
+                            [
+                              if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
+                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
+                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
+                            ].join(' • '),
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 5,
+                              color: palette.textSecondary,
+                            ),
+                            maxLines: 1,
+                          ),
                       ],
                     ),
                   ),
@@ -1546,6 +1602,10 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? orgEmail,
+    String? orgPhone,
+    String? orgWhatsapp,
+    String? orgWebsite,
   }) async {
     final pdf = pw.Document();
 
@@ -1594,6 +1654,10 @@ class PromotionPdfService {
                 theme: theme,
                 overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                 ticketBgImage: ticketBgImage,
+                orgPhone: orgPhone,
+                orgWhatsapp: orgWhatsapp,
+                orgEmail: orgEmail,
+                orgWebsite: orgWebsite,
               );
             }),
           );
