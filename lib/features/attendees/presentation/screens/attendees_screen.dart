@@ -1393,11 +1393,8 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
         await batch.commit();
       }
 
-      // Update event: attendee count + time slot bookedCounts
-      final updateData = <String, dynamic>{
-        'attendeesCount': FieldValue.increment(imported),
-      };
-
+      // Note: attendeesCount is incremented server-side by Cloud Functions (onAttendeeCreated).
+      // If time slots were assigned during import, update their bookedCounts.
       if (event.hasTimeSlots && slotImportCounts.isNotEmpty) {
         final updatedSlots = event.timeSlots.map((s) {
           final map = s.toMap();
@@ -1406,10 +1403,8 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
           }
           return map;
         }).toList();
-        updateData['timeSlots'] = updatedSlots;
+        await db.collection(Collections.events).doc(_selectedEventId).update({'timeSlots': updatedSlots});
       }
-
-      await db.collection(Collections.events).doc(_selectedEventId).update(updateData);
 
       // Close loading dialog
       if (mounted) Navigator.pop(context);
@@ -1534,13 +1529,8 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                           final docRef = FirebaseFirestore.instance.collection(Collections.attendees).doc();
                           await docRef.set(attendee.toFirestore());
 
-                          // Update attendee count on event
-                          await FirebaseFirestore.instance
-                              .collection(Collections.events)
-                              .doc(_selectedEventId)
-                              .update({'attendeesCount': FieldValue.increment(1)});
-
                           // Track attendee added
+                          // Note: attendeesCount is incremented server-side by Cloud Function (onAttendeeCreated)
                           AnalyticsService.instance.logEvent('attendee_added');
 
                           if (context.mounted) Navigator.pop(context);
