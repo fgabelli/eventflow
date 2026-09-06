@@ -657,7 +657,7 @@ class PromotionPdfService {
                   // Bottom brand bar
                   pw.Container(
                     width: double.infinity,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                     decoration: pw.BoxDecoration(
                       color: palette.surfaceLevel1,
                       borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(5.5)),
@@ -666,25 +666,41 @@ class PromotionPdfService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        // Org contact info
+                        // Org contact info (2 lines)
                         pw.Expanded(
-                          child: pw.Text(
-                            [
-                              orgName,
-                              if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
-                              if (orgPhone != null && orgPhone.trim().isNotEmpty) 'Tel: $orgPhone',
-                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA: $orgWhatsapp',
-                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
-                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
-                            ].join('  •  '),
-                            style: pw.TextStyle(font: fontRegular, fontSize: 7, color: palette.textSecondary),
-                            maxLines: 1,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            mainAxisSize: pw.MainAxisSize.min,
+                            children: [
+                              pw.Text(
+                                [
+                                  orgName,
+                                  if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
+                                ].join('  •  '),
+                                style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.textPrimary),
+                                maxLines: 1,
+                              ),
+                              if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.only(top: 2),
+                                  child: pw.Text(
+                                    [
+                                      if (orgPhone != null && orgPhone.trim().isNotEmpty) 'Tel: $orgPhone',
+                                      if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA: $orgWhatsapp',
+                                      if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                                      if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
+                                    ].join('  •  '),
+                                    style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary),
+                                    maxLines: 1,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        pw.SizedBox(width: 8),
+                        pw.SizedBox(width: 12),
                         pw.Text(
                           'Powered by ticketto.it',
-                          style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.accentColor),
+                          style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: palette.accentColor),
                         ),
                       ],
                     ),
@@ -821,21 +837,40 @@ class PromotionPdfService {
                             ),
                           ],
                         ),
-                        // Compact contact info
+                        // Compact contact info (2 lines)
                         if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
-                          pw.Text(
-                            [
-                              if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
-                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
-                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
-                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
-                            ].join(' • '),
-                            style: pw.TextStyle(
-                              font: fontRegular,
-                              fontSize: 5.5,
-                              color: palette.textSecondary,
-                            ),
-                            maxLines: 1,
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            mainAxisSize: pw.MainAxisSize.min,
+                            children: [
+                              if (orgPhone != null || orgWhatsapp != null)
+                                pw.Text(
+                                  [
+                                    if (orgPhone != null && orgPhone.trim().isNotEmpty) 'Tel $orgPhone',
+                                    if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
+                                  ].join('  •  '),
+                                  style: pw.TextStyle(
+                                    font: fontRegular,
+                                    fontSize: 4.8,
+                                    color: palette.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              if (orgEmail != null || orgWebsite != null)
+                                pw.Text(
+                                  [
+                                    if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                                    if (orgWebsite != null && orgWebsite.trim().isNotEmpty)
+                                      orgWebsite.replaceAll(RegExp(r'^https?://'), '').replaceAll(RegExp(r'^www\.'), ''),
+                                  ].join('  •  '),
+                                  style: pw.TextStyle(
+                                    font: fontRegular,
+                                    fontSize: 4.8,
+                                    color: palette.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                            ],
                           ),
                       ],
                     ),
@@ -1311,20 +1346,35 @@ class PromotionPdfService {
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
                         pw.Expanded(
-                          child: pw.Text(
-                            [
-                              orgName,
-                              if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
-                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
-                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
-                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
-                            ].join('  •  '),
-                            style: pw.TextStyle(
-                              font: fontRegular,
-                              fontSize: 6.5,
-                              color: palette.textSecondary,
-                            ),
-                            maxLines: 1,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            mainAxisSize: pw.MainAxisSize.min,
+                            children: [
+                              pw.Text(
+                                orgName,
+                                style: pw.TextStyle(
+                                  font: fontBold,
+                                  fontSize: 6.5,
+                                  color: palette.textPrimary,
+                                ),
+                                maxLines: 1,
+                              ),
+                              if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
+                                pw.Text(
+                                  [
+                                    if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
+                                    if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
+                                    if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                                    if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
+                                  ].join('  •  '),
+                                  style: pw.TextStyle(
+                                    font: fontRegular,
+                                    fontSize: 5.5,
+                                    color: palette.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                            ],
                           ),
                         ),
                         pw.SizedBox(width: 6),
@@ -1475,21 +1525,40 @@ class PromotionPdfService {
                             ),
                           ],
                         ),
-                        // Compact contact info
+                        // Compact contact info (2 lines)
                         if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
-                          pw.Text(
-                            [
-                              if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
-                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
-                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
-                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
-                            ].join(' • '),
-                            style: pw.TextStyle(
-                              font: fontRegular,
-                              fontSize: 5,
-                              color: palette.textSecondary,
-                            ),
-                            maxLines: 1,
+                          pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            mainAxisSize: pw.MainAxisSize.min,
+                            children: [
+                              if (orgPhone != null || orgWhatsapp != null)
+                                pw.Text(
+                                  [
+                                    if (orgPhone != null && orgPhone.trim().isNotEmpty) 'Tel $orgPhone',
+                                    if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
+                                  ].join('  •  '),
+                                  style: pw.TextStyle(
+                                    font: fontRegular,
+                                    fontSize: 5.0,
+                                    color: palette.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              if (orgEmail != null || orgWebsite != null)
+                                pw.Text(
+                                  [
+                                    if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                                    if (orgWebsite != null && orgWebsite.trim().isNotEmpty)
+                                      orgWebsite.replaceAll(RegExp(r'^https?://'), '').replaceAll(RegExp(r'^www\.'), ''),
+                                  ].join('  •  '),
+                                  style: pw.TextStyle(
+                                    font: fontRegular,
+                                    fontSize: 5.0,
+                                    color: palette.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                            ],
                           ),
                       ],
                     ),

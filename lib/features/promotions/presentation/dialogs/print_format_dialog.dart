@@ -324,17 +324,16 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                 const SizedBox(width: 10),
                 OutlinedButton.icon(
                   onPressed: _isGenerating ? null : () async {
+                    final messenger = ScaffoldMessenger.of(context);
                     setState(() => _isGenerating = true);
                     try {
                       await PromotionPdfService.downloadQrCode(
                         promotion: widget.promo,
                       );
                     } catch (e) {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Errore: $e')),
-                        );
-                      }
+                      messenger.showSnackBar(
+                        SnackBar(content: Text('Errore: $e')),
+                      );
                     } finally {
                       if (mounted) setState(() => _isGenerating = false);
                     }
