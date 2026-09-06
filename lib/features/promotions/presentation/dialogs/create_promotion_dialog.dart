@@ -40,6 +40,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
 
   bool _isPartnership = false;
   bool _isUploadingPartnerLogo = false;
+  bool _partnerLogoDarkBg = false;
   OfferType _selectedOfferType = OfferType.twoForOne;
   PromotionPaymentMethod _selectedPaymentMethod = PromotionPaymentMethod.atVenue;
   bool _hasRegistrationDeadline = false;
@@ -59,6 +60,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
       _descriptionCtrl.text = p.description ?? '';
       _partnerCtrl.text = p.partnerName ?? '';
       _partnerLogoCtrl.text = p.partnerLogoUrl ?? '';
+      _partnerLogoDarkBg = p.partnerLogoDarkBg;
       _prefixCtrl.text = p.codePrefix;
       _quantityCtrl.text = p.totalVouchers.toString();
       _priceCtrl.text = p.price != null ? p.price!.toStringAsFixed(2) : '';
@@ -212,6 +214,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
           'description': _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
           'partnerName': _isPartnership && _partnerCtrl.text.trim().isNotEmpty ? _partnerCtrl.text.trim() : null,
           'partnerLogoUrl': _isPartnership && _partnerLogoCtrl.text.trim().isNotEmpty ? _partnerLogoCtrl.text.trim() : null,
+          'partnerLogoDarkBg': _partnerLogoDarkBg,
           'offerType': _selectedOfferType.name,
           'discountValue': double.tryParse(_discountValueCtrl.text.trim()),
           'price': double.tryParse(_priceCtrl.text.trim()),
@@ -247,6 +250,7 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
         description: _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
         partnerName: _isPartnership && _partnerCtrl.text.trim().isNotEmpty ? _partnerCtrl.text.trim() : null,
         partnerLogoUrl: _isPartnership && _partnerLogoCtrl.text.trim().isNotEmpty ? _partnerLogoCtrl.text.trim() : null,
+        partnerLogoDarkBg: _partnerLogoDarkBg,
         codePrefix: prefix,
         currentSequence: quantity,
         totalVouchers: quantity,
@@ -508,13 +512,40 @@ class _CreatePromotionDialogState extends ConsumerState<CreatePromotionDialog> {
                           child: Container(
                             width: 44,
                             height: 44,
-                            color: AppColors.surface,
+                            padding: const EdgeInsets.all(3),
+                            color: _partnerLogoDarkBg ? const Color(0xFF0F172A) : AppColors.surface,
                             child: _buildPartnerLogoPreview(_partnerLogoCtrl.text.trim()),
                           ),
                         ),
                       ],
                     ],
                   ),
+                  if (_partnerLogoCtrl.text.trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text(
+                          'Sfondo scuro per logo partner',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: const Text(
+                          'Consigliato per loghi con scritte bianche o chiare per garantire contrasto e visibilità su stampe e coupon a sfondo bianco',
+                          style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                        value: _partnerLogoDarkBg,
+                        activeThumbColor: AppColors.primary,
+                        onChanged: (val) => setState(() => _partnerLogoDarkBg = val),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
 
                   // Logos preview card for printed coupons

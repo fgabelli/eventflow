@@ -697,9 +697,9 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                         width: 52,
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: promo.partnerLogoDarkBg ? const Color(0xFF0F172A) : Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: promo.partnerLogoDarkBg ? const Color(0xFF1E293B) : AppColors.border),
                         ),
                         child: _buildPartnerLogoThumb(promo.partnerLogoUrl!),
                       ),

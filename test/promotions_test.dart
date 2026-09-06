@@ -315,5 +315,50 @@ void main() {
       expect(CouponPrintFormat.a4Grid.widthMm, equals(210));
       expect(CouponPrintFormat.a4Grid.heightMm, equals(297));
     });
+
+    test('partnerLogoDarkBg configuration and PDF generation with contrast badge', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+
+      final promoWithDarkBg = PromotionModel(
+        id: 'promo_fitup_dark',
+        orgId: 'devero_spa',
+        title: '2x1 SPA FitUP Lissone',
+        partnerName: 'FitUP Lissone',
+        partnerLogoUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        partnerLogoDarkBg: true,
+        codePrefix: 'FIT',
+        totalVouchers: 500,
+        validityDays: 365,
+      );
+
+      expect(promoWithDarkBg.partnerLogoDarkBg, isTrue);
+      final firestoreMap = promoWithDarkBg.toFirestore();
+      expect(firestoreMap['partnerLogoDarkBg'], isTrue);
+
+      final copy = promoWithDarkBg.copyWith(partnerLogoDarkBg: false);
+      expect(copy.partnerLogoDarkBg, isFalse);
+
+      // Verify PDF generation for deskStandA4 format with dark background
+      final pdfBytes = await PromotionPdfService.generateDocument(
+        promotion: promoWithDarkBg,
+        vouchers: [],
+        orgName: 'Devero SPA',
+        partnerLogo: promoWithDarkBg.partnerLogoUrl,
+        format: CouponPrintFormat.deskStandA4,
+        overridePartnerLogoDarkBg: true,
+      );
+      expect(pdfBytes.isNotEmpty, isTrue);
+
+      // Verify PDF generation for businessCard format
+      final cardBytes = await PromotionPdfService.generateDocument(
+        promotion: promoWithDarkBg,
+        vouchers: [],
+        orgName: 'Devero SPA',
+        partnerLogo: promoWithDarkBg.partnerLogoUrl,
+        format: CouponPrintFormat.businessCard,
+        overridePartnerLogoDarkBg: true,
+      );
+      expect(cardBytes.isNotEmpty, isTrue);
+    });
   });
 }

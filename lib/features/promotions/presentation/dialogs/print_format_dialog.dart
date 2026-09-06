@@ -22,6 +22,13 @@ class PrintFormatDialog extends StatefulWidget {
 class _PrintFormatDialogState extends State<PrintFormatDialog> {
   CouponPrintFormat _selectedFormat = CouponPrintFormat.deskStandA4;
   bool _isGenerating = false;
+  late bool _partnerLogoDarkBg;
+
+  @override
+  void initState() {
+    super.initState();
+    _partnerLogoDarkBg = widget.promo.partnerLogoDarkBg;
+  }
 
   Future<void> _startPrint() async {
     setState(() => _isGenerating = true);
@@ -33,6 +40,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
         orgLogo: widget.org.logo,
         partnerLogo: widget.promo.partnerLogoUrl,
         format: _selectedFormat,
+        overridePartnerLogoDarkBg: _partnerLogoDarkBg,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
@@ -143,8 +151,34 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                 ),
               );
             }),
-
-            const SizedBox(height: 16),
+            if (widget.promo.partnerLogoUrl != null && widget.promo.partnerLogoUrl!.trim().isNotEmpty) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: const Text(
+                    'Sfondo scuro per logo partner',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text(
+                    'Consigliato per loghi con scritte o dettagli bianchi/chiari per garantire contrasto sulla stampa',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                  value: _partnerLogoDarkBg,
+                  activeThumbColor: AppColors.primary,
+                  onChanged: (val) => setState(() => _partnerLogoDarkBg = val),
+                ),
+              ),
+            ] else ...[
+              const SizedBox(height: 16),
+            ],
 
             Row(
               mainAxisAlignment: MainAxisAlignment.end,

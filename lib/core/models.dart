@@ -650,6 +650,7 @@ class PromotionModel {
   final String? linkedEventId;
   final PromotionStatus status;
   final String? primaryColor;
+  final bool partnerLogoDarkBg;
   final int validityDays; // Duration of voucher validity in days after registration
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -661,6 +662,7 @@ class PromotionModel {
     this.description,
     this.partnerName,
     this.partnerLogoUrl,
+    this.partnerLogoDarkBg = false,
     required this.codePrefix,
     this.currentSequence = 0,
     this.totalVouchers = 0,
@@ -699,6 +701,7 @@ class PromotionModel {
       description: data['description'],
       partnerName: data['partnerName'],
       partnerLogoUrl: data['partnerLogoUrl'],
+      partnerLogoDarkBg: data['partnerLogoDarkBg'] as bool? ?? false,
       codePrefix: data['codePrefix'] ?? 'PROMO',
       currentSequence: data['currentSequence'] ?? 0,
       totalVouchers: data['totalVouchers'] ?? 0,
@@ -733,6 +736,7 @@ class PromotionModel {
     'description': description,
     'partnerName': partnerName,
     'partnerLogoUrl': partnerLogoUrl,
+    'partnerLogoDarkBg': partnerLogoDarkBg,
     'codePrefix': codePrefix.toUpperCase().trim(),
     'currentSequence': currentSequence,
     'totalVouchers': totalVouchers,
@@ -757,6 +761,7 @@ class PromotionModel {
     String? description,
     String? partnerName,
     String? partnerLogoUrl,
+    bool? partnerLogoDarkBg,
     String? codePrefix,
     int? currentSequence,
     int? totalVouchers,
@@ -781,6 +786,7 @@ class PromotionModel {
       description: description ?? this.description,
       partnerName: partnerName ?? this.partnerName,
       partnerLogoUrl: partnerLogoUrl ?? this.partnerLogoUrl,
+      partnerLogoDarkBg: partnerLogoDarkBg ?? this.partnerLogoDarkBg,
       codePrefix: codePrefix ?? this.codePrefix,
       currentSequence: currentSequence ?? this.currentSequence,
       totalVouchers: totalVouchers ?? this.totalVouchers,

@@ -50,6 +50,7 @@ class PromotionPdfService {
     required pw.Font fontSemiBold,
     double logoHeight = 16,
     pw.MainAxisAlignment alignment = pw.MainAxisAlignment.start,
+    bool? overridePartnerLogoDarkBg,
   }) {
     if (!promotion.isPartnership) {
       // Pure internal venue promotion: ONLY venue branding
@@ -74,6 +75,8 @@ class PromotionPdfService {
       );
     }
 
+    final effectiveDarkBg = overridePartnerLogoDarkBg ?? promotion.partnerLogoDarkBg;
+
     // Partnership collaboration: display both logos / names
     return pw.Row(
       mainAxisSize: pw.MainAxisSize.min,
@@ -92,14 +95,28 @@ class PromotionPdfService {
             maxLines: 1,
           ),
         pw.Padding(
-          padding: const pw.EdgeInsets.symmetric(horizontal: 4),
-          child: pw.Text('✕', style: pw.TextStyle(font: fontBold, fontSize: logoHeight * 0.38, color: PdfColors.grey500)),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 5),
+          child: pw.Text('x', style: pw.TextStyle(font: fontBold, fontSize: logoHeight * 0.36, color: PdfColors.grey500)),
         ),
         if (partnerLogoImage != null)
-          pw.Container(
-            height: logoHeight,
-            child: pw.Image(partnerLogoImage, fit: pw.BoxFit.contain),
-          )
+          if (effectiveDarkBg)
+            pw.Container(
+              height: logoHeight,
+              padding: pw.EdgeInsets.symmetric(
+                horizontal: logoHeight > 20 ? 8 : (logoHeight > 14 ? 5 : 3.5),
+                vertical: logoHeight > 20 ? 4 : (logoHeight > 14 ? 2.5 : 1.5),
+              ),
+              decoration: pw.BoxDecoration(
+                color: PdfColor.fromHex('0F172A'),
+                borderRadius: pw.BorderRadius.circular(logoHeight > 20 ? 6 : 3),
+              ),
+              child: pw.Image(partnerLogoImage, fit: pw.BoxFit.contain),
+            )
+          else
+            pw.Container(
+              height: logoHeight,
+              child: pw.Image(partnerLogoImage, fit: pw.BoxFit.contain),
+            )
         else if (promotion.partnerName != null)
           pw.Text(
             promotion.partnerName!,
@@ -119,6 +136,7 @@ class PromotionPdfService {
     String? partnerLogo,
     required CouponPrintFormat format,
     String? baseUrl,
+    bool? overridePartnerLogoDarkBg,
   }) async {
     switch (format) {
       case CouponPrintFormat.deskStandA4:
@@ -128,6 +146,7 @@ class PromotionPdfService {
           orgLogo: orgLogo,
           partnerLogo: partnerLogo,
           baseUrl: baseUrl,
+          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
         );
       case CouponPrintFormat.businessCard:
         return generateBusinessCards(
@@ -137,6 +156,7 @@ class PromotionPdfService {
           orgLogo: orgLogo,
           partnerLogo: partnerLogo,
           baseUrl: baseUrl,
+          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
         );
       case CouponPrintFormat.flyerA6:
         return generateFlyersA6(
@@ -146,6 +166,7 @@ class PromotionPdfService {
           orgLogo: orgLogo,
           partnerLogo: partnerLogo,
           baseUrl: baseUrl,
+          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
         );
       case CouponPrintFormat.a4Grid:
         return generateCouponSheet(
@@ -155,6 +176,7 @@ class PromotionPdfService {
           orgLogo: orgLogo,
           partnerLogo: partnerLogo,
           baseUrl: baseUrl,
+          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
         );
     }
   }
@@ -167,6 +189,7 @@ class PromotionPdfService {
     String? orgLogo,
     String? partnerLogo,
     String? baseUrl,
+    bool? overridePartnerLogoDarkBg,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -209,6 +232,7 @@ class PromotionPdfService {
                       fontSemiBold: fontSemiBold,
                       logoHeight: 36,
                       alignment: pw.MainAxisAlignment.center,
+                      overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                     ),
                     pw.SizedBox(height: 8),
                     pw.Container(
@@ -425,6 +449,7 @@ class PromotionPdfService {
     String? orgLogo,
     String? partnerLogo,
     String? baseUrl,
+    bool? overridePartnerLogoDarkBg,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -473,6 +498,7 @@ class PromotionPdfService {
                         fontBold: fontBold,
                         fontSemiBold: fontSemiBold,
                         logoHeight: 14,
+                        overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                       ),
                     ),
                     pw.Container(
@@ -590,6 +616,7 @@ class PromotionPdfService {
     String? orgLogo,
     String? partnerLogo,
     String? baseUrl,
+    bool? overridePartnerLogoDarkBg,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -630,6 +657,7 @@ class PromotionPdfService {
                   fontSemiBold: fontSemiBold,
                   logoHeight: 22,
                   alignment: pw.MainAxisAlignment.center,
+                  overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                 ),
 
                 pw.Divider(color: PdfColors.grey200, height: 10),
@@ -742,6 +770,7 @@ class PromotionPdfService {
     String? orgLogo,
     String? partnerLogo,
     String? baseUrl,
+    bool? overridePartnerLogoDarkBg,
   }) async {
     final pdf = pw.Document();
 
@@ -780,6 +809,7 @@ class PromotionPdfService {
                 fontRegular: fontRegular,
                 fontBold: fontBold,
                 fontSemiBold: fontSemiBold,
+                overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
               );
             }),
           );
@@ -800,6 +830,7 @@ class PromotionPdfService {
     required pw.Font fontRegular,
     required pw.Font fontBold,
     required pw.Font fontSemiBold,
+    bool? overridePartnerLogoDarkBg,
   }) {
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -829,6 +860,7 @@ class PromotionPdfService {
                   fontBold: fontBold,
                   fontSemiBold: fontSemiBold,
                   logoHeight: 18,
+                  overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                 ),
               ),
               pw.Container(
@@ -939,6 +971,7 @@ class PromotionPdfService {
     String? partnerLogo,
     CouponPrintFormat format = CouponPrintFormat.a4Grid,
     String? baseUrl,
+    bool? overridePartnerLogoDarkBg,
   }) async {
     final pdfBytes = await generateDocument(
       promotion: promotion,
@@ -948,6 +981,7 @@ class PromotionPdfService {
       partnerLogo: partnerLogo,
       format: format,
       baseUrl: baseUrl,
+      overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
     );
 
     await Printing.layoutPdf(

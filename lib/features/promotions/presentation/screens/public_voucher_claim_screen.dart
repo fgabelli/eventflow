@@ -953,30 +953,55 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
     if (org == null) return const SizedBox(height: 16);
 
     Widget buildPartnerLogoWidget(String logoData) {
+      final isDarkBg = promo?.partnerLogoDarkBg ?? false;
+      Widget imageWidget;
       if (logoData.startsWith('data:image')) {
         final commaIdx = logoData.indexOf(',');
         if (commaIdx != -1) {
           try {
             final bytes = base64Decode(logoData.substring(commaIdx + 1));
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.memory(bytes, width: 36, height: 36, fit: BoxFit.cover),
-            );
-          } catch (_) {}
+            imageWidget = Image.memory(bytes, fit: BoxFit.contain);
+          } catch (_) {
+            return const SizedBox.shrink();
+          }
+        } else {
+          return const SizedBox.shrink();
         }
       } else if (logoData.startsWith('http://') || logoData.startsWith('https://')) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            logoData,
-            width: 36,
-            height: 36,
-            fit: BoxFit.cover,
-            errorBuilder: (ctx, err, stack) => const Icon(Icons.handshake_outlined, size: 20),
+        imageWidget = Image.network(
+          logoData,
+          fit: BoxFit.contain,
+          errorBuilder: (ctx, err, stack) => const Icon(Icons.handshake_outlined, size: 20),
+        );
+      } else {
+        return const SizedBox.shrink();
+      }
+
+      if (isDarkBg) {
+        return Container(
+          width: 40,
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF1E293B)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: imageWidget,
           ),
         );
       }
-      return const SizedBox.shrink();
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: imageWidget,
+        ),
+      );
     }
 
     final hasPartner = promo != null && ((promo.partnerName != null && promo.partnerName!.trim().isNotEmpty) || (promo.partnerLogoUrl != null && promo.partnerLogoUrl!.trim().isNotEmpty));
@@ -1007,7 +1032,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
           ),
           if (hasPartner) ...[
             const SizedBox(width: 10),
-            const Text('✕', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textTertiary)),
+            const Text('×', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textTertiary)),
             const SizedBox(width: 10),
             if (promo.partnerLogoUrl != null && promo.partnerLogoUrl!.trim().isNotEmpty) ...[
               buildPartnerLogoWidget(promo.partnerLogoUrl!),
