@@ -81,9 +81,13 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
 
       final batch = db.batch();
 
+      final now = DateTime.now();
+      final voucherExpiresAt = now.add(Duration(days: promo.validityDays));
+
       final updatedVoucher = freshVoucher.copyWith(
         status: VoucherStatus.claimed,
-        claimedAt: DateTime.now(),
+        claimedAt: now,
+        expiresAt: voucherExpiresAt,
         claimedFirstName: _firstNameCtrl.text.trim(),
         claimedLastName: _lastNameCtrl.text.trim(),
         claimedEmail: _emailCtrl.text.trim().toLowerCase(),
@@ -95,7 +99,8 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
 
       batch.update(voucherRef, {
         'status': updatedVoucher.status.name,
-        'claimedAt': Timestamp.fromDate(updatedVoucher.claimedAt!),
+        'claimedAt': Timestamp.fromDate(now),
+        'expiresAt': Timestamp.fromDate(voucherExpiresAt),
         'claimedFirstName': updatedVoucher.claimedFirstName,
         'claimedLastName': updatedVoucher.claimedLastName,
         'claimedEmail': updatedVoucher.claimedEmail,
@@ -548,8 +553,13 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Scadenza:', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
-                        Text(expDateStr, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                        const Text('Scadenza Voucher:', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
+                        Text(
+                          voucher.expiresAt != null
+                              ? '${DateFormat('dd/MM/yyyy').format(voucher.expiresAt!)} (${voucher.remainingDays ?? promo.validityDays} gg rim.)'
+                              : expDateStr,
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.primary),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 4),

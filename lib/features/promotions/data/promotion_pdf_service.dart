@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -19,11 +20,102 @@ enum CouponPrintFormat {
 }
 
 class PromotionPdfService {
+  /// Resolves an image from base64 data URL or HTTP URL
+  static Future<pw.ImageProvider?> _resolveImage(String? urlOrData) async {
+    if (urlOrData == null || urlOrData.trim().isEmpty) return null;
+    final trimmed = urlOrData.trim();
+    try {
+      if (trimmed.startsWith('data:image')) {
+        final commaIdx = trimmed.indexOf(',');
+        if (commaIdx != -1) {
+          final bytes = base64Decode(trimmed.substring(commaIdx + 1));
+          return pw.MemoryImage(bytes);
+        }
+      } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return await networkImage(trimmed);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Builds header logos: internal promotion shows ONLY venue logo/name;
+  /// partnership promotion shows both venue and partner logos side-by-side.
+  static pw.Widget _buildHeaderLogos({
+    required pw.ImageProvider? orgLogoImage,
+    required pw.ImageProvider? partnerLogoImage,
+    required String orgName,
+    required PromotionModel promotion,
+    required pw.Font fontBold,
+    required pw.Font fontSemiBold,
+    double logoHeight = 16,
+    pw.MainAxisAlignment alignment = pw.MainAxisAlignment.start,
+  }) {
+    if (!promotion.isPartnership) {
+      // Pure internal venue promotion: ONLY venue branding
+      return pw.Row(
+        mainAxisSize: pw.MainAxisSize.min,
+        mainAxisAlignment: alignment,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          if (orgLogoImage != null) ...[
+            pw.Container(
+              height: logoHeight,
+              child: pw.Image(orgLogoImage, fit: pw.BoxFit.contain),
+            ),
+            pw.SizedBox(width: 5),
+          ],
+          pw.Text(
+            orgName.toUpperCase(),
+            style: pw.TextStyle(font: fontBold, fontSize: logoHeight * 0.46, color: PdfColors.indigo900),
+            maxLines: 1,
+          ),
+        ],
+      );
+    }
+
+    // Partnership collaboration: display both logos / names
+    return pw.Row(
+      mainAxisSize: pw.MainAxisSize.min,
+      mainAxisAlignment: alignment,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      children: [
+        if (orgLogoImage != null)
+          pw.Container(
+            height: logoHeight,
+            child: pw.Image(orgLogoImage, fit: pw.BoxFit.contain),
+          )
+        else
+          pw.Text(
+            orgName.toUpperCase(),
+            style: pw.TextStyle(font: fontBold, fontSize: logoHeight * 0.42, color: PdfColors.indigo900),
+            maxLines: 1,
+          ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 4),
+          child: pw.Text('✕', style: pw.TextStyle(font: fontBold, fontSize: logoHeight * 0.38, color: PdfColors.grey500)),
+        ),
+        if (partnerLogoImage != null)
+          pw.Container(
+            height: logoHeight,
+            child: pw.Image(partnerLogoImage, fit: pw.BoxFit.contain),
+          )
+        else if (promotion.partnerName != null)
+          pw.Text(
+            promotion.partnerName!,
+            style: pw.TextStyle(font: fontSemiBold, fontSize: logoHeight * 0.42, color: PdfColors.grey800),
+            maxLines: 1,
+          ),
+      ],
+    );
+  }
+
   /// Main entrypoint: generates PDF based on the chosen format.
   static Future<Uint8List> generateDocument({
     required PromotionModel promotion,
     required List<VoucherModel> vouchers,
     required String orgName,
+    String? orgLogo,
+    String? partnerLogo,
     required CouponPrintFormat format,
     String? baseUrl,
   }) async {
@@ -33,6 +125,8 @@ class PromotionPdfService {
           promotion: promotion,
           vouchers: vouchers,
           orgName: orgName,
+          orgLogo: orgLogo,
+          partnerLogo: partnerLogo,
           baseUrl: baseUrl,
         );
       case CouponPrintFormat.flyerA6:
@@ -40,6 +134,8 @@ class PromotionPdfService {
           promotion: promotion,
           vouchers: vouchers,
           orgName: orgName,
+          orgLogo: orgLogo,
+          partnerLogo: partnerLogo,
           baseUrl: baseUrl,
         );
       case CouponPrintFormat.a4Grid:
@@ -47,6 +143,8 @@ class PromotionPdfService {
           promotion: promotion,
           vouchers: vouchers,
           orgName: orgName,
+          orgLogo: orgLogo,
+          partnerLogo: partnerLogo,
           baseUrl: baseUrl,
         );
     }
@@ -58,12 +156,17 @@ class PromotionPdfService {
     required PromotionModel promotion,
     required List<VoucherModel> vouchers,
     required String orgName,
+    String? orgLogo,
+    String? partnerLogo,
     String? baseUrl,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
     final fontBold = await PdfGoogleFonts.interBold();
     final fontSemiBold = await PdfGoogleFonts.interSemiBold();
+
+    final orgLogoImage = await _resolveImage(orgLogo);
+    final partnerLogoImage = await _resolveImage(partnerLogo);
 
     final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
     final dateFormat = DateFormat('dd/MM/yyyy');
@@ -98,22 +201,14 @@ class PromotionPdfService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Expanded(
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(
-                              orgName.toUpperCase(),
-                              style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.indigo900),
-                              maxLines: 1,
-                            ),
-                            if (promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
-                              pw.Text(
-                                'In convenzione: ${promotion.partnerName!}',
-                                style: pw.TextStyle(font: fontSemiBold, fontSize: 6.5, color: PdfColors.grey700),
-                                maxLines: 1,
-                              ),
-                            ],
-                          ],
+                        child: _buildHeaderLogos(
+                          orgLogoImage: orgLogoImage,
+                          partnerLogoImage: partnerLogoImage,
+                          orgName: orgName,
+                          promotion: promotion,
+                          fontBold: fontBold,
+                          fontSemiBold: fontSemiBold,
+                          logoHeight: 14,
                         ),
                       ),
                       pw.Container(
@@ -197,8 +292,8 @@ class PromotionPdfService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        'Scade il: $expDateStr',
-                        style: pw.TextStyle(font: fontSemiBold, fontSize: 6, color: PdfColors.red800),
+                        'Valido ${promotion.validityDays} gg da attivazione • Entro $expDateStr',
+                        style: pw.TextStyle(font: fontSemiBold, fontSize: 5.5, color: PdfColors.red800),
                       ),
                       pw.Text(
                         promotion.paymentMethod == PromotionPaymentMethod.atVenue ? 'Paga in struttura' : 'Offerta attiva',
@@ -227,12 +322,17 @@ class PromotionPdfService {
     required PromotionModel promotion,
     required List<VoucherModel> vouchers,
     required String orgName,
+    String? orgLogo,
+    String? partnerLogo,
     String? baseUrl,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
     final fontBold = await PdfGoogleFonts.interBold();
     final fontSemiBold = await PdfGoogleFonts.interSemiBold();
+
+    final orgLogoImage = await _resolveImage(orgLogo);
+    final partnerLogoImage = await _resolveImage(partnerLogo);
 
     final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
     final dateFormat = DateFormat('dd/MM/yyyy');
@@ -257,23 +357,16 @@ class PromotionPdfService {
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  // Header
-                  pw.Column(
-                    children: [
-                      pw.Text(
-                        orgName.toUpperCase(),
-                        style: pw.TextStyle(font: fontBold, fontSize: 13, color: PdfColors.indigo900, letterSpacing: 0.5),
-                        textAlign: pw.TextAlign.center,
-                      ),
-                      if (promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
-                        pw.SizedBox(height: 2),
-                        pw.Text(
-                          'In convenzione esclusiva con: ${promotion.partnerName!}',
-                          style: pw.TextStyle(font: fontSemiBold, fontSize: 9, color: PdfColors.grey700),
-                          textAlign: pw.TextAlign.center,
-                        ),
-                      ],
-                    ],
+                  // Header with logos
+                  _buildHeaderLogos(
+                    orgLogoImage: orgLogoImage,
+                    partnerLogoImage: partnerLogoImage,
+                    orgName: orgName,
+                    promotion: promotion,
+                    fontBold: fontBold,
+                    fontSemiBold: fontSemiBold,
+                    logoHeight: 22,
+                    alignment: pw.MainAxisAlignment.center,
                   ),
 
                   pw.Divider(color: PdfColors.grey200, height: 10),
@@ -352,8 +445,8 @@ class PromotionPdfService {
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
                       pw.Text(
-                        'Valido fino al: $expDateStr',
-                        style: pw.TextStyle(font: fontSemiBold, fontSize: 7.5, color: PdfColors.red800),
+                        'Valido ${promotion.validityDays} giorni da registrazione • Attiva entro $expDateStr',
+                        style: pw.TextStyle(font: fontSemiBold, fontSize: 7, color: PdfColors.red800),
                       ),
                       pw.Text(
                         promotion.paymentMethod == PromotionPaymentMethod.atVenue ? 'Pagamento alla reception' : 'Offerta digitale',
@@ -382,6 +475,8 @@ class PromotionPdfService {
     required PromotionModel promotion,
     required List<VoucherModel> vouchers,
     required String orgName,
+    String? orgLogo,
+    String? partnerLogo,
     String? baseUrl,
   }) async {
     final pdf = pw.Document();
@@ -389,6 +484,9 @@ class PromotionPdfService {
     final fontRegular = await PdfGoogleFonts.interRegular();
     final fontBold = await PdfGoogleFonts.interBold();
     final fontSemiBold = await PdfGoogleFonts.interSemiBold();
+
+    final orgLogoImage = await _resolveImage(orgLogo);
+    final partnerLogoImage = await _resolveImage(partnerLogo);
 
     final origin = baseUrl ?? 'https://eventflow-3541b.web.app';
     final dateFormat = DateFormat('dd/MM/yyyy');
@@ -415,6 +513,8 @@ class PromotionPdfService {
                   promotion: promotion,
                   voucher: voucher,
                   orgName: orgName,
+                  orgLogoImage: orgLogoImage,
+                  partnerLogoImage: partnerLogoImage,
                   claimUrl: claimUrl,
                   expDateStr: expDateStr,
                   fontRegular: fontRegular,
@@ -435,6 +535,8 @@ class PromotionPdfService {
     required PromotionModel promotion,
     required VoucherModel voucher,
     required String orgName,
+    required pw.ImageProvider? orgLogoImage,
+    required pw.ImageProvider? partnerLogoImage,
     required String claimUrl,
     required String expDateStr,
     required pw.Font fontRegular,
@@ -461,25 +563,14 @@ class PromotionPdfService {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Expanded(
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text(
-                      orgName.toUpperCase(),
-                      style: pw.TextStyle(font: fontBold, fontSize: 11, color: PdfColors.indigo900),
-                      maxLines: 1,
-                      overflow: pw.TextOverflow.clip,
-                    ),
-                    if (promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
-                      pw.SizedBox(height: 2),
-                      pw.Text(
-                        'In collaborazione con: ${promotion.partnerName!}',
-                        style: pw.TextStyle(font: fontSemiBold, fontSize: 8, color: PdfColors.grey700),
-                        maxLines: 1,
-                        overflow: pw.TextOverflow.clip,
-                      ),
-                    ],
-                  ],
+                child: _buildHeaderLogos(
+                  orgLogoImage: orgLogoImage,
+                  partnerLogoImage: partnerLogoImage,
+                  orgName: orgName,
+                  promotion: promotion,
+                  fontBold: fontBold,
+                  fontSemiBold: fontSemiBold,
+                  logoHeight: 18,
                 ),
               ),
               pw.Container(
@@ -508,30 +599,27 @@ class PromotionPdfService {
                   children: [
                     pw.Text(
                       promotion.title,
-                      style: pw.TextStyle(font: fontBold, fontSize: 12, color: PdfColors.black),
+                      style: pw.TextStyle(font: fontBold, fontSize: 11, color: PdfColors.black),
                       maxLines: 2,
-                      overflow: pw.TextOverflow.clip,
                     ),
                     if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
-                      pw.SizedBox(height: 3),
+                      pw.SizedBox(height: 2),
                       pw.Text(
                         promotion.description!,
-                        style: pw.TextStyle(font: fontRegular, fontSize: 7.5, color: PdfColors.grey600),
+                        style: pw.TextStyle(font: fontRegular, fontSize: 7, color: PdfColors.grey600),
                         maxLines: 2,
-                        overflow: pw.TextOverflow.clip,
                       ),
                     ],
                     pw.SizedBox(height: 6),
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: pw.BoxDecoration(
-                        color: PdfColors.grey100,
+                        color: PdfColors.indigo900,
                         borderRadius: pw.BorderRadius.circular(4),
-                        border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
                       ),
                       child: pw.Text(
                         'CODICE: ${voucher.code}',
-                        style: pw.TextStyle(font: fontBold, fontSize: 10, color: PdfColors.blueGrey900, letterSpacing: 0.8),
+                        style: pw.TextStyle(font: fontBold, fontSize: 9.5, color: PdfColors.white, letterSpacing: 0.8),
                       ),
                     ),
                   ],
@@ -564,15 +652,11 @@ class PromotionPdfService {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                'Valido fino al: $expDateStr',
+                'Valido ${promotion.validityDays} gg da registrazione • Attiva entro $expDateStr',
                 style: pw.TextStyle(font: fontSemiBold, fontSize: 7, color: PdfColors.red800),
               ),
               pw.Text(
-                promotion.paymentMethod == PromotionPaymentMethod.atVenue
-                    ? 'Pagamento in struttura'
-                    : promotion.paymentMethod == PromotionPaymentMethod.online
-                        ? 'Pagamento online'
-                        : 'Ingresso omaggio',
+                promotion.paymentMethod == PromotionPaymentMethod.atVenue ? 'Pagamento in struttura' : 'Pagamento online',
                 style: pw.TextStyle(font: fontRegular, fontSize: 7, color: PdfColors.grey600),
               ),
               pw.Text(
@@ -591,6 +675,8 @@ class PromotionPdfService {
     required PromotionModel promotion,
     required List<VoucherModel> vouchers,
     required String orgName,
+    String? orgLogo,
+    String? partnerLogo,
     CouponPrintFormat format = CouponPrintFormat.a4Grid,
     String? baseUrl,
   }) async {
@@ -598,6 +684,8 @@ class PromotionPdfService {
       promotion: promotion,
       vouchers: vouchers,
       orgName: orgName,
+      orgLogo: orgLogo,
+      partnerLogo: partnerLogo,
       format: format,
       baseUrl: baseUrl,
     );

@@ -68,6 +68,9 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
 
     try {
       final db = FirebaseFirestore.instance;
+      DocumentSnapshot? voucherDoc;
+
+      // 1. Try exact voucher code
       final query = await db
           .collection(Collections.vouchers)
           .where('orgId', isEqualTo: widget.org.id)
@@ -75,15 +78,37 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
           .limit(1)
           .get();
 
-      if (query.docs.isEmpty) {
+      if (query.docs.isNotEmpty) {
+        voucherDoc = query.docs.first;
+      } else {
+        // 2. Fallback: Search across organization vouchers by customer name, email or phone
+        final term = rawCode.trim().toLowerCase();
+        final snap = await db
+            .collection(Collections.vouchers)
+            .where('orgId', isEqualTo: widget.org.id)
+            .get();
+
+        final matches = snap.docs.where((d) {
+          final v = VoucherModel.fromFirestore(d);
+          return v.code.toLowerCase() == term ||
+              v.claimedFullName.toLowerCase().contains(term) ||
+              (v.claimedEmail ?? '').toLowerCase().contains(term) ||
+              (v.claimedPhone ?? '').contains(term);
+        }).toList();
+
+        if (matches.isNotEmpty) {
+          voucherDoc = matches.first;
+        }
+      }
+
+      if (voucherDoc == null) {
         setState(() {
-          _errorMessage = 'Nessun voucher trovato con il codice "$cleanCode".';
+          _errorMessage = 'Nessun voucher trovato per "$rawCode". Digita il codice (es. FIT-0001), il nome cliente o l\'email.';
           _isLoading = false;
         });
         return;
       }
 
-      final voucherDoc = query.docs.first;
       final voucher = VoucherModel.fromFirestore(voucherDoc);
 
       // Load corresponding promotion
@@ -181,7 +206,7 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 24),
+                    child: const Icon(Icons.point_of_sale_rounded, color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -355,7 +380,9 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
 
   Widget _buildVoucherDetailsCard(VoucherModel voucher, PromotionModel promo) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    final isExpired = promo.isExpired;
+    final isVoucherExpired = voucher.isExpired;
+    final isPromoExpired = promo.isExpired;
+    final isExpired = isVoucherExpired || isPromoExpired;
     final isRedeemed = voucher.isRedeemed;
     final isClaimed = voucher.isClaimed;
     final isAvailable = voucher.isAvailable;
@@ -368,7 +395,7 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
       statusText = 'GIÀ RISCATTATO';
     } else if (isExpired) {
       statusColor = AppColors.error;
-      statusText = 'SCADUTO';
+      statusText = isVoucherExpired ? 'SCADUTO (Termine registrazione)' : 'CAMPAGNA TERMINATA';
     } else if (isClaimed) {
       statusColor = AppColors.success;
       statusText = 'ATTIVATO DA CLIENTE';
@@ -480,6 +507,29 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
                 style: TextStyle(fontSize: 11, color: AppColors.textTertiary),
               ),
             ],
+            if (voucher.expiresAt != null) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(
+                    voucher.isExpired ? Icons.timer_off_outlined : Icons.timer_outlined,
+                    size: 15,
+                    color: voucher.isExpired ? AppColors.error : AppColors.success,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    voucher.isExpired
+                        ? 'Scaduto il: ${dateFormat.format(voucher.expiresAt!)}'
+                        : 'Scadenza voucher: ${dateFormat.format(voucher.expiresAt!)} (${voucher.remainingDays ?? 0} gg rimasti)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: voucher.isExpired ? AppColors.error : AppColors.success,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const Divider(height: 24),
           ] else if (isAvailable) ...[
             Container(
@@ -533,10 +583,38 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
             ),
           ],
 
+          // Expired notice
+          if (isExpired && !isRedeemed) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.timer_off_outlined, color: AppColors.error),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isVoucherExpired
+                          ? 'Voucher non riscattabile: scaduto il ${dateFormat.format(voucher.expiresAt!)}. I ${promo.validityDays} giorni di validità dalla registrazione sono trascorsi.'
+                          : 'Voucher non riscattabile: la campagna promozionale è terminata il ${DateFormat('dd/MM/yyyy').format(promo.expirationDate)}.',
+                      style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           // Already redeemed notice
           if (isRedeemed && voucher.redeemedAt != null) ...[
             Container(
               padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),

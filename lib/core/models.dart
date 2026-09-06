@@ -636,6 +636,7 @@ class PromotionModel {
   final String title;
   final String? description;
   final String? partnerName;
+  final String? partnerLogoUrl;
   final String codePrefix;
   final int currentSequence;
   final int totalVouchers;
@@ -649,6 +650,7 @@ class PromotionModel {
   final String? linkedEventId;
   final PromotionStatus status;
   final String? primaryColor;
+  final int validityDays; // Duration of voucher validity in days after registration
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -658,12 +660,14 @@ class PromotionModel {
     required this.title,
     this.description,
     this.partnerName,
+    this.partnerLogoUrl,
     required this.codePrefix,
     this.currentSequence = 0,
     this.totalVouchers = 0,
     this.claimedCount = 0,
     this.redeemedCount = 0,
     required this.expirationDate,
+    this.validityDays = 30,
     this.offerType = OfferType.twoForOne,
     this.discountValue,
     this.price,
@@ -678,6 +682,7 @@ class PromotionModel {
   bool get isExpired => DateTime.now().isAfter(expirationDate);
   bool get isActive => status == PromotionStatus.active && !isExpired;
   bool get isTwoForOne => offerType == OfferType.twoForOne;
+  bool get isPartnership => partnerName != null && partnerName!.trim().isNotEmpty;
   int get availableCount => (totalVouchers - claimedCount).clamp(0, totalVouchers);
   double get redemptionRate => totalVouchers > 0 ? (redeemedCount / totalVouchers) : 0;
   double get claimRate => totalVouchers > 0 ? (claimedCount / totalVouchers) : 0;
@@ -690,12 +695,14 @@ class PromotionModel {
       title: data['title'] ?? '',
       description: data['description'],
       partnerName: data['partnerName'],
+      partnerLogoUrl: data['partnerLogoUrl'],
       codePrefix: data['codePrefix'] ?? 'PROMO',
       currentSequence: data['currentSequence'] ?? 0,
       totalVouchers: data['totalVouchers'] ?? 0,
       claimedCount: data['claimedCount'] ?? 0,
       redeemedCount: data['redeemedCount'] ?? 0,
       expirationDate: (data['expirationDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 30)),
+      validityDays: (data['validityDays'] as num?)?.toInt() ?? 30,
       offerType: OfferType.values.firstWhere(
         (t) => t.name == data['offerType'],
         orElse: () => OfferType.twoForOne,
@@ -722,12 +729,14 @@ class PromotionModel {
     'title': title,
     'description': description,
     'partnerName': partnerName,
+    'partnerLogoUrl': partnerLogoUrl,
     'codePrefix': codePrefix.toUpperCase().trim(),
     'currentSequence': currentSequence,
     'totalVouchers': totalVouchers,
     'claimedCount': claimedCount,
     'redeemedCount': redeemedCount,
     'expirationDate': Timestamp.fromDate(expirationDate),
+    'validityDays': validityDays,
     'offerType': offerType.name,
     'discountValue': discountValue,
     'price': price,
@@ -743,12 +752,14 @@ class PromotionModel {
     String? title,
     String? description,
     String? partnerName,
+    String? partnerLogoUrl,
     String? codePrefix,
     int? currentSequence,
     int? totalVouchers,
     int? claimedCount,
     int? redeemedCount,
     DateTime? expirationDate,
+    int? validityDays,
     OfferType? offerType,
     double? discountValue,
     double? price,
@@ -764,12 +775,14 @@ class PromotionModel {
       title: title ?? this.title,
       description: description ?? this.description,
       partnerName: partnerName ?? this.partnerName,
+      partnerLogoUrl: partnerLogoUrl ?? this.partnerLogoUrl,
       codePrefix: codePrefix ?? this.codePrefix,
       currentSequence: currentSequence ?? this.currentSequence,
       totalVouchers: totalVouchers ?? this.totalVouchers,
       claimedCount: claimedCount ?? this.claimedCount,
       redeemedCount: redeemedCount ?? this.redeemedCount,
       expirationDate: expirationDate ?? this.expirationDate,
+      validityDays: validityDays ?? this.validityDays,
       offerType: offerType ?? this.offerType,
       discountValue: discountValue ?? this.discountValue,
       price: price ?? this.price,
@@ -793,6 +806,7 @@ class VoucherModel {
   final int sequenceNumber;
   final VoucherStatus status;
   final DateTime? claimedAt;
+  final DateTime? expiresAt; // Computed when claimed: claimedAt + validityDays
   final String? claimedFirstName;
   final String? claimedLastName;
   final String? claimedEmail;
@@ -810,6 +824,7 @@ class VoucherModel {
     required this.sequenceNumber,
     this.status = VoucherStatus.available,
     this.claimedAt,
+    this.expiresAt,
     this.claimedFirstName,
     this.claimedLastName,
     this.claimedEmail,
@@ -825,6 +840,13 @@ class VoucherModel {
   bool get isClaimed => status == VoucherStatus.claimed;
   bool get isRedeemed => status == VoucherStatus.redeemed;
   bool get isCancelled => status == VoucherStatus.cancelled;
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
+
+  int? get remainingDays {
+    if (expiresAt == null) return null;
+    final diff = expiresAt!.difference(DateTime.now()).inDays;
+    return diff < 0 ? 0 : diff;
+  }
 
   factory VoucherModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -839,6 +861,7 @@ class VoucherModel {
         orElse: () => VoucherStatus.available,
       ),
       claimedAt: (data['claimedAt'] as Timestamp?)?.toDate(),
+      expiresAt: (data['expiresAt'] as Timestamp?)?.toDate(),
       claimedFirstName: data['claimedFirstName'],
       claimedLastName: data['claimedLastName'],
       claimedEmail: data['claimedEmail'],
@@ -860,6 +883,7 @@ class VoucherModel {
     'sequenceNumber': sequenceNumber,
     'status': status.name,
     'claimedAt': claimedAt != null ? Timestamp.fromDate(claimedAt!) : null,
+    'expiresAt': expiresAt != null ? Timestamp.fromDate(expiresAt!) : null,
     'claimedFirstName': claimedFirstName,
     'claimedLastName': claimedLastName,
     'claimedEmail': claimedEmail,
@@ -873,6 +897,7 @@ class VoucherModel {
   VoucherModel copyWith({
     VoucherStatus? status,
     DateTime? claimedAt,
+    DateTime? expiresAt,
     String? claimedFirstName,
     String? claimedLastName,
     String? claimedEmail,
@@ -889,6 +914,7 @@ class VoucherModel {
       sequenceNumber: sequenceNumber,
       status: status ?? this.status,
       claimedAt: claimedAt ?? this.claimedAt,
+      expiresAt: expiresAt ?? this.expiresAt,
       claimedFirstName: claimedFirstName ?? this.claimedFirstName,
       claimedLastName: claimedLastName ?? this.claimedLastName,
       claimedEmail: claimedEmail ?? this.claimedEmail,

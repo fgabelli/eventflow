@@ -30,6 +30,8 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
         promotion: widget.promo,
         vouchers: widget.vouchers,
         orgName: widget.org.name,
+        orgLogo: widget.org.logo,
+        partnerLogo: widget.promo.partnerLogoUrl,
         format: _selectedFormat,
       );
       if (mounted) Navigator.of(context).pop();

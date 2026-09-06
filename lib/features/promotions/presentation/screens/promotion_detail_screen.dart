@@ -246,9 +246,11 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
             if (_selectedFilter == 'available') {
               filteredVouchers = filteredVouchers.where((v) => v.isAvailable).toList();
             } else if (_selectedFilter == 'claimed') {
-              filteredVouchers = filteredVouchers.where((v) => v.isClaimed).toList();
+              filteredVouchers = filteredVouchers.where((v) => v.isClaimed && !v.isExpired).toList();
             } else if (_selectedFilter == 'redeemed') {
               filteredVouchers = filteredVouchers.where((v) => v.isRedeemed).toList();
+            } else if (_selectedFilter == 'expired') {
+              filteredVouchers = filteredVouchers.where((v) => v.isExpired && !v.isRedeemed).toList();
             }
 
             final searchQuery = _searchCtrl.text.toLowerCase().trim();
@@ -292,8 +294,8 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                 actions: [
                   OutlinedButton.icon(
                     onPressed: () => _openRedeemDialog(org),
-                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
-                    label: const Text('Riscatta'),
+                    icon: const Icon(Icons.point_of_sale_rounded, size: 16),
+                    label: const Text('Convalida in Cassa'),
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
                   ),
                   const SizedBox(width: 8),
@@ -366,8 +368,9 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                           children: [
                             _buildFilterChip('Tutti (${allVouchers.length})', 'all'),
                             _buildFilterChip('Disponibili (${allVouchers.where((v) => v.isAvailable).length})', 'available'),
-                            _buildFilterChip('Attivati (${allVouchers.where((v) => v.isClaimed).length})', 'claimed'),
+                            _buildFilterChip('Attivati (${allVouchers.where((v) => v.isClaimed && !v.isExpired).length})', 'claimed'),
                             _buildFilterChip('Riscattati (${allVouchers.where((v) => v.isRedeemed).length})', 'redeemed'),
+                            _buildFilterChip('Scaduti (${allVouchers.where((v) => v.isExpired && !v.isRedeemed).length})', 'expired'),
                           ],
                         ),
                       ],
@@ -422,8 +425,9 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
   Widget _buildOverviewCard(Organization org, PromotionModel promo, List<VoucherModel> vouchers) {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final available = vouchers.where((v) => v.isAvailable).length;
-    final claimed = vouchers.where((v) => v.isClaimed).length;
+    final claimed = vouchers.where((v) => v.isClaimed && !v.isExpired).length;
     final redeemed = vouchers.where((v) => v.isRedeemed).length;
+    final expired = vouchers.where((v) => v.isExpired && !v.isRedeemed).length;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -471,9 +475,12 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
             children: [
               _buildOverviewMetric('Totale Emessi', '${vouchers.length}', AppColors.textPrimary),
               _buildOverviewMetric('Disponibili', '$available', const Color(0xFF64748B)),
-              _buildOverviewMetric('Attivati da Clienti', '$claimed', const Color(0xFF0EA5E9)),
-              _buildOverviewMetric('Riscattati in Cassa', '$redeemed', AppColors.success),
-              _buildOverviewMetric('Scadenza', dateFormat.format(promo.expirationDate), promo.isExpired ? AppColors.error : AppColors.textPrimary),
+              _buildOverviewMetric('Attivati', '$claimed', const Color(0xFF0EA5E9)),
+              _buildOverviewMetric('Riscattati', '$redeemed', AppColors.success),
+              if (expired > 0)
+                _buildOverviewMetric('Scaduti', '$expired', AppColors.error),
+              _buildOverviewMetric('Validità', '${promo.validityDays} gg', const Color(0xFF8B5CF6)),
+              _buildOverviewMetric('Termine Campagna', dateFormat.format(promo.expirationDate), promo.isExpired ? AppColors.error : AppColors.textPrimary),
             ],
           ),
         ],
@@ -493,12 +500,20 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
 
   Widget _buildVoucherRow(Organization org, VoucherModel voucher, PromotionModel promo) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final dateOnlyFormat = DateFormat('dd/MM/yyyy');
+    final isVoucherExpired = voucher.isExpired;
+    final isPromoExpired = promo.isExpired;
+    final isExpired = (isVoucherExpired || isPromoExpired) && !voucher.isRedeemed;
+
     Color badgeColor = const Color(0xFF64748B);
     String badgeText = 'Disponibile';
 
     if (voucher.isRedeemed) {
       badgeColor = AppColors.success;
       badgeText = 'Riscattato';
+    } else if (isExpired) {
+      badgeColor = AppColors.error;
+      badgeText = 'Scaduto';
     } else if (voucher.isClaimed) {
       badgeColor = const Color(0xFF0EA5E9);
       badgeText = 'Attivato';
@@ -510,7 +525,11 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(
+          color: isExpired
+              ? AppColors.error.withValues(alpha: 0.3)
+              : AppColors.border,
+        ),
       ),
       child: Row(
         children: [
@@ -562,9 +581,24 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
                         voucher.claimedFullName.isNotEmpty ? voucher.claimedFullName : 'Cliente',
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
-                      Text(
-                        '${voucher.claimedEmail ?? ""} ${voucher.claimedPhone != null ? "• ${voucher.claimedPhone!}" : ""}',
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      Row(
+                        children: [
+                          Text(
+                            '${voucher.claimedEmail ?? ""} ${voucher.claimedPhone != null ? "• ${voucher.claimedPhone!}" : ""}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          ),
+                          if (voucher.expiresAt != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '• Scadenza: ${dateOnlyFormat.format(voucher.expiresAt!)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: isExpired ? AppColors.error : AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   )
@@ -583,8 +617,21 @@ class _PromotionDetailScreenState extends ConsumerState<PromotionDetailScreen> {
             const SizedBox(width: 12),
           ],
 
-          // Quick redeem button for reception
-          if (!voucher.isRedeemed) ...[
+          // Quick action button
+          if (voucher.isRedeemed) ...[
+            const SizedBox.shrink(),
+          ] else if (isExpired) ...[
+            OutlinedButton(
+              onPressed: () => _openRedeemDialog(org, initialCode: voucher.code),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              child: const Text('Dettagli Scaduto'),
+            ),
+          ] else ...[
             ElevatedButton(
               onPressed: () => _openRedeemDialog(org, initialCode: voucher.code),
               style: ElevatedButton.styleFrom(

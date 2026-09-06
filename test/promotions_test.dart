@@ -103,5 +103,76 @@ void main() {
       expect(SubscriptionPlan.business.isUnlimitedVouchers, isTrue);
       expect(SubscriptionPlan.business.canOnlinePromotionPayment, isTrue);
     });
+
+    test('PromotionModel partnership and dynamic validityDays support', () {
+      // Partnership promotion
+      final partnershipPromo = PromotionModel(
+        id: 'promo_part',
+        orgId: 'org_1',
+        title: 'Sconto Palestra',
+        partnerName: 'Palestra XYZ',
+        partnerLogoUrl: 'data:image/png;base64,xyz123',
+        validityDays: 14,
+        codePrefix: 'PAL',
+        expirationDate: DateTime.now().add(const Duration(days: 90)),
+      );
+
+      expect(partnershipPromo.isPartnership, isTrue);
+      expect(partnershipPromo.validityDays, equals(14));
+      expect(partnershipPromo.partnerLogoUrl, equals('data:image/png;base64,xyz123'));
+
+      final map = partnershipPromo.toFirestore();
+      expect(map['partnerName'], equals('Palestra XYZ'));
+      expect(map['partnerLogoUrl'], equals('data:image/png;base64,xyz123'));
+      expect(map['validityDays'], equals(14));
+
+      // Internal venue promotion (no partner)
+      final internalPromo = PromotionModel(
+        id: 'promo_int',
+        orgId: 'org_1',
+        title: 'Open Day SPA',
+        codePrefix: 'SPA',
+        expirationDate: DateTime.now().add(const Duration(days: 30)),
+      );
+
+      expect(internalPromo.isPartnership, isFalse);
+      expect(internalPromo.validityDays, equals(30)); // default 30 days
+      expect(internalPromo.partnerLogoUrl, isNull);
+    });
+
+    test('VoucherModel dynamic expiration and remaining days calculation', () {
+      final now = DateTime.now();
+      final claimTime = now.subtract(const Duration(days: 5));
+      final expiresFuture = claimTime.add(const Duration(days: 14)); // 9 days remaining
+
+      final activeVoucher = VoucherModel(
+        id: 'v_active',
+        promoId: 'p_1',
+        orgId: 'org_1',
+        code: 'TEST-0001',
+        sequenceNumber: 1,
+        status: VoucherStatus.claimed,
+        claimedAt: claimTime,
+        expiresAt: expiresFuture,
+      );
+
+      expect(activeVoucher.isExpired, isFalse);
+      expect(activeVoucher.remainingDays, inInclusiveRange(8, 10));
+
+      final expiresPast = claimTime.add(const Duration(days: 3)); // expired 2 days ago
+      final expiredVoucher = VoucherModel(
+        id: 'v_expired',
+        promoId: 'p_1',
+        orgId: 'org_1',
+        code: 'TEST-0002',
+        sequenceNumber: 2,
+        status: VoucherStatus.claimed,
+        claimedAt: claimTime,
+        expiresAt: expiresPast,
+      );
+
+      expect(expiredVoucher.isExpired, isTrue);
+      expect(expiredVoucher.remainingDays, equals(0));
+    });
   });
 }
