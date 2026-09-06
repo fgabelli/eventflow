@@ -639,11 +639,11 @@ class PromotionPdfService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text(
-                          'Ticketto  •  Piattaforma Gestione Pass & Convenzioni',
+                          'Piattaforma Gestione Pass & Convenzioni',
                           style: pw.TextStyle(font: fontRegular, fontSize: 7, color: palette.textSecondary),
                         ),
                         pw.Text(
-                          'ticketto.it',
+                          'Powered by ticketto.it',
                           style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.accentColor),
                         ),
                       ],
@@ -1246,7 +1246,7 @@ class PromotionPdfService {
                           ),
                         ),
                         pw.Text(
-                          'ticketto.it',
+                          'Powered by ticketto.it',
                           style: pw.TextStyle(
                             font: fontBold,
                             fontSize: 7,
