@@ -639,11 +639,11 @@ class PromotionPdfService {
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
                         pw.Text(
-                          'Eventflow  •  Piattaforma Gestione Pass & Convenzioni',
+                          'Ticketto  •  Piattaforma Gestione Pass & Convenzioni',
                           style: pw.TextStyle(font: fontRegular, fontSize: 7, color: palette.textSecondary),
                         ),
                         pw.Text(
-                          'eventflow.it',
+                          'ticketto.it',
                           style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.accentColor),
                         ),
                       ],
@@ -694,7 +694,7 @@ class PromotionPdfService {
           if (ticketBgImage != null)
             pw.Positioned.fill(
               child: pw.Opacity(
-                opacity: isDark ? 0.15 : 0.08,
+                opacity: isDark ? 0.45 : 0.30,
                 child: pw.Image(ticketBgImage, fit: pw.BoxFit.cover),
               ),
             ),
@@ -1246,7 +1246,7 @@ class PromotionPdfService {
                           ),
                         ),
                         pw.Text(
-                          'eventflow.it',
+                          'ticketto.it',
                           style: pw.TextStyle(
                             font: fontBold,
                             fontSize: 7,
@@ -1297,7 +1297,7 @@ class PromotionPdfService {
           if (ticketBgImage != null)
             pw.Positioned.fill(
               child: pw.Opacity(
-                opacity: isDark ? 0.12 : 0.06,
+                opacity: isDark ? 0.40 : 0.25,
                 child: pw.Image(ticketBgImage, fit: pw.BoxFit.cover),
               ),
             ),
