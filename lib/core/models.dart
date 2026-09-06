@@ -9,6 +9,7 @@ class Organization {
   final String? logo;
   final String? email;
   final String? phone;
+  final String? whatsapp;
   final String? website;
   final String? address;
   final String? fiscalInfo;
@@ -22,6 +23,7 @@ class Organization {
     this.logo,
     this.email,
     this.phone,
+    this.whatsapp,
     this.website,
     this.address,
     this.fiscalInfo,
@@ -38,6 +40,7 @@ class Organization {
       logo: data['logo'],
       email: data['email'],
       phone: data['phone'],
+      whatsapp: data['whatsapp'],
       website: data['website'],
       address: data['address'],
       fiscalInfo: data['fiscalInfo'],
@@ -55,6 +58,7 @@ class Organization {
     'logo': logo,
     'email': email,
     'phone': phone,
+    'whatsapp': whatsapp,
     'website': website,
     'address': address,
     'fiscalInfo': fiscalInfo,

@@ -45,6 +45,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
         theme: _selectedTheme,
         orgEmail: widget.org.email,
         orgPhone: widget.org.phone,
+        orgWhatsapp: widget.org.whatsapp,
         orgWebsite: widget.org.website,
         orgAddress: widget.org.address,
       );

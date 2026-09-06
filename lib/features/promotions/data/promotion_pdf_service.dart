@@ -274,6 +274,7 @@ class PromotionPdfService {
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
     String? orgEmail,
     String? orgPhone,
+    String? orgWhatsapp,
     String? orgWebsite,
     String? orgAddress,
   }) async {
@@ -289,6 +290,7 @@ class PromotionPdfService {
           theme: theme,
           orgEmail: orgEmail,
           orgPhone: orgPhone,
+          orgWhatsapp: orgWhatsapp,
           orgWebsite: orgWebsite,
           orgAddress: orgAddress,
         );
@@ -315,6 +317,7 @@ class PromotionPdfService {
           theme: theme,
           orgEmail: orgEmail,
           orgPhone: orgPhone,
+          orgWhatsapp: orgWhatsapp,
           orgWebsite: orgWebsite,
         );
       case CouponPrintFormat.a4Grid:
@@ -343,6 +346,7 @@ class PromotionPdfService {
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
     String? orgEmail,
     String? orgPhone,
+    String? orgWhatsapp,
     String? orgWebsite,
     String? orgAddress,
   }) async {
@@ -661,6 +665,7 @@ class PromotionPdfService {
                               orgName,
                               if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
                               if (orgPhone != null && orgPhone.trim().isNotEmpty) 'Tel: $orgPhone',
+                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA: $orgWhatsapp',
                               if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
                               if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
                             ].join('  •  '),
@@ -983,6 +988,7 @@ class PromotionPdfService {
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
     String? orgEmail,
     String? orgPhone,
+    String? orgWhatsapp,
     String? orgWebsite,
   }) async {
     final pdf = pw.Document();
@@ -1273,6 +1279,7 @@ class PromotionPdfService {
                             [
                               orgName,
                               if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
+                              if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) 'WA $orgWhatsapp',
                               if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
                               if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
                             ].join('  •  '),
@@ -1611,6 +1618,7 @@ class PromotionPdfService {
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
     String? orgEmail,
     String? orgPhone,
+    String? orgWhatsapp,
     String? orgWebsite,
     String? orgAddress,
   }) async {
@@ -1626,6 +1634,7 @@ class PromotionPdfService {
       theme: theme,
       orgEmail: orgEmail,
       orgPhone: orgPhone,
+          orgWhatsapp: orgWhatsapp,
       orgWebsite: orgWebsite,
       orgAddress: orgAddress,
     );
