@@ -792,16 +792,6 @@ class PromotionPdfService {
                   ),
                 ),
 
-                // Vertical Perforation Divider
-                pw.Container(
-                  width: 1,
-                  margin: const pw.EdgeInsets.symmetric(vertical: 4),
-                  decoration: const pw.BoxDecoration(
-                    border: pw.Border(
-                      left: pw.BorderSide(color: PdfColors.grey500, width: 0.75, style: pw.BorderStyle.dashed),
-                    ),
-                  ),
-                ),
 
                 // Right 37%: Dedicated QR Stub (100% Centered!)
                 pw.Expanded(
