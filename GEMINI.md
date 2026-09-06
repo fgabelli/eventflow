@@ -23,3 +23,7 @@
    - Entrambe le correzioni sono automatiche: `predeploy_guard.sh` è agganciato come hook `predeploy` in `firebase.json` e gira prima di **ogni** `firebase deploy` che tocchi l'hosting. Corregge da sé i due casi sopra e blocca il deploy se la landing manca o non è quella giusta.
    - **Non rimuovere né disattivare** `predeploy_guard.sh`, `fix_service_worker.py`, l'hook `predeploy` in `firebase.json`, il rewrite `"/" → /index_landing.html` e il file `web/index_landing.html`. Se un cambiamento li rende necessari da modificare, parlarne prima con Fabio.
    - **Verifica dopo ogni pubblicazione**: `curl -s https://ticketto.it/ | grep "<title>"` deve mostrare il titolo della landing (non "Ticketto" secco), e aprendo `https://ticketto.it/` in una finestra in incognito deve comparire la vetrina, non il login.
+4. **Dominio Ufficiale e URL Pubblici (REGOLA CRITICA — Solo ticketto.it)**:
+   - Qualsiasi link generato nell'applicazione, copiato negli appunti, inviato via email, stampato su PDF o codificato nei QR code DEVE usare esclusivamente il dominio ufficiale `https://ticketto.it` (utilizzando la costante `AppConfig.baseUrl` da `package:eventflow/core/constants/app_constants.dart`).
+   - È TASSATIVAMENTE VIETATO usare o esporre l'URL predefinito di Firebase (`eventflow-3541b.web.app` o simili) in link utente, QR code, condivisioni o documentazione rivolta al pubblico.
+
