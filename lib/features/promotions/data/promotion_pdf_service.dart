@@ -328,9 +328,9 @@ class PromotionPdfService {
 
     pw.ImageProvider? flyerBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/spa_flyer_template.jpg');
+      flyerBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
     } else if (theme == CouponVisualTheme.sportDynamic) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/sport_flyer_template.jpg');
+      flyerBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
     }
 
     if (flyerBgImage != null) {
@@ -343,6 +343,11 @@ class PromotionPdfService {
               children: [
                 pw.Positioned.fill(
                   child: pw.Image(flyerBgImage!, fit: pw.BoxFit.cover),
+                ),
+                pw.Positioned.fill(
+                  child: pw.Container(
+                    color: PdfColor(0.04, 0.05, 0.08, 0.50),
+                  ),
                 ),
                 pw.Positioned.fill(
                   child: pw.Padding(
@@ -748,309 +753,175 @@ class PromotionPdfService {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme != CouponVisualTheme.modernMinimal;
 
-    if (ticketBgImage != null) {
-      return pw.Container(
-        decoration: pw.BoxDecoration(
-          borderRadius: pw.BorderRadius.circular(6),
-          border: isGridItem
-              ? pw.Border.all(color: PdfColors.grey400, width: 0.75, style: pw.BorderStyle.dashed)
-              : null,
-        ),
-        child: pw.ClipRRect(
-          horizontalRadius: 6,
-          verticalRadius: 6,
-          child: pw.Stack(
-            children: [
-              pw.Positioned.fill(
-                child: pw.Image(ticketBgImage, fit: pw.BoxFit.cover),
-              ),
-              pw.Positioned.fill(
-                child: pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                  child: pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-                    children: [
-                      // Left 62%
-                      pw.Expanded(
-                        flex: 62,
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildHeaderLogos(
-                              orgLogoImage: orgLogoImage,
-                              partnerLogoImage: partnerLogoImage,
-                              orgName: orgName,
-                              promotion: promotion,
-                              fontBold: fontBold,
-                              fontSemiBold: fontSemiBold,
-                              logoHeight: 12,
-                              overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                              textLightColor: PdfColors.white,
-                            ),
-                            pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                              decoration: pw.BoxDecoration(
-                                color: palette.badgeBg,
-                                borderRadius: pw.BorderRadius.circular(3),
-                                border: pw.Border.all(color: palette.accentColor, width: 0.5),
-                              ),
-                              child: pw.Text(
-                                promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty
-                                    ? 'CONVENZIONE ${promotion.partnerName!.toUpperCase()}'
-                                    : promotion.offerType.label.toUpperCase(),
-                                style: pw.TextStyle(font: fontBold, fontSize: 5.5, color: palette.badgeText, letterSpacing: 0.3),
-                                maxLines: 1,
-                              ),
-                            ),
-                            pw.Text(
-                              promotion.title,
-                              style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: PdfColors.white),
-                              maxLines: 2,
-                            ),
-                            pw.Row(
-                              children: [
-                                pw.Container(
-                                  padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                  decoration: pw.BoxDecoration(
-                                    color: palette.codeBg,
-                                    borderRadius: pw.BorderRadius.circular(2.5),
-                                  ),
-                                  child: pw.Text(
-                                    'CODICE: ${promotion.codePrefix}',
-                                    style: pw.TextStyle(font: fontBold, fontSize: 6.5, color: palette.codeText, letterSpacing: 0.5),
-                                  ),
-                                ),
-                                pw.SizedBox(width: 5),
-                                pw.Text(
-                                  'Valido ${promotion.validityDays} gg',
-                                  style: pw.TextStyle(font: fontRegular, fontSize: 5, color: PdfColor.fromHex('CBD5E1')),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Spacing over notch (10%)
-                      pw.SizedBox(width: 14),
-                      // Right 28% QR stub
-                      pw.Expanded(
-                        flex: 28,
-                        child: pw.Column(
-                          mainAxisAlignment: pw.MainAxisAlignment.center,
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Container(
-                              padding: const pw.EdgeInsets.all(3),
-                              decoration: pw.BoxDecoration(
-                                color: PdfColors.white,
-                                borderRadius: pw.BorderRadius.circular(3),
-                                border: pw.Border.all(color: palette.accentColor, width: 0.5),
-                              ),
-                              child: pw.BarcodeWidget(
-                                barcode: pw.Barcode.qrCode(),
-                                data: claimUrl,
-                                width: 26,
-                                height: 26,
-                                color: PdfColors.black,
-                              ),
-                            ),
-                            pw.SizedBox(height: 3),
-                            pw.Text(
-                              'INQUADRA QR',
-                              style: pw.TextStyle(font: fontBold, fontSize: 4.5, color: PdfColors.white, letterSpacing: 0.3),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return pw.Container(
       decoration: pw.BoxDecoration(
         color: palette.primaryBg,
-        borderRadius: pw.BorderRadius.circular(6),
-        border: pw.Border.all(
-          color: isGridItem ? PdfColors.grey400 : palette.borderColor,
-          width: 0.75,
-          style: isGridItem ? pw.BorderStyle.dashed : pw.BorderStyle.solid,
-        ),
+        border: isGridItem
+            ? pw.Border.all(color: PdfColors.grey400, width: 0.5, style: pw.BorderStyle.dashed)
+            : null,
       ),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+      child: pw.Stack(
         children: [
-          // Left section (Brand & Offer)
-          pw.Expanded(
-            flex: 60,
-            child: pw.Padding(
-              padding: const pw.EdgeInsets.all(6),
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildHeaderLogos(
-                    orgLogoImage: orgLogoImage,
-                    partnerLogoImage: partnerLogoImage,
-                    orgName: orgName,
-                    promotion: promotion,
-                    fontBold: fontBold,
-                    fontSemiBold: fontSemiBold,
-                    logoHeight: 13,
-                    overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                    textLightColor: isDark ? PdfColors.white : null,
-                  ),
-                  pw.SizedBox(height: 2),
-                  pw.Container(
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                    decoration: pw.BoxDecoration(
-                      color: palette.badgeBg,
-                      borderRadius: pw.BorderRadius.circular(3),
-                      border: pw.Border.all(color: palette.accentColor, width: 0.5),
-                    ),
-                    child: pw.Text(
-                      promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty
-                          ? 'CONVENZIONE ${promotion.partnerName!.toUpperCase()}'
-                          : promotion.offerType.label.toUpperCase(),
-                      style: pw.TextStyle(font: fontBold, fontSize: 5.5, color: palette.badgeText, letterSpacing: 0.3),
-                      maxLines: 1,
-                    ),
-                  ),
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    promotion.title,
-                    style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: palette.textPrimary),
-                    maxLines: 2,
-                  ),
-                  if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
-                    pw.SizedBox(height: 1),
-                    pw.Text(
-                      promotion.description!,
-                      style: pw.TextStyle(font: fontRegular, fontSize: 5, color: palette.textSecondary),
-                      maxLines: 1,
-                    ),
-                  ],
-                  pw.SizedBox(height: 3),
-                  pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: [
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        decoration: pw.BoxDecoration(
-                          color: palette.codeBg,
-                          borderRadius: pw.BorderRadius.circular(2.5),
-                        ),
-                        child: pw.Text(
-                          'CODICE: ${promotion.codePrefix}',
-                          style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.codeText, letterSpacing: 0.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    'Valido ${promotion.validityDays} gg da attivazione',
-                    style: pw.TextStyle(font: fontRegular, fontSize: 4.5, color: palette.textSecondary),
-                  ),
-                ],
+          // 1. Full-bleed background photo
+          if (ticketBgImage != null)
+            pw.Positioned.fill(
+              child: pw.Image(ticketBgImage, fit: pw.BoxFit.cover),
+            ),
+
+          // 2. Dark glass overlay so text is razor-sharp
+          if (ticketBgImage != null)
+            pw.Positioned.fill(
+              child: pw.Container(
+                color: PdfColor(0.04, 0.05, 0.08, 0.74),
               ),
             ),
-          ),
 
-          // Center Ticket Notch & Perforation
-          pw.Container(
-            width: 8,
-            child: pw.Column(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          // 3. Crisp Card Content Layout
+          pw.Positioned.fill(
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                pw.Container(
-                  width: 8,
-                  height: 4,
-                  decoration: const pw.BoxDecoration(
-                    color: PdfColors.white,
-                    borderRadius: pw.BorderRadius.only(
-                      bottomLeft: pw.Radius.circular(4),
-                      bottomRight: pw.Radius.circular(4),
-                    ),
-                  ),
-                ),
+                // Left 63%: Partner branding & Offer info
                 pw.Expanded(
-                  child: pw.Center(
-                    child: pw.Container(
-                      width: 0.75,
-                      decoration: const pw.BoxDecoration(
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey300, width: 0.75, style: pw.BorderStyle.dashed),
+                  flex: 63,
+                  child: pw.Padding(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildHeaderLogos(
+                          orgLogoImage: orgLogoImage,
+                          partnerLogoImage: partnerLogoImage,
+                          orgName: orgName,
+                          promotion: promotion,
+                          fontBold: fontBold,
+                          fontSemiBold: fontSemiBold,
+                          logoHeight: 14,
+                          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                          textLightColor: isDark ? PdfColors.white : null,
                         ),
-                      ),
+                        pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: pw.BoxDecoration(
+                            color: palette.badgeBg,
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(color: palette.accentColor, width: 0.5),
+                          ),
+                          child: pw.Text(
+                            promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty
+                                ? 'CONVENZIONE ${promotion.partnerName!.toUpperCase()}'
+                                : promotion.offerType.label.toUpperCase(),
+                            style: pw.TextStyle(font: fontBold, fontSize: 5.5, color: palette.badgeText, letterSpacing: 0.3),
+                            maxLines: 1,
+                          ),
+                        ),
+                        pw.Text(
+                          promotion.title,
+                          style: pw.TextStyle(font: fontBold, fontSize: 8.5, color: isDark ? PdfColors.white : palette.textPrimary),
+                          maxLines: 2,
+                        ),
+                        pw.Row(
+                          children: [
+                            pw.Container(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: pw.BoxDecoration(
+                                color: palette.codeBg,
+                                borderRadius: pw.BorderRadius.circular(2),
+                              ),
+                              child: pw.Text(
+                                'CODICE: ${promotion.codePrefix}',
+                                style: pw.TextStyle(font: fontBold, fontSize: 6.5, color: palette.codeText, letterSpacing: 0.5),
+                              ),
+                            ),
+                            pw.SizedBox(width: 4),
+                            pw.Text(
+                              'Valido ${promotion.validityDays} gg',
+                              style: pw.TextStyle(font: fontRegular, fontSize: 5, color: isDark ? PdfColor.fromHex('CBD5E1') : palette.textSecondary),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
+
+                // Vertical Perforation Divider
                 pw.Container(
-                  width: 8,
-                  height: 4,
+                  width: 1,
+                  margin: const pw.EdgeInsets.symmetric(vertical: 4),
                   decoration: const pw.BoxDecoration(
-                    color: PdfColors.white,
-                    borderRadius: pw.BorderRadius.only(
-                      topLeft: pw.Radius.circular(4),
-                      topRight: pw.Radius.circular(4),
+                    border: pw.Border(
+                      left: pw.BorderSide(color: PdfColors.grey500, width: 0.75, style: pw.BorderStyle.dashed),
+                    ),
+                  ),
+                ),
+
+                // Right 37%: Dedicated QR Stub (100% Centered!)
+                pw.Expanded(
+                  flex: 37,
+                  child: pw.Container(
+                    color: isDark ? PdfColor(0.04, 0.05, 0.08, 0.55) : PdfColors.white,
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+                    child: pw.Column(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        pw.Text(
+                          'ATTIVA IL PASS',
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 5,
+                            color: isDark ? palette.accentColor : palette.primaryBg,
+                            letterSpacing: 0.4,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                        pw.SizedBox(height: 2.5),
+                        // Clean White Square with Theme Border
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(3),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.white,
+                            borderRadius: pw.BorderRadius.circular(3),
+                            border: pw.Border.all(color: palette.accentColor, width: 1),
+                          ),
+                          child: pw.BarcodeWidget(
+                            barcode: pw.Barcode.qrCode(),
+                            data: claimUrl,
+                            width: 27,
+                            height: 27,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                        pw.SizedBox(height: 2.5),
+                        pw.Text(
+                          'INQUADRA CON FOTOCAMERA',
+                          style: pw.TextStyle(
+                            font: fontSemiBold,
+                            fontSize: 3.8,
+                            color: isDark ? PdfColors.white : PdfColors.grey700,
+                            letterSpacing: 0.2,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                        if (expDateStr != null) ...[
+                          pw.SizedBox(height: 1),
+                          pw.Text(
+                            'Entro il $expDateStr',
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 3.5,
+                              color: isDark ? PdfColor.fromHex('F87171') : PdfColors.red800,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Right section (Pure White QR & Activation)
-          pw.Expanded(
-            flex: 40,
-            child: pw.Container(
-              decoration: const pw.BoxDecoration(
-                color: PdfColors.white,
-                borderRadius: pw.BorderRadius.only(
-                  topRight: pw.Radius.circular(5),
-                  bottomRight: pw.Radius.circular(5),
-                ),
-              ),
-              padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 5),
-              child: pw.Column(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  pw.Text(
-                    'ATTIVA IL TUO PASS',
-                    style: pw.TextStyle(font: fontBold, fontSize: 5.5, color: PdfColors.indigo900, letterSpacing: 0.4),
-                    textAlign: pw.TextAlign.center,
-                  ),
-                  pw.BarcodeWidget(
-                    barcode: pw.Barcode.qrCode(),
-                    data: claimUrl,
-                    width: 27,
-                    height: 27,
-                    color: PdfColors.black,
-                  ),
-                  pw.Text(
-                    'Inquadra con fotocamera',
-                    style: pw.TextStyle(font: fontSemiBold, fontSize: 4.5, color: PdfColors.grey700),
-                    textAlign: pw.TextAlign.center,
-                  ),
-                  pw.Text(
-                    expDateStr != null ? 'Attiva entro $expDateStr' : 'ticketto.it',
-                    style: pw.TextStyle(
-                      font: fontRegular,
-                      fontSize: 4,
-                      color: expDateStr != null ? PdfColors.red800 : PdfColors.grey500,
-                    ),
-                    textAlign: pw.TextAlign.center,
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -1086,9 +957,9 @@ class PromotionPdfService {
 
     pw.ImageProvider? ticketBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/spa_ticket_template.jpg');
+      ticketBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
     } else if (theme == CouponVisualTheme.sportDynamic) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/sport_ticket_template.jpg');
+      ticketBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
     }
 
     final cardFormat = PdfPageFormat(
@@ -1153,9 +1024,9 @@ class PromotionPdfService {
 
     pw.ImageProvider? flyerBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/spa_flyer_template.jpg');
+      flyerBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
     } else if (theme == CouponVisualTheme.sportDynamic) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/sport_flyer_template.jpg');
+      flyerBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
     }
 
     if (flyerBgImage != null) {
@@ -1168,6 +1039,11 @@ class PromotionPdfService {
               children: [
                 pw.Positioned.fill(
                   child: pw.Image(flyerBgImage!, fit: pw.BoxFit.cover),
+                ),
+                pw.Positioned.fill(
+                  child: pw.Container(
+                    color: PdfColor(0.04, 0.05, 0.08, 0.50),
+                  ),
                 ),
                 pw.Positioned.fill(
                   child: pw.Padding(
@@ -1502,9 +1378,9 @@ class PromotionPdfService {
 
     pw.ImageProvider? ticketBgImage;
     if (theme == CouponVisualTheme.luxurySpa) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/spa_ticket_template.jpg');
+      ticketBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
     } else if (theme == CouponVisualTheme.sportDynamic) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/sport_ticket_template.jpg');
+      ticketBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
     }
 
     const itemsPerPage = 6; // 2 cols x 3 rows
