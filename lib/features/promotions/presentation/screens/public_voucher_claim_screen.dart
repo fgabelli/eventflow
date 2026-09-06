@@ -93,7 +93,15 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
             : VoucherPaymentStatus.pending,
       );
 
-      batch.update(voucherRef, updatedVoucher.toFirestore());
+      batch.update(voucherRef, {
+        'status': updatedVoucher.status.name,
+        'claimedAt': Timestamp.fromDate(updatedVoucher.claimedAt!),
+        'claimedFirstName': updatedVoucher.claimedFirstName,
+        'claimedLastName': updatedVoucher.claimedLastName,
+        'claimedEmail': updatedVoucher.claimedEmail,
+        'claimedPhone': updatedVoucher.claimedPhone,
+        'paymentStatus': updatedVoucher.paymentStatus.name,
+      });
 
       // Increment claimed count in promotion
       final promoRef = db.collection(Collections.promotions).doc(promo.id);

@@ -12,7 +12,6 @@ import 'package:eventflow/features/auth/presentation/providers/auth_providers.da
 import 'package:eventflow/features/promotions/presentation/dialogs/create_promotion_dialog.dart';
 import 'package:eventflow/features/promotions/presentation/dialogs/redeem_voucher_dialog.dart';
 import 'package:eventflow/features/promotions/presentation/dialogs/print_format_dialog.dart';
-import 'package:eventflow/features/promotions/data/promotion_pdf_service.dart';
 
 class PromotionsScreen extends ConsumerStatefulWidget {
   const PromotionsScreen({super.key});

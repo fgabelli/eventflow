@@ -95,9 +95,10 @@ service cloud.firestore {
       // Public read for customer voucher claim page
       allow read: if true;
       allow create: if isAuth() && isOrgStaff(request.resource.data.orgId);
-      // Staff update (redemption/management) OR customer self-claim
+      // Staff update (redemption/management) OR customer self-claim (only available vouchers)
       allow update: if (isAuth() && isOrgStaff(resource.data.orgId))
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedAt', 'claimedFirstName', 'claimedLastName', 'claimedEmail', 'claimedPhone', 'paymentStatus']));
+        || (resource.data.status == 'available'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedAt', 'claimedFirstName', 'claimedLastName', 'claimedEmail', 'claimedPhone', 'paymentStatus']));
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
     }
   }
