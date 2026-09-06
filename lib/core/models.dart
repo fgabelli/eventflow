@@ -8,6 +8,9 @@ class Organization {
   final String name;
   final String? logo;
   final String? email;
+  final String? phone;
+  final String? website;
+  final String? address;
   final String? fiscalInfo;
   final String? primaryColor;
   final SubscriptionPlan plan;
@@ -18,6 +21,9 @@ class Organization {
     required this.name,
     this.logo,
     this.email,
+    this.phone,
+    this.website,
+    this.address,
     this.fiscalInfo,
     this.primaryColor,
     this.plan = SubscriptionPlan.free,
@@ -31,6 +37,9 @@ class Organization {
       name: data['name'] ?? '',
       logo: data['logo'],
       email: data['email'],
+      phone: data['phone'],
+      website: data['website'],
+      address: data['address'],
       fiscalInfo: data['fiscalInfo'],
       primaryColor: data['primaryColor'],
       plan: SubscriptionPlan.values.firstWhere(
@@ -45,6 +54,9 @@ class Organization {
     'name': name,
     'logo': logo,
     'email': email,
+    'phone': phone,
+    'website': website,
+    'address': address,
     'fiscalInfo': fiscalInfo,
     'primaryColor': primaryColor,
     'plan': plan.name,

@@ -272,6 +272,10 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? orgEmail,
+    String? orgPhone,
+    String? orgWebsite,
+    String? orgAddress,
   }) async {
     switch (format) {
       case CouponPrintFormat.deskStandA4:
@@ -283,6 +287,10 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          orgEmail: orgEmail,
+          orgPhone: orgPhone,
+          orgWebsite: orgWebsite,
+          orgAddress: orgAddress,
         );
       case CouponPrintFormat.businessCard:
         return generateBusinessCards(
@@ -305,6 +313,9 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          orgEmail: orgEmail,
+          orgPhone: orgPhone,
+          orgWebsite: orgWebsite,
         );
       case CouponPrintFormat.a4Grid:
         return generateCouponSheet(
@@ -330,6 +341,10 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? orgEmail,
+    String? orgPhone,
+    String? orgWebsite,
+    String? orgAddress,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -630,18 +645,30 @@ class PromotionPdfService {
                   // Bottom brand bar
                   pw.Container(
                     width: double.infinity,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: pw.BoxDecoration(
                       color: palette.surfaceLevel1,
                       borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(5.5)),
                     ),
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text(
-                          'Piattaforma Gestione Pass & Convenzioni',
-                          style: pw.TextStyle(font: fontRegular, fontSize: 7, color: palette.textSecondary),
+                        // Org contact info
+                        pw.Expanded(
+                          child: pw.Text(
+                            [
+                              orgName,
+                              if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
+                              if (orgPhone != null && orgPhone.trim().isNotEmpty) 'Tel: $orgPhone',
+                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
+                            ].join('  •  '),
+                            style: pw.TextStyle(font: fontRegular, fontSize: 7, color: palette.textSecondary),
+                            maxLines: 1,
+                          ),
                         ),
+                        pw.SizedBox(width: 8),
                         pw.Text(
                           'Powered by ticketto.it',
                           style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.accentColor),
@@ -954,6 +981,9 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? orgEmail,
+    String? orgPhone,
+    String? orgWebsite,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -1229,27 +1259,37 @@ class PromotionPdfService {
                   // ZONE 4: Footer (12%)
                   pw.Container(
                     width: double.infinity,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: pw.BoxDecoration(
                       color: palette.surfaceLevel1,
                       borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(3.5)),
                     ),
                     child: pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
                       children: [
-                        pw.Text(
-                          '1. Inquadra  •  2. Registrati  •  3. Mostra pass',
-                          style: pw.TextStyle(
-                            font: fontRegular,
-                            fontSize: 7,
-                            color: palette.textSecondary,
+                        pw.Expanded(
+                          child: pw.Text(
+                            [
+                              orgName,
+                              if (orgPhone != null && orgPhone.trim().isNotEmpty) orgPhone,
+                              if (orgEmail != null && orgEmail.trim().isNotEmpty) orgEmail,
+                              if (orgWebsite != null && orgWebsite.trim().isNotEmpty) orgWebsite,
+                            ].join('  •  '),
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 6.5,
+                              color: palette.textSecondary,
+                            ),
+                            maxLines: 1,
                           ),
                         ),
+                        pw.SizedBox(width: 6),
                         pw.Text(
                           'Powered by ticketto.it',
                           style: pw.TextStyle(
                             font: fontBold,
-                            fontSize: 7,
+                            fontSize: 6.5,
                             color: palette.accentColor,
                           ),
                         ),
@@ -1569,6 +1609,10 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? orgEmail,
+    String? orgPhone,
+    String? orgWebsite,
+    String? orgAddress,
   }) async {
     final pdfBytes = await generateDocument(
       promotion: promotion,
@@ -1580,6 +1624,10 @@ class PromotionPdfService {
       baseUrl: baseUrl,
       overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
       theme: theme,
+      orgEmail: orgEmail,
+      orgPhone: orgPhone,
+      orgWebsite: orgWebsite,
+      orgAddress: orgAddress,
     );
 
     await Printing.layoutPdf(

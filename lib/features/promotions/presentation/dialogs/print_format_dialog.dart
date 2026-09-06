@@ -43,6 +43,10 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
         format: _selectedFormat,
         overridePartnerLogoDarkBg: _partnerLogoDarkBg,
         theme: _selectedTheme,
+        orgEmail: widget.org.email,
+        orgPhone: widget.org.phone,
+        orgWebsite: widget.org.website,
+        orgAddress: widget.org.address,
       );
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
