@@ -331,6 +331,23 @@ class PromotionPdfService {
     }
   }
 
+  /// Safely loads the background texture image for a specific theme.
+  static Future<pw.ImageProvider?> _loadThemeBgImage(CouponVisualTheme theme) async {
+    final assetPath = switch (theme) {
+      CouponVisualTheme.luxurySpa => 'assets/images/coupons/spa_bg.jpg',
+      CouponVisualTheme.sportDynamic => 'assets/images/coupons/sport_bg.jpg',
+      CouponVisualTheme.christmas => 'assets/images/coupons/christmas_bg.jpg',
+      CouponVisualTheme.valentine => 'assets/images/coupons/valentine_bg.jpg',
+      CouponVisualTheme.birthday => 'assets/images/coupons/birthday_bg.jpg',
+      CouponVisualTheme.anniversary => 'assets/images/coupons/anniversary_bg.jpg',
+      CouponVisualTheme.motherDay => 'assets/images/coupons/mother_bg.jpg',
+      CouponVisualTheme.fatherDay => 'assets/images/coupons/father_bg.jpg',
+      CouponVisualTheme.modernMinimal => null,
+    };
+    if (assetPath == null) return null;
+    return _loadAssetImage(assetPath);
+  }
+
   static const String _waIconBase64 = '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';
 
   /// Loads the WhatsApp logo (from asset bundle or embedded base64 fallback).
@@ -578,12 +595,7 @@ class PromotionPdfService {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme.isDark;
 
-    pw.ImageProvider? heroBgImage;
-    if (theme == CouponVisualTheme.luxurySpa) {
-      heroBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
-    } else if (theme == CouponVisualTheme.sportDynamic) {
-      heroBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
-    }
+    final heroBgImage = await _loadThemeBgImage(theme);
 
     final waIcon = await _loadWhatsappIcon();
 
@@ -1279,12 +1291,7 @@ class PromotionPdfService {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
 
-    pw.ImageProvider? ticketBgImage;
-    if (theme == CouponVisualTheme.luxurySpa) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
-    } else if (theme == CouponVisualTheme.sportDynamic) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
-    }
+    final ticketBgImage = await _loadThemeBgImage(theme);
 
     final waIcon = await _loadWhatsappIcon();
 
@@ -1356,12 +1363,7 @@ class PromotionPdfService {
     final palette = _ThemePalette.fromTheme(theme);
     final isDark = theme.isDark;
 
-    pw.ImageProvider? flyerBgImage;
-    if (theme == CouponVisualTheme.luxurySpa) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
-    } else if (theme == CouponVisualTheme.sportDynamic) {
-      flyerBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
-    }
+    final flyerBgImage = await _loadThemeBgImage(theme);
 
     final waIcon = await _loadWhatsappIcon();
 
@@ -2037,12 +2039,7 @@ class PromotionPdfService {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
 
-    pw.ImageProvider? ticketBgImage;
-    if (theme == CouponVisualTheme.luxurySpa) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/spa_bg.jpg');
-    } else if (theme == CouponVisualTheme.sportDynamic) {
-      ticketBgImage = await _loadAssetImage('assets/images/coupons/sport_bg.jpg');
-    }
+    final ticketBgImage = await _loadThemeBgImage(theme);
 
     final waIcon = await _loadWhatsappIcon();
 
