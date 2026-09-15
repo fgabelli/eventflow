@@ -1178,22 +1178,18 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 18,
-            height: 18,
-            child: SvgPicture.asset(
-              'assets/brand/ticketto-mark.svg',
-              fit: BoxFit.contain,
-            ),
-          ),
-          const SizedBox(width: 8),
           Text(
-            'Powered by Ticketto',
+            'Powered by',
             style: TextStyle(
               color: AppColors.textTertiary,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
+          ),
+          const SizedBox(width: 6),
+          SvgPicture.asset(
+            'assets/brand/ticketto-logo.svg',
+            height: 18,
           ),
         ],
       ),

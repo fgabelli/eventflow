@@ -260,24 +260,9 @@ class AboutScreen extends StatelessWidget {
           InkWell(
             onTap: () => context.go('/landing'),
             borderRadius: BorderRadius.circular(8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  'assets/brand/ticketto-mark.svg',
-                  width: 32,
-                  height: 32,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Ticketto',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
+            child: SvgPicture.asset(
+              'assets/brand/ticketto-logo.svg',
+              height: 28,
             ),
           ),
           const Spacer(),

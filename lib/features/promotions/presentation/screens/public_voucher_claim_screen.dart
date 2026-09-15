@@ -1057,18 +1057,14 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: SvgPicture.asset(
-              'assets/brand/ticketto-mark.svg',
-              fit: BoxFit.contain,
-            ),
-          ),
-          const SizedBox(width: 8),
           const Text(
-            'Powered by Ticketto',
+            'Powered by',
             style: TextStyle(color: AppColors.textTertiary, fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(width: 6),
+          SvgPicture.asset(
+            'assets/brand/ticketto-logo.svg',
+            height: 18,
           ),
         ],
       ),

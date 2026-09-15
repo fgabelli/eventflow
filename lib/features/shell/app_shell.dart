@@ -78,56 +78,41 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget _buildSideNav(BuildContext context, dynamic appUser, dynamic org) {
     return Container(
       width: 260,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0F172A),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
         border: Border(
-          right: BorderSide(color: Color(0xFF1E293B)),
+          right: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
         ),
       ),
       child: Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.all(20),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 36,
-                  height: 36,
-                  child: SvgPicture.asset(
-                    'assets/brand/ticketto-mark.svg',
-                    fit: BoxFit.contain,
-                  ),
+                SvgPicture.asset(
+                  'assets/brand/ticketto-logo-dark.svg',
+                  height: 30,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Ticketto',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      if (org != null)
-                        Text(
-                          org.name,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 12,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
+                if (org != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    org.name,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
+                ],
               ],
             ),
           ),
-          const Divider(color: Color(0xFF1E293B), height: 1),
+          Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
 
           // Navigation
           Expanded(
@@ -140,7 +125,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
           ),
 
-          const Divider(color: Color(0xFF1E293B), height: 1),
+          Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
 
           // Bottom section - settings & user
           Padding(
@@ -216,22 +201,27 @@ class _AppShellState extends ConsumerState<AppShell> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.15)
+                  ? Colors.white.withValues(alpha: 0.06)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
+              border: isSelected
+                  ? const Border(
+                      left: BorderSide(color: AppColors.lime, width: 3),
+                    )
+                  : null,
             ),
             child: Row(
               children: [
                 Icon(
                   item.icon,
                   size: 20,
-                  color: isSelected ? AppColors.primaryLight : Colors.white54,
+                  color: isSelected ? AppColors.lime : Colors.white.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   AppLocalizations.of(context)[item.labelKey],
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white54,
+                    color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -287,22 +277,27 @@ class _AppShellState extends ConsumerState<AppShell> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.primary.withValues(alpha: 0.15)
+                  ? Colors.white.withValues(alpha: 0.06)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
+              border: isSelected
+                  ? const Border(
+                      left: BorderSide(color: AppColors.lime, width: 3),
+                    )
+                  : null,
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.settings_rounded,
                   size: 20,
-                  color: isSelected ? AppColors.primaryLight : Colors.white54,
+                  color: isSelected ? AppColors.lime : Colors.white.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   AppLocalizations.of(context)['nav_settings'],
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white54,
+                    color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -331,15 +326,20 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isOnSubscription ? AppColors.primary.withValues(alpha: 0.15) : AppColors.lime,
+                color: isOnSubscription ? Colors.white.withValues(alpha: 0.06) : AppColors.lime,
                 borderRadius: BorderRadius.circular(10),
+                border: isOnSubscription
+                    ? const Border(
+                        left: BorderSide(color: AppColors.lime, width: 3),
+                      )
+                    : null,
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.diamond_rounded,
                     size: 20,
-                    color: isOnSubscription ? AppColors.primaryLight : AppColors.onLime,
+                    color: isOnSubscription ? AppColors.lime : AppColors.onLime,
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -370,22 +370,27 @@ class _AppShellState extends ConsumerState<AppShell> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: isOnSubscription
-                  ? AppColors.primary.withValues(alpha: 0.15)
+                  ? Colors.white.withValues(alpha: 0.06)
                   : Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
+              border: isOnSubscription
+                  ? const Border(
+                      left: BorderSide(color: AppColors.lime, width: 3),
+                    )
+                  : null,
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.workspace_premium_rounded,
                   size: 20,
-                  color: isOnSubscription ? AppColors.primaryLight : const Color(0xFFFFD700),
+                  color: isOnSubscription ? AppColors.lime : const Color(0xFFFFD700),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   'Piano ${plan.label}',
                   style: TextStyle(
-                    color: isOnSubscription ? Colors.white : Colors.white54,
+                    color: isOnSubscription ? Colors.white : Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                     fontWeight: isOnSubscription ? FontWeight.w600 : FontWeight.w400,
                   ),

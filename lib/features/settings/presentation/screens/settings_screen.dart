@@ -291,18 +291,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onTap: () {
                   showAboutDialog(
                     context: context,
-                    applicationName: 'Ticketto',
+                    applicationName: '',
                     applicationVersion: '1.0.0',
-                    applicationIcon: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: SvgPicture.asset(
-                        'assets/brand/ticketto-mark.svg',
-                        fit: BoxFit.contain,
-                      ),
+                    applicationIcon: SvgPicture.asset(
+                      'assets/brand/ticketto-logo.svg',
+                      height: 28,
                     ),
                     children: [
-                      Text(l['about_description'] ?? 'Ticketto — La piattaforma per la gestione degli eventi.'),
+                      Text(l['about_description']),
                     ],
                   );
                 },
