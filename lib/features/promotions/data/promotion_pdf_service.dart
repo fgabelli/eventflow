@@ -134,7 +134,15 @@ class _ThemePalette {
     required this.surfaceLevel2,
   });
 
-  factory _ThemePalette.fromTheme(CouponVisualTheme theme) {
+  factory _ThemePalette.fromTheme(CouponVisualTheme theme, {String? customBrandColor}) {
+    final base = _fromThemeBase(theme);
+    if (customBrandColor == null || customBrandColor.trim().isEmpty) {
+      return base;
+    }
+    return _applyCustomBrandColor(base, theme, customBrandColor.trim());
+  }
+
+  static _ThemePalette _fromThemeBase(CouponVisualTheme theme) {
     switch (theme) {
       case CouponVisualTheme.luxurySpa:
         return _ThemePalette(
@@ -298,6 +306,79 @@ class _ThemePalette {
           surfaceLevel1: PdfColor.fromHex('0F2238'),
           surfaceLevel2: PdfColor.fromHex('1B3B5C'),
         );
+    }
+  }
+
+  static _ThemePalette _applyCustomBrandColor(_ThemePalette base, CouponVisualTheme theme, String rawHex) {
+    try {
+      final clean = rawHex.replaceAll('#', '').trim();
+      if (clean.length != 6 && clean.length != 8) return base;
+      final brandColor = PdfColor.fromHex(clean);
+      final r = brandColor.red;
+      final g = brandColor.green;
+      final b = brandColor.blue;
+      final lum = 0.299 * r + 0.587 * g + 0.114 * b;
+      final onBrandText = lum > 0.65 ? PdfColors.black : PdfColors.white;
+
+      if (theme.isDark) {
+        final badgeText = lum < 0.40
+            ? PdfColor(
+                (r + (1.0 - r) * 0.40).clamp(0.0, 1.0),
+                (g + (1.0 - g) * 0.40).clamp(0.0, 1.0),
+                (b + (1.0 - b) * 0.40).clamp(0.0, 1.0),
+              )
+            : brandColor;
+
+        return _ThemePalette(
+          primaryBg: base.primaryBg,
+          qrSectionBg: base.qrSectionBg,
+          textPrimary: base.textPrimary,
+          textSecondary: base.textSecondary,
+          accentColor: brandColor,
+          accentText: onBrandText,
+          borderColor: PdfColor((r * 0.35).clamp(0.0, 1.0), (g * 0.35).clamp(0.0, 1.0), (b * 0.35).clamp(0.0, 1.0)),
+          dividerColor: base.dividerColor,
+          badgeBg: PdfColor((r * 0.15).clamp(0.0, 1.0), (g * 0.15).clamp(0.0, 1.0), (b * 0.15).clamp(0.0, 1.0)),
+          badgeText: badgeText,
+          codeBg: brandColor,
+          codeText: onBrandText,
+          surfaceLevel0: base.surfaceLevel0,
+          surfaceLevel1: base.surfaceLevel1,
+          surfaceLevel2: base.surfaceLevel2,
+        );
+      } else {
+        final badgeText = lum > 0.55
+            ? PdfColor((r * 0.65).clamp(0.0, 1.0), (g * 0.65).clamp(0.0, 1.0), (b * 0.65).clamp(0.0, 1.0))
+            : brandColor;
+
+        return _ThemePalette(
+          primaryBg: base.primaryBg,
+          qrSectionBg: base.qrSectionBg,
+          textPrimary: base.textPrimary,
+          textSecondary: base.textSecondary,
+          accentColor: brandColor,
+          accentText: onBrandText,
+          borderColor: base.borderColor,
+          dividerColor: base.dividerColor,
+          badgeBg: PdfColor(
+            (1.0 - (1.0 - r) * 0.14).clamp(0.0, 1.0),
+            (1.0 - (1.0 - g) * 0.14).clamp(0.0, 1.0),
+            (1.0 - (1.0 - b) * 0.14).clamp(0.0, 1.0),
+          ),
+          badgeText: badgeText,
+          codeBg: brandColor,
+          codeText: onBrandText,
+          surfaceLevel0: base.surfaceLevel0,
+          surfaceLevel1: base.surfaceLevel1,
+          surfaceLevel2: PdfColor(
+            (1.0 - (1.0 - r) * 0.08).clamp(0.0, 1.0),
+            (1.0 - (1.0 - g) * 0.08).clamp(0.0, 1.0),
+            (1.0 - (1.0 - b) * 0.08).clamp(0.0, 1.0),
+          ),
+        );
+      }
+    } catch (_) {
+      return base;
     }
   }
 }
@@ -495,6 +576,7 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? customBrandColor,
     String? orgEmail,
     String? orgPhone,
     String? orgWhatsapp,
@@ -511,6 +593,7 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          customBrandColor: customBrandColor,
           orgEmail: orgEmail,
           orgPhone: orgPhone,
           orgWhatsapp: orgWhatsapp,
@@ -527,6 +610,7 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          customBrandColor: customBrandColor,
           orgEmail: orgEmail,
           orgPhone: orgPhone,
           orgWhatsapp: orgWhatsapp,
@@ -542,6 +626,7 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          customBrandColor: customBrandColor,
           orgEmail: orgEmail,
           orgPhone: orgPhone,
           orgWhatsapp: orgWhatsapp,
@@ -557,6 +642,7 @@ class PromotionPdfService {
           baseUrl: baseUrl,
           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
           theme: theme,
+          customBrandColor: customBrandColor,
           orgEmail: orgEmail,
           orgPhone: orgPhone,
           orgWhatsapp: orgWhatsapp,
@@ -575,6 +661,7 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? customBrandColor,
     String? orgEmail,
     String? orgPhone,
     String? orgWhatsapp,
@@ -593,7 +680,7 @@ class PromotionPdfService {
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
-    final palette = _ThemePalette.fromTheme(theme);
+    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
     final isDark = theme.isDark;
 
     final heroBgImage = await _loadThemeBgImage(theme);
@@ -976,6 +1063,7 @@ class PromotionPdfService {
     required pw.Font fontBold,
     required pw.Font fontSemiBold,
     required CouponVisualTheme theme,
+    String? customBrandColor,
     bool? overridePartnerLogoDarkBg,
     bool isGridItem = false,
     pw.ImageProvider? ticketBgImage,
@@ -985,7 +1073,7 @@ class PromotionPdfService {
     String? orgWebsite,
     pw.ImageProvider? waIcon,
   }) {
-    final palette = _ThemePalette.fromTheme(theme);
+    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
     final isDark = theme.isDark;
     // Page background for ticket notch cutouts
     final pageBg = isGridItem ? PdfColors.white : (isDark ? palette.surfaceLevel0 : PdfColors.white);
@@ -1274,6 +1362,7 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? customBrandColor,
     String? orgEmail,
     String? orgPhone,
     String? orgWhatsapp,
@@ -1317,6 +1406,7 @@ class PromotionPdfService {
             fontBold: fontBold,
             fontSemiBold: fontSemiBold,
             theme: theme,
+            customBrandColor: customBrandColor,
             overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
             isGridItem: false,
             ticketBgImage: ticketBgImage,
@@ -1344,6 +1434,7 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? customBrandColor,
     String? orgEmail,
     String? orgPhone,
     String? orgWhatsapp,
@@ -1361,7 +1452,7 @@ class PromotionPdfService {
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
-    final palette = _ThemePalette.fromTheme(theme);
+    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
     final isDark = theme.isDark;
 
     final flyerBgImage = await _loadThemeBgImage(theme);
@@ -1722,6 +1813,7 @@ class PromotionPdfService {
     required pw.Font fontBold,
     required pw.Font fontSemiBold,
     required CouponVisualTheme theme,
+    String? customBrandColor,
     bool? overridePartnerLogoDarkBg,
     pw.ImageProvider? ticketBgImage,
     String? orgPhone,
@@ -1730,7 +1822,7 @@ class PromotionPdfService {
     String? orgWebsite,
     pw.ImageProvider? waIcon,
   }) {
-    final palette = _ThemePalette.fromTheme(theme);
+    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
     final isDark = theme.isDark;
 
     return pw.Container(
@@ -2021,6 +2113,7 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? customBrandColor,
     String? orgEmail,
     String? orgPhone,
     String? orgWhatsapp,
@@ -2068,6 +2161,7 @@ class PromotionPdfService {
                 fontBold: fontBold,
                 fontSemiBold: fontSemiBold,
                 theme: theme,
+                customBrandColor: customBrandColor,
                 overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                 ticketBgImage: ticketBgImage,
                 orgPhone: orgPhone,
@@ -2097,6 +2191,7 @@ class PromotionPdfService {
     String? baseUrl,
     bool? overridePartnerLogoDarkBg,
     CouponVisualTheme theme = CouponVisualTheme.luxurySpa,
+    String? customBrandColor,
     String? orgEmail,
     String? orgPhone,
     String? orgWhatsapp,
@@ -2113,9 +2208,10 @@ class PromotionPdfService {
       baseUrl: baseUrl,
       overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
       theme: theme,
+      customBrandColor: customBrandColor,
       orgEmail: orgEmail,
       orgPhone: orgPhone,
-          orgWhatsapp: orgWhatsapp,
+      orgWhatsapp: orgWhatsapp,
       orgWebsite: orgWebsite,
       orgAddress: orgAddress,
     );

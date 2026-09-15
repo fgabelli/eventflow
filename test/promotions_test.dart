@@ -427,5 +427,32 @@ void main() {
         expect(posterDoc.isNotEmpty, isTrue, reason: 'Desk stand A4 for ${theme.name} should generate valid bytes');
       }
     });
+
+    test('CouponVisualTheme custom brand color application', () async {
+      final promo = PromotionModel(
+        id: 'promo_brand_test',
+        orgId: 'devero_spa',
+        title: 'Percorso Benessere Devero SPA',
+        partnerName: 'Devero Hotel',
+        codePrefix: 'DEV',
+        totalVouchers: 100,
+        validityDays: 180,
+        primaryColor: '#00AAA7',
+      );
+
+      for (final format in CouponPrintFormat.values) {
+        final doc = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'DEVERO SPA',
+          format: format,
+          theme: CouponVisualTheme.luxurySpa,
+          customBrandColor: '#00AAA7',
+          orgPhone: '02 95339238',
+          orgWhatsapp: '331 9986088',
+        );
+        expect(doc.isNotEmpty, isTrue, reason: 'Format ${format.name} with #00AAA7 brand color should generate bytes');
+      }
+    });
   });
 }

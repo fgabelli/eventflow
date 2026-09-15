@@ -24,11 +24,27 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
   CouponVisualTheme _selectedTheme = CouponVisualTheme.luxurySpa;
   bool _isGenerating = false;
   late bool _partnerLogoDarkBg;
+  late bool _useBrandColor;
+  late String _brandColorHex;
+
+  Color get _parsedBrandColor {
+    try {
+      final clean = _brandColorHex.replaceAll('#', '');
+      return Color(int.parse('FF$clean', radix: 16));
+    } catch (_) {
+      return AppColors.primary;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     _partnerLogoDarkBg = widget.promo.partnerLogoDarkBg;
+    final registeredColor = widget.promo.primaryColor ?? widget.org.primaryColor;
+    _useBrandColor = registeredColor != null && registeredColor.trim().isNotEmpty;
+    _brandColorHex = (registeredColor != null && registeredColor.trim().isNotEmpty)
+        ? registeredColor.trim()
+        : '#00AAA7';
   }
 
   Future<void> _startPrint() async {
@@ -43,6 +59,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
         format: _selectedFormat,
         overridePartnerLogoDarkBg: _partnerLogoDarkBg,
         theme: _selectedTheme,
+        customBrandColor: _useBrandColor ? _brandColorHex : null,
         orgEmail: widget.org.email,
         orgPhone: widget.org.phone,
         orgWhatsapp: widget.org.whatsapp,
@@ -186,6 +203,112 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                       ),
                     ),
                     const SizedBox(height: 10),
+
+                    // Selettore Colore Brand Aziendale
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _useBrandColor
+                            ? _parsedBrandColor.withValues(alpha: 0.08)
+                            : AppColors.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _useBrandColor ? _parsedBrandColor : AppColors.border,
+                          width: _useBrandColor ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: _showColorPickerDialog,
+                            child: Tooltip(
+                              message: 'Clicca per modificare il colore',
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: _parsedBrandColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _parsedBrandColor.withValues(alpha: 0.4),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(Icons.palette_outlined, size: 15, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Usa colore del tuo Brand',
+                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    InkWell(
+                                      onTap: _showColorPickerDialog,
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: _useBrandColor
+                                              ? _parsedBrandColor.withValues(alpha: 0.2)
+                                              : AppColors.border,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _brandColorHex.toUpperCase(),
+                                              style: TextStyle(
+                                                fontFamily: 'monospace',
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: _useBrandColor ? _parsedBrandColor : AppColors.textSecondary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 3),
+                                            Icon(
+                                              Icons.edit,
+                                              size: 10,
+                                              color: _useBrandColor ? _parsedBrandColor : AppColors.textSecondary,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _useBrandColor
+                                      ? 'Applicato ad accenti, codici e cornici del tema'
+                                      : 'Disattivato: usa i colori standard predefiniti',
+                                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch.adaptive(
+                            value: _useBrandColor,
+                            activeThumbColor: _parsedBrandColor,
+                            activeTrackColor: _parsedBrandColor.withValues(alpha: 0.5),
+                            onChanged: (val) => setState(() => _useBrandColor = val),
+                          ),
+                        ],
+                      ),
+                    ),
 
                     // 1. Stili Base
                     const Row(
@@ -431,7 +554,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: accentCol,
+                    color: _useBrandColor ? _parsedBrandColor : accentCol,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -453,6 +576,117 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showColorPickerDialog() {
+    final textController = TextEditingController(text: _brandColorHex);
+    final orgColor = widget.org.primaryColor;
+    final promoColor = widget.promo.primaryColor;
+    final presets = <String>[
+      if (orgColor != null && orgColor.trim().isNotEmpty) orgColor.trim(),
+      if (promoColor != null && promoColor.trim().isNotEmpty && promoColor.trim() != orgColor?.trim()) promoColor.trim(),
+      '#00AAA7', // Teal (Devero SPA)
+      '#6366F1', // Indigo
+      '#0EA5E9', // Sky
+      '#10B981', // Emerald
+      '#F59E0B', // Amber
+      '#EF4444', // Red
+      '#8B5CF6', // Purple
+      '#EC4899', // Pink
+      '#0F172A', // Slate
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Colore Brand Aziendale', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            content: SizedBox(
+              width: 340,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Seleziona una tinta rapida o inserisci il codice HEX istituzionale:',
+                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: presets.map((hex) {
+                      Color c;
+                      try {
+                        c = Color(int.parse('FF${hex.replaceAll('#', '')}', radix: 16));
+                      } catch (_) {
+                        c = AppColors.primary;
+                      }
+                      final isCurrent = hex.toLowerCase() == _brandColorHex.toLowerCase();
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _brandColorHex = hex;
+                            _useBrandColor = true;
+                          });
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: c,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isCurrent ? AppColors.primary : Colors.grey.shade300,
+                              width: isCurrent ? 2.5 : 1,
+                            ),
+                          ),
+                          child: isCurrent ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: textController,
+                    decoration: const InputDecoration(
+                      labelText: 'Codice HEX personalizzato',
+                      hintText: '#00AAA7',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Annulla'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final text = textController.text.trim();
+                  if (text.isNotEmpty) {
+                    final formatted = text.startsWith('#') ? text : '#$text';
+                    setState(() {
+                      _brandColorHex = formatted;
+                      _useBrandColor = true;
+                    });
+                  }
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Applica'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
