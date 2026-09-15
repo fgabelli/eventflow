@@ -1,0 +1,20 @@
+TICKETTO / VECTOR KIT 1.0
+
+Ricostruzione vettoriale del concept approvato: lettering ricavato dalla proposta originale e ottimizzato in curve Bezier; ticket ricostruito con geometria regolare. Piccole differenze nei bordi rispetto alla raster sono intenzionali.
+
+SVG: master editabili in tracciati, senza font esterni o immagini incorporate.
+PDF: copie vettoriali RGB, apribili in Illustrator, Affinity Designer e Inkscape.
+EPS: copie vettoriali per flussi tradizionali. I bianchi richiedono fondo scuro per essere visibili.
+Preview: anteprima delle varianti, non master del marchio.
+
+COLOR: Ink #101410 e Ticket Lime #9AD530, per fondi chiari.
+DARK: parola bianca, tab lime e lettere nere, per fondi scuri.
+BLACK / WHITE / BOTTLE: monocromia con lettere 'to' realmente sottratte al ticket; il fondo sottostante resta visibile. Nessun rettangolo bianco maschera lo sfondo.
+BOTTLE: #0E6B52.
+
+Logo completo: mantenuta la tacca sul lato destro del tab come nel concept selezionato. Simbolo autonomo: due tacche laterali e stesso lettering 'to'. Non separare né ridigitare le lettere.
+
+Tutti i file hanno fondo trasparente e margine esterno incluso. Non usare DARK o WHITE su fondo bianco. Non deformare.
+Dimensioni iniziali consigliate: logo da 140 px; simbolo da 32 px. Non è inclusa una favicon ottica 16 px: a quella scala serve una semplificazione dedicata.
+
+I colori sono RGB. Per stampa con profilo CMYK o tinte piatte richiedere una conversione con prova colore allo stampatore. Non è incluso un file AI nativo: i master SVG contengono i tracciati editabili.

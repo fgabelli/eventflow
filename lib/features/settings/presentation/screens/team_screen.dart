@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/models.dart';
-import 'package:eventflow/core/utils/feature_gate.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 
@@ -82,7 +81,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                  color: AppColors.bottleGreen,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(

@@ -10,6 +10,7 @@ import 'package:eventflow/core/utils/feature_gate.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
+import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
 
 // ─── Events Provider ───────────────────────────────────────────────
@@ -336,7 +337,7 @@ class _EventCard extends StatelessWidget {
                       width: 52,
                       height: 60,
                       decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
+                        color: AppColors.bottleGreen,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Column(
@@ -554,8 +555,8 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
   final _meetingUrlController = TextEditingController();
   final _maxAttendeesController = TextEditingController(text: '50');
   final _priceController = TextEditingController();
-  final _hexColorController = TextEditingController(text: '#6366F1');
-  String? _selectedColor = '#6366F1';
+  final _hexColorController = TextEditingController(text: '#0E6B52');
+  String? _selectedColor = '#0E6B52';
   bool _showAttendeesCount = false;
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 7));
   TimeOfDay _selectedTime = const TimeOfDay(hour: 18, minute: 0);
@@ -885,6 +886,8 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
+                            {'name': 'Verde Ticketto', 'hex': '#0E6B52', 'color': const Color(0xFF0E6B52)},
+                            {'name': 'Lime', 'hex': '#9AD530', 'color': const Color(0xFF9AD530)},
                             {'name': 'Viola', 'hex': '#6366F1', 'color': const Color(0xFF6366F1)},
                             {'name': 'Blu Oceano', 'hex': '#1B5E9E', 'color': const Color(0xFF1B5E9E)},
                             {'name': 'Teal', 'hex': '#0D9488', 'color': const Color(0xFF0D9488)},
@@ -1087,14 +1090,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                                     Text(AppLocalizations.of(context)['paid_event'], style: Theme.of(context).textTheme.titleMedium),
                                     HelpTip(text: AppLocalizations.of(context)['help_paid_event']),
                                     const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                                    ),
+                                    const TicketBadge(label: 'PRO'),
                                   ],
                                 ),
                                 Text(
@@ -1156,14 +1152,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                                 children: [
                                   Text(AppLocalizations.of(context)['group_registration_label'], style: Theme.of(context).textTheme.titleMedium),
                                   const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                                  ),
+                                  const TicketBadge(label: 'PRO'),
                                 ],
                               ),
                               Text(
@@ -1216,14 +1205,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                                     Text(AppLocalizations.of(context)['time_slot_booking'], style: Theme.of(context).textTheme.titleMedium),
                                     HelpTip(text: AppLocalizations.of(context)['help_time_slots']),
                                     const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                                    ),
+                                    const TicketBadge(label: 'PRO'),
                                   ],
                                 ),
                                 Text(
@@ -1333,14 +1315,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                                 children: [
                                 Text(AppLocalizations.of(context)['custom_fields_label'], style: Theme.of(context).textTheme.titleMedium),
                                   const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                                  ),
+                                  const TicketBadge(label: 'PRO'),
                                   HelpTip(text: AppLocalizations.of(context)['help_custom_fields']),
                                   Text(
                                     AppLocalizations.of(context)['custom_fields_desc'],

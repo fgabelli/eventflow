@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -39,7 +40,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        color: AppColors.bottleGreen,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Center(
@@ -292,9 +293,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     context: context,
                     applicationName: 'Ticketto',
                     applicationVersion: '1.0.0',
-                    applicationIcon: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset('assets/images/ticketto_logo.png', width: 48, height: 48),
+                    applicationIcon: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: SvgPicture.asset(
+                        'assets/brand/ticketto-mark.svg',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                     children: [
                       Text(l['about_description'] ?? 'Ticketto — La piattaforma per la gestione degli eventi.'),
@@ -697,8 +702,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (org == null) return;
     final nameCtrl = TextEditingController(text: org.name);
     final logoCtrl = TextEditingController(text: org.logo ?? '');
-    final hexColorCtrl = TextEditingController(text: org.primaryColor ?? '#6366F1');
-    String? selectedColor = org.primaryColor ?? '#6366F1';
+    final hexColorCtrl = TextEditingController(text: org.primaryColor ?? '#0E6B52');
+    String? selectedColor = org.primaryColor ?? '#0E6B52';
     bool isUploading = false;
     bool isSaving = false;
 
@@ -796,6 +801,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
+                        {'name': 'Verde Ticketto', 'hex': '#0E6B52', 'color': const Color(0xFF0E6B52)},
+                        {'name': 'Lime', 'hex': '#9AD530', 'color': const Color(0xFF9AD530)},
                         {'name': 'Viola', 'hex': '#6366F1', 'color': const Color(0xFF6366F1)},
                         {'name': 'Blu Oceano', 'hex': '#1B5E9E', 'color': const Color(0xFF1B5E9E)},
                         {'name': 'Teal', 'hex': '#0D9488', 'color': const Color(0xFF0D9488)},

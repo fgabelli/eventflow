@@ -25,10 +25,11 @@ const i18nStrings = {
     email: {
       // Confirmation email
       confirmationSubject: '🎫 Registrazione Confermata – {{eventTitle}}',
-      confirmationTitle: '🎫 Registrazione Confermata',
+      confirmationTitle: 'Registrazione Confermata',
       confirmationSubtitle: 'Il tuo posto è stato riservato',
       greeting: 'Ciao <strong>{{firstName}}</strong>,',
-      confirmationBody: 'La tua registrazione per <strong style="color: #1A1A2E;">{{eventTitle}}</strong> è stata confermata. Ecco i tuoi dettagli:',
+      confirmationBody: 'La tua iscrizione è confermata. Qui trovi le informazioni dell\'evento e il tuo invito per <strong style="color: #101410;">{{eventTitle}}</strong>:',
+      viewInviteButton: 'Visualizza il tuo invito',
       dateLabel: '📅 Data',
       timeLabel: '🕐 Ora',
       locationLabel: '📍 Luogo',
@@ -91,10 +92,11 @@ const i18nStrings = {
     email: {
       // Confirmation email
       confirmationSubject: '🎫 Registration Confirmed – {{eventTitle}}',
-      confirmationTitle: '🎫 Registration Confirmed',
+      confirmationTitle: 'Registration Confirmed',
       confirmationSubtitle: 'Your spot has been reserved',
       greeting: 'Hi <strong>{{firstName}}</strong>,',
-      confirmationBody: 'Your registration for <strong style="color: #1A1A2E;">{{eventTitle}}</strong> has been confirmed. Here are your details:',
+      confirmationBody: 'Your registration is confirmed. Here are the event details and your invitation for <strong style="color: #101410;">{{eventTitle}}</strong>:',
+      viewInviteButton: 'View your invitation',
       dateLabel: '📅 Date',
       timeLabel: '🕐 Time',
       locationLabel: '📍 Venue',
@@ -310,7 +312,7 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
     const attendeeFullName = `${attendee.firstName || ""} ${attendee.lastName || ""}`.trim() || attendee.email || "Partecipante";
     const primaryColor = eventData.primaryColor && /^#[0-9A-Fa-f]{6}$/.test(eventData.primaryColor)
       ? eventData.primaryColor
-      : "#6366F1";
+      : "#0E6B52";
 
     const locale = getDateLocale(lang);
     let formattedDateTime = "";
@@ -455,8 +457,8 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
   if (event.isOnline && event.meetingUrl) {
     locationHtml = `<tr>
         <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">${t(lang, 'email', 'onlineEventLabel')}</td>
-        <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #6366F1;">
-          <a href="${event.meetingUrl}" style="color: #6366F1; text-decoration: none;">${t(lang, 'email', 'joinStreamLabel')}</a>
+        <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #0E6B52;">
+          <a href="${event.meetingUrl}" style="color: #0E6B52; text-decoration: none;">${t(lang, 'email', 'joinStreamLabel')}</a>
         </td>
       </tr>`;
   } else if (event.location) {
@@ -488,19 +490,22 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%); padding: 40px 32px; text-align: center;">
-              <h1 style="color: #FFFFFF; margin: 0 0 8px 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">${t(lang, 'email', 'confirmationTitle')}</h1>
-              <p style="color: rgba(255,255,255,0.85); margin: 0; font-size: 15px;">${t(lang, 'email', 'confirmationSubtitle')}</p>
+            <td style="background-color: #0E6B52; padding: 36px 32px; text-align: center;">
+              <div style="margin-bottom: 20px;">
+                <img src="https://ticketto.it/images/ticketto_logo_dark.png" alt="Ticketto" height="28" style="height: 28px; display: inline-block; border: 0;" />
+              </div>
+              <h1 style="color: #FFFFFF; margin: 0 0 8px 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">${t(lang, 'email', 'confirmationTitle')}</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 15px;">${t(lang, 'email', 'confirmationSubtitle')}</p>
             </td>
           </tr>
 
           <!-- Greeting -->
           <tr>
             <td style="padding: 32px 32px 16px 32px;">
-              <p style="margin: 0; font-size: 16px; color: #374151;">
+              <p style="margin: 0; font-size: 16px; color: #101410;">
                 ${t(lang, 'email', 'greeting', { firstName: attendee.firstName })}
               </p>
-              <p style="margin: 8px 0 0 0; font-size: 15px; color: #6B7280; line-height: 1.6;">
+              <p style="margin: 8px 0 0 0; font-size: 15px; color: #4B5563; line-height: 1.6;">
                 ${t(lang, 'email', 'confirmationBody', { eventTitle: event.title })}
               </p>
             </td>
@@ -531,14 +536,23 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
             </td>
           </tr>
 
+          <!-- View Invitation CTA -->
+          <tr>
+            <td style="padding: 20px 32px 8px 32px; text-align: center;">
+              <a href="#ticketto-invite" style="display: inline-block; background-color: #9AD530; color: #101410; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; letter-spacing: -0.2px;">
+                ${t(lang, 'email', 'viewInviteButton')}
+              </a>
+            </td>
+          </tr>
+
           <!-- QR Code -->
           <tr>
-            <td style="padding: 24px 32px; text-align: center;">
-              <p style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #374151;">${t(lang, 'email', 'qrTitle')}</p>
+            <td id="ticketto-invite" style="padding: 20px 32px 24px 32px; text-align: center;">
+              <p style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #101410;">${t(lang, 'email', 'qrTitle')}</p>
               <div style="display: inline-block; background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; padding: 20px;">
                 <img src="${qrCodeUrl}" alt="QR Code" width="200" height="200" style="display: block;" />
               </div>
-              <p style="margin: 12px 0 0 0; font-size: 12px; color: #9CA3AF;">${t(lang, 'email', 'qrHint')}</p>
+              <p style="margin: 12px 0 0 0; font-size: 12px; color: #6B7280;">${t(lang, 'email', 'qrHint')}</p>
             </td>
           </tr>
 
@@ -554,13 +568,13 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
           <!-- Attendee Info -->
           <tr>
             <td style="padding: 0 32px 24px 32px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #EEF2FF; border-radius: 12px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #E8F2EC; border-radius: 12px;">
                 <tr>
                   <td style="padding: 16px 20px;">
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="font-size: 13px; color: #6366F1;">👤 ${attendee.firstName} ${attendee.lastName}</td>
-                        <td style="font-size: 13px; color: #6366F1; text-align: right;">✉️ ${attendee.email}</td>
+                        <td style="font-size: 13px; color: #0E6B52; font-weight: 500;">👤 ${attendee.firstName} ${attendee.lastName}</td>
+                        <td style="font-size: 13px; color: #0E6B52; font-weight: 500; text-align: right;">✉️ ${attendee.email}</td>
                       </tr>
                     </table>
                   </td>
@@ -571,12 +585,15 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
 
           <!-- Footer -->
           <tr>
-            <td style="padding: 20px 32px 32px 32px; text-align: center; border-top: 1px solid #E5E7EB;">
-              <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+            <td style="padding: 24px 32px 32px 32px; text-align: center; border-top: 1px solid #E5E7EB; background-color: #FAFAFA;">
+              <p style="margin: 0 0 10px 0; font-size: 12px; color: #6B7280;">
                 ${t(lang, 'email', 'sentBy', { orgName: org?.name || "Ticketto" })}
               </p>
-              <p style="margin: 4px 0 0 0; font-size: 11px; color: #D1D5DB;">
-                Powered by Ticketto
+              <div style="margin: 6px 0 4px 0;">
+                <img src="https://ticketto.it/images/ticketto_logo.png" alt="Ticketto" height="18" style="height: 18px; vertical-align: middle; border: 0; display: inline-block;" />
+              </div>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #0E6B52; font-weight: 600;">
+                L'invito diventa presenza.
               </p>
             </td>
           </tr>
@@ -768,15 +785,15 @@ exports.onAttendeeCreated = onDocumentCreated(
           });
 
           const orgHtml = `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-              <h2 style="color: #2b5cff;">${t(orgLang, 'email', 'orgNotificationTitle', { eventTitle: eventData.title })}</h2>
-              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #101410;">
+              <h2 style="color: #0E6B52;">${t(orgLang, 'email', 'orgNotificationTitle', { eventTitle: eventData.title })}</h2>
+              <div style="background-color: #F4F6F2; padding: 20px; border-radius: 12px; margin-top: 20px;">
                 <p style="margin: 0 0 10px 0;"><strong>${t(orgLang, 'email', 'orgNotificationName')}:</strong> ${attendee.firstName} ${attendee.lastName}</p>
-                <p style="margin: 0 0 10px 0;"><strong>${t(orgLang, 'email', 'orgNotificationEmail')}:</strong> <a href="mailto:${attendee.email}">${attendee.email}</a></p>
+                <p style="margin: 0 0 10px 0;"><strong>${t(orgLang, 'email', 'orgNotificationEmail')}:</strong> <a href="mailto:${attendee.email}" style="color: #0E6B52;">${attendee.email}</a></p>
                 <p style="margin: 0;"><strong>${t(orgLang, 'email', 'orgNotificationRegisteredAt')}:</strong> ${registeredAtStr}</p>
               </div>
               <div style="margin-top: 30px; text-align: center;">
-                <a href="https://ticketto.it/events/${attendee.eventId}" style="background-color: #2b5cff; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block;">${t(orgLang, 'email', 'orgNotificationViewEvent')}</a>
+                <a href="https://ticketto.it/events/${attendee.eventId}" style="background-color: #9AD530; color: #101410; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; display: inline-block;">${t(orgLang, 'email', 'orgNotificationViewEvent')}</a>
               </div>
             </div>
           `;
@@ -900,9 +917,12 @@ exports.testEmail = onRequest(
         to: [to],
         subject: "🎫 Ticketto – Test Email",
         html: `
-          <div style="font-family: sans-serif; padding: 40px; text-align: center; background: linear-gradient(135deg, #6366F1, #8B5CF6); border-radius: 16px; margin: 20px;">
-            <h1 style="color: white; margin: 0 0 12px 0;">🎫 Configurazione OK!</h1>
-            <p style="color: rgba(255,255,255,0.85); margin: 0;">Le email di Ticketto funzionano correttamente.</p>
+          <div style="font-family: sans-serif; padding: 40px; text-align: center; background-color: #0E6B52; border-radius: 16px; margin: 20px;">
+            <div style="margin-bottom: 16px;">
+              <img src="https://ticketto.it/images/ticketto_logo_dark.png" alt="Ticketto" height="28" style="height: 28px; display: inline-block; border: 0;" />
+            </div>
+            <h1 style="color: white; margin: 0 0 12px 0;">Configurazione OK!</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 0;">Le email di Ticketto funzionano correttamente.</p>
           </div>
         `,
       });
@@ -2397,15 +2417,15 @@ function reactivationEmailHtml(name) {
   return [
     '<div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; background:#F4F4F8; padding:24px;">',
     '<div style="max-width:520px; margin:0 auto; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #ECECF3;">',
-    '<div style="background:linear-gradient(135deg,#6366F1,#8B5CF6); padding:28px 32px;">',
-    '<span style="color:#fff; font-size:20px; font-weight:700;">🎫 Ticketto</span>',
+    '<div style="background-color:#0E6B52; padding:28px 32px;">',
+    '<img src="https://ticketto.it/images/ticketto_logo_dark.png" alt="Ticketto" height="28" style="height:28px; display:block; border:0;" />',
     '</div>',
     '<div style="padding:32px;">',
     '<p style="font-size:16px; color:#1A1A2E; margin:0 0 16px;">Ciao <strong>' + n + '</strong>,</p>',
     '<p style="font-size:16px; line-height:1.6; color:#333; margin:0 0 16px;">hai creato il tuo account Ticketto ma non hai ancora lanciato il tuo primo evento.</p>',
     '<p style="font-size:16px; line-height:1.6; color:#333; margin:0 0 24px;">Ci vogliono davvero <strong>2 minuti</strong>: dai un nome, scegli i posti, e ottieni un link da condividere. Le iscrizioni arrivano da sole — niente chat infinite, niente fogli Excel da aggiornare a mano.</p>',
     '<div style="text-align:center; margin:0 0 28px;">',
-    '<a href="' + REACTIVATION_CTA_URL + '" style="display:inline-block; background:#6366F1; color:#fff; text-decoration:none; font-weight:600; font-size:16px; padding:14px 32px; border-radius:10px;">Crea il tuo evento →</a>',
+    '<a href="' + REACTIVATION_CTA_URL + '" style="display:inline-block; background-color:#9AD530; color:#101410; text-decoration:none; font-weight:700; font-size:16px; padding:14px 32px; border-radius:10px;">Crea il tuo evento →</a>',
     '</div>',
     '<p style="font-size:15px; color:#333; margin:0 0 8px;">Qualche idea per partire:</p>',
     '<ul style="font-size:15px; line-height:1.8; color:#333; margin:0 0 8px; padding-left:20px;">',
@@ -2727,15 +2747,15 @@ function outreachEmailHtml(evento) {
   return [
     '<div style="font-family: -apple-system, Segoe UI, Roboto, sans-serif; background:#F4F4F8; padding:24px;">',
     '<div style="max-width:520px; margin:0 auto; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #ECECF3;">',
-    '<div style="background:linear-gradient(135deg,#6366F1,#8B5CF6); padding:28px 32px;">',
-    '<span style="color:#fff; font-size:20px; font-weight:700;">🎫 Ticketto</span>',
+    '<div style="background-color:#0E6B52; padding:28px 32px;">',
+    '<img src="https://ticketto.it/images/ticketto_logo_dark.png" alt="Ticketto" height="28" style="height:28px; display:block; border:0;" />',
     '</div>',
     '<div style="padding:32px;">',
     '<p style="font-size:16px; color:#1A1A2E; margin:0 0 16px;">Salve,</p>',
     '<p style="font-size:16px; line-height:1.6; color:#333; margin:0 0 16px;">vi scrivo perché organizzate ' + ev + ' su invito, e so quanto sia scomodo gestire la lista all’ingresso: chi c’è, chi manca, e a fine serata ricostruire chi è venuto davvero.</p>',
     '<p style="font-size:16px; line-height:1.6; color:#333; margin:0 0 24px;">Ho creato <strong>Ticketto</strong>, uno strumento semplice per chiudere il cerchio: mandate gli inviti con un link, all’ingresso fate il check-in dal telefono in un secondo, e vi resta la lista dei presenti — pronta da riversare nel vostro CRM per il follow-up.</p>',
     '<div style="text-align:center; margin:0 0 28px;">',
-    '<a href="https://ticketto.it" style="display:inline-block; background:#6366F1; color:#fff; text-decoration:none; font-weight:600; font-size:16px; padding:14px 32px; border-radius:10px;">Scopri Ticketto →</a>',
+    '<a href="https://ticketto.it" style="display:inline-block; background-color:#9AD530; color:#101410; text-decoration:none; font-weight:700; font-size:16px; padding:14px 32px; border-radius:10px;">Scopri Ticketto →</a>',
     '</div>',
     '<p style="font-size:16px; line-height:1.6; color:#333; margin:0 0 8px;">Se vi fa piacere, ve lo configuro io su un vostro prossimo evento, senza alcun impegno, così lo vedete sul campo.</p>',
     '<p style="font-size:16px; color:#333; margin:24px 0 0;">Un saluto,<br>Fabio — Ticketto</p>',

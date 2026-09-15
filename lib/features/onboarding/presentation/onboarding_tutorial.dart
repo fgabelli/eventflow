@@ -168,7 +168,7 @@ class _OnboardingTutorialState extends ConsumerState<OnboardingTutorial>
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
+                          color: AppColors.bottleGreen,
                           borderRadius: BorderRadius.circular(18),
                         ),
                         child: Icon(step.icon, color: Colors.white, size: 32),

@@ -295,7 +295,7 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
               final isWide = constraints.maxWidth > 700;
               final cards = [
                 _buildStatCard('Campagne Attive', '$activePromos', Icons.campaign_rounded, AppColors.primary),
-                _buildStatCard('Voucher Emessi', '$totalVouchers', Icons.confirmation_number_rounded, const Color(0xFF6366F1)),
+                _buildStatCard('Voucher Emessi', '$totalVouchers', Icons.confirmation_number_rounded, AppColors.bottleGreen),
                 _buildStatCard('Clienti Registrati', '$totalClaimed', Icons.people_alt_rounded, const Color(0xFF0EA5E9)),
                 _buildStatCard('Voucher Riscattati', '$totalRedeemed', Icons.check_circle_rounded, AppColors.success),
               ];

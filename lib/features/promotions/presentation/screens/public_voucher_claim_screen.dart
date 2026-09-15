@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
@@ -408,7 +409,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                  color: AppColors.bottleGreen,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
@@ -1056,13 +1057,12 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
+          SizedBox(
             width: 16,
             height: 16,
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(4)),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: Image.asset('assets/images/ticketto_logo.png', fit: BoxFit.cover),
+            child: SvgPicture.asset(
+              'assets/brand/ticketto-mark.svg',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 8),

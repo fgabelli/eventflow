@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -257,16 +258,10 @@ class ContactScreen extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
+                SvgPicture.asset(
+                  'assets/brand/ticketto-mark.svg',
                   width: 32,
                   height: 32,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8)),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset('assets/images/ticketto_logo.png',
-                        fit: BoxFit.cover),
-                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(

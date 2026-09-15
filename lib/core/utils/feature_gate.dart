@@ -28,7 +28,7 @@ bool checkFeatureAccess({
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
+                color: AppColors.bottleGreen,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(

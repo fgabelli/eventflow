@@ -483,7 +483,7 @@ class PromotionPdfService {
     bool? overridePartnerLogoDarkBg,
     PdfColor? textLightColor,
   }) {
-    final titleColor = textLightColor ?? PdfColors.indigo900;
+    final titleColor = textLightColor ?? const PdfColor.fromInt(0xFF101410);
     final partnerColor = textLightColor ?? PdfColors.grey800;
     final xColor = textLightColor != null ? PdfColor.fromHex('94A3B8') : PdfColors.grey500;
 

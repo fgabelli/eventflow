@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -1177,18 +1178,12 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
+          SizedBox(
             width: 18,
             height: 18,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: Image.asset(
-                'assets/images/ticketto_logo.png',
-                fit: BoxFit.cover,
-              ),
+            child: SvgPicture.asset(
+              'assets/brand/ticketto-mark.svg',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 8),

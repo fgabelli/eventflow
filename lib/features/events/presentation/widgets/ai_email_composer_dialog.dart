@@ -108,7 +108,7 @@ class _AiEmailComposerDialogState extends ConsumerState<AiEmailComposerDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    color: AppColors.bottleGreen,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.mail_outline, color: Colors.white, size: 20),
@@ -295,7 +295,7 @@ class _AiEmailComposerDialogState extends ConsumerState<AiEmailComposerDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    color: AppColors.bottleGreen,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
@@ -90,18 +91,12 @@ class _AppShellState extends ConsumerState<AppShell> {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/ticketto_logo.png',
-                      fit: BoxFit.cover,
-                    ),
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: SvgPicture.asset(
+                    'assets/brand/ticketto-mark.svg',
+                    fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -336,8 +331,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                gradient: isOnSubscription ? null : AppColors.primaryGradient,
-                color: isOnSubscription ? AppColors.primary.withValues(alpha: 0.15) : null,
+                color: isOnSubscription ? AppColors.primary.withValues(alpha: 0.15) : AppColors.lime,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -345,13 +339,13 @@ class _AppShellState extends ConsumerState<AppShell> {
                   Icon(
                     Icons.diamond_rounded,
                     size: 20,
-                    color: isOnSubscription ? AppColors.primaryLight : Colors.white,
+                    color: isOnSubscription ? AppColors.primaryLight : AppColors.onLime,
                   ),
                   const SizedBox(width: 12),
                   Text(
                     AppLocalizations.of(context)['upgrade'],
                     style: TextStyle(
-                      color: Colors.white,
+                      color: isOnSubscription ? Colors.white : AppColors.onLime,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),

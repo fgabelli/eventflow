@@ -85,9 +85,7 @@ class _AiEventInsightsDialogState extends ConsumerState<AiEventInsightsDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF06B6D4), Color(0xFF8B5CF6)],
-                    ),
+                    color: AppColors.bottleGreen,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.insights, color: Colors.white, size: 20),
@@ -108,10 +106,10 @@ class _AiEventInsightsDialogState extends ConsumerState<AiEventInsightsDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                    color: AppColors.ink,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text('Business', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF8B5CF6))),
+                  child: const Text('Business', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -237,14 +235,9 @@ class _AiEventInsightsDialogState extends ConsumerState<AiEventInsightsDialog> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF06B6D4).withValues(alpha: 0.08),
-                  const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                ],
-              ),
+              color: AppColors.bottleGreen.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
+              border: Border.all(color: AppColors.bottleGreen.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,7 +431,7 @@ class _AiEventInsightsDialogState extends ConsumerState<AiEventInsightsDialog> {
   Widget _buildPredictionRow(String label, String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF8B5CF6)),
+        Icon(icon, size: 16, color: AppColors.bottleGreen),
         const SizedBox(width: 8),
         Expanded(child: Text(label, style: TextStyle(fontSize: 12, color: AppColors.textSecondary))),
         Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),

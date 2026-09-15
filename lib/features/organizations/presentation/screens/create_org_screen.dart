@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
@@ -95,15 +96,7 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E1B4B),
-              Color(0xFF312E81),
-            ],
-          ),
+          color: AppColors.bottleGreen,
         ),
         child: SafeArea(
           child: Center(
@@ -115,19 +108,9 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Logo
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          'assets/images/ticketto_logo.png',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                    SvgPicture.asset(
+                      'assets/brand/ticketto-logo-dark.svg',
+                      height: 44,
                     ),
                     const SizedBox(height: 28),
 

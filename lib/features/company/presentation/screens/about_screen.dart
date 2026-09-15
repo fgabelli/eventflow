@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
@@ -40,26 +41,9 @@ class AboutScreen extends StatelessWidget {
                   constraints: BoxConstraints(maxWidth: maxWidth),
                   child: Column(
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            'assets/images/ticketto_logo.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                      SvgPicture.asset(
+                        'assets/brand/ticketto-logo.svg',
+                        height: 48,
                       ),
                       const SizedBox(height: 24),
                       Text(
@@ -279,16 +263,10 @@ class AboutScreen extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
+                SvgPicture.asset(
+                  'assets/brand/ticketto-mark.svg',
                   width: 32,
                   height: 32,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8)),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset('assets/images/ticketto_logo.png',
-                        fit: BoxFit.cover),
-                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(

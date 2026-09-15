@@ -587,6 +587,8 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
     final presets = <String>[
       if (orgColor != null && orgColor.trim().isNotEmpty) orgColor.trim(),
       if (promoColor != null && promoColor.trim().isNotEmpty && promoColor.trim() != orgColor?.trim()) promoColor.trim(),
+      '#0E6B52', // Verde Ticketto
+      '#9AD530', // Ticket Lime
       '#00AAA7', // Teal (Devero SPA)
       '#6366F1', // Indigo
       '#0EA5E9', // Sky

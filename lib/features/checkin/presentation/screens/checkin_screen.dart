@@ -9,6 +9,24 @@ import 'package:eventflow/features/auth/presentation/providers/auth_providers.da
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
 
+enum CheckInResultType { success, warning, error }
+
+class CheckInResult {
+  final CheckInResultType type;
+  final String title;
+  final String subtitle;
+  final String? attendeeName;
+  final IconData icon;
+
+  const CheckInResult({
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    this.attendeeName,
+    required this.icon,
+  });
+}
+
 class CheckInScreen extends ConsumerStatefulWidget {
   const CheckInScreen({super.key});
 
@@ -21,8 +39,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   final _searchController = TextEditingController();
   bool _showScanner = false;
   String? _lastScannedCode;
-  String? _scanMessage;
-  bool _scanSuccess = false;
+  CheckInResult? _scanResult;
 
   @override
   void dispose() {
@@ -93,7 +110,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                     ),
                     onPressed: () => setState(() {
                       _showScanner = !_showScanner;
-                      _scanMessage = null;
+                      _scanResult = null;
                     }),
                   ),
                 ),
@@ -107,43 +124,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           if (_showScanner) _buildScannerArea(),
 
           // Scan result message
-          if (_scanMessage != null)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _scanSuccess
-                    ? AppColors.success.withValues(alpha: 0.1)
-                    : AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: _scanSuccess ? AppColors.success : AppColors.error,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _scanSuccess ? Icons.check_circle : Icons.error_outline,
-                    color: _scanSuccess ? AppColors.success : AppColors.error,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _scanMessage!,
-                      style: TextStyle(
-                        color: _scanSuccess ? AppColors.success : AppColors.error,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, size: 18),
-                    onPressed: () => setState(() => _scanMessage = null),
-                  ),
-                ],
-              ),
-            ),
+          if (_scanResult != null) _buildScanResultBanner(_scanResult!),
 
           // Attendees list
           Expanded(
@@ -227,11 +208,117 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     );
   }
 
+  Widget _buildScanResultBanner(CheckInResult result) {
+    Color bg;
+    Color border;
+    Color iconColor;
+
+    switch (result.type) {
+      case CheckInResultType.success:
+        bg = AppColors.successBg;
+        border = AppColors.success;
+        iconColor = AppColors.success;
+        break;
+      case CheckInResultType.warning:
+        bg = AppColors.warningBg;
+        border = AppColors.warning;
+        iconColor = AppColors.warning;
+        break;
+      case CheckInResultType.error:
+        bg = AppColors.errorBg;
+        border = AppColors.error;
+        iconColor = AppColors.error;
+        break;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border, width: 1.5),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: border.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(result.icon, color: iconColor, size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      result.title,
+                      style: TextStyle(
+                        color: iconColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                    if (result.attendeeName != null) ...[
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '• ${result.attendeeName!}',
+                          style: const TextStyle(
+                            color: AppColors.ink,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  result.subtitle,
+                  style: TextStyle(
+                    color: AppColors.ink.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            color: AppColors.ink,
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            padding: EdgeInsets.zero,
+            onPressed: () => setState(() => _scanResult = null),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleQrScan(String qrCode) async {
+    final l = AppLocalizations.of(context);
     if (_selectedEventId == null) {
       setState(() {
-        _scanMessage = AppLocalizations.of(context)['select_event_first'];
-        _scanSuccess = false;
+        _scanResult = CheckInResult(
+          type: CheckInResultType.error,
+          title: l['select_event_first'],
+          subtitle: l['select_event_checkin'],
+          icon: Icons.error_outline_rounded,
+        );
       });
       return;
     }
@@ -246,8 +333,12 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
       if (query.docs.isEmpty) {
         setState(() {
-          _scanMessage = AppLocalizations.of(context)['attendee_not_found'];
-          _scanSuccess = false;
+          _scanResult = CheckInResult(
+            type: CheckInResultType.error,
+            title: l['checkin_error_title'],
+            subtitle: l['checkin_error_subtitle'],
+            icon: Icons.cancel_outlined,
+          );
         });
         return;
       }
@@ -256,9 +347,20 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       final attendee = Attendee.fromFirestore(doc);
 
       if (attendee.checkInStatus == CheckInStatus.checkedIn) {
+        final checkInTime = attendee.checkInTime;
+        final timeStr = checkInTime != null
+            ? '${checkInTime.hour.toString().padLeft(2, '0')}:${checkInTime.minute.toString().padLeft(2, '0')}'
+            : '';
         setState(() {
-          _scanMessage = '${attendee.fullName} ${AppLocalizations.of(context)['already_checked_in']}';
-          _scanSuccess = false;
+          _scanResult = CheckInResult(
+            type: CheckInResultType.warning,
+            title: l['checkin_warning_title'],
+            attendeeName: attendee.fullName,
+            subtitle: timeStr.isNotEmpty
+                ? '${l['checkin_warning_subtitle']} $timeStr.'
+                : l['already_checked_in'],
+            icon: Icons.history_rounded,
+          );
         });
         return;
       }
@@ -269,14 +371,23 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       });
 
       setState(() {
-        _scanMessage = '✓ ${attendee.fullName} ${AppLocalizations.of(context)['checked_in_success']}';
-        _scanSuccess = true;
+        _scanResult = CheckInResult(
+          type: CheckInResultType.success,
+          title: l['checkin_success_title'],
+          attendeeName: attendee.fullName,
+          subtitle: l['checkin_success_subtitle'],
+          icon: Icons.check_circle_rounded,
+        );
         _lastScannedCode = null; // Allow re-scan
       });
     } catch (e) {
       setState(() {
-        _scanMessage = '${AppLocalizations.of(context)['error_generic_short']}: $e';
-        _scanSuccess = false;
+        _scanResult = CheckInResult(
+          type: CheckInResultType.error,
+          title: l['error_generic_short'],
+          subtitle: '$e',
+          icon: Icons.error_outline_rounded,
+        );
       });
     }
   }
@@ -365,7 +476,25 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   }
 
   Future<void> _manualCheckIn(Attendee attendee) async {
-    if (attendee.checkInStatus == CheckInStatus.checkedIn) return;
+    final l = AppLocalizations.of(context);
+    if (attendee.checkInStatus == CheckInStatus.checkedIn) {
+      final checkInTime = attendee.checkInTime;
+      final timeStr = checkInTime != null
+          ? '${checkInTime.hour.toString().padLeft(2, '0')}:${checkInTime.minute.toString().padLeft(2, '0')}'
+          : '';
+      setState(() {
+        _scanResult = CheckInResult(
+          type: CheckInResultType.warning,
+          title: l['checkin_warning_title'],
+          attendeeName: attendee.fullName,
+          subtitle: timeStr.isNotEmpty
+              ? '${l['checkin_warning_subtitle']} $timeStr.'
+              : l['already_checked_in'],
+          icon: Icons.history_rounded,
+        );
+      });
+      return;
+    }
     
     await FirebaseFirestore.instance
         .collection(Collections.attendees)
@@ -373,6 +502,16 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         .update({
       'checkInStatus': CheckInStatus.checkedIn.name,
       'checkInTime': Timestamp.now(),
+    });
+
+    setState(() {
+      _scanResult = CheckInResult(
+        type: CheckInResultType.success,
+        title: l['checkin_success_title'],
+        attendeeName: attendee.fullName,
+        subtitle: l['checkin_success_subtitle'],
+        icon: Icons.check_circle_rounded,
+      );
     });
   }
 }

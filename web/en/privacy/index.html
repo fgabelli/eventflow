@@ -25,20 +25,23 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/layout.css?v=2">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/layout.css?v=3">
 
   <style>
     :root {
       --primary: #0E6B52;
-      --text-dark: #0F172A;
+      --lime: #9AD530;
+      --lime-dark: #86BD22;
+      --ink: #101410;
+      --text-dark: #101410;
       --text-main: #334155;
       --text-muted: #64748B;
       --border: #E2E8F0;
     }
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', sans-serif; color: var(--text-main); line-height: 1.6; background: #F8FAFC; }
-    h1, h2, h3, .nav-brand { font-family: 'Outfit', sans-serif; color: var(--text-dark); }
+    body { font-family: 'Inter', sans-serif; color: var(--text-main); line-height: 1.6; background: #F4F6F2; }
+    h1, h2, h3, .nav-brand { font-family: 'Manrope', sans-serif; color: var(--text-dark); }
     a { text-decoration: none; color: var(--primary); }
     a:hover { text-decoration: underline; }
 
@@ -54,8 +57,7 @@
 
   <header class="site-header" role="banner">
     <a class="nav-brand" href="/en/" aria-label="Ticketto — Home">
-      <img src="/icons/Icon-192.png?v=2" alt="" width="36" height="36" decoding="async" />
-      <span>Ticketto</span>
+      <img src="/brand/ticketto-logo-color.svg" alt="" width="140" height="35" decoding="async" />
     </a>
     <nav class="nav-links" aria-label="Main navigation">
       <a href="/en/#piattaforma" class="link">Platform</a>
@@ -119,8 +121,8 @@
   <footer class="site-footer" role="contentinfo">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img src="/icons/Icon-192.png?v=2" alt="Ticketto" width="40" height="40" />
-        <p>The ticketing and event check-in platform.</p>
+        <img src="/brand/ticketto-logo-dark.svg" alt="Ticketto" width="160" height="40" loading="lazy" />
+        <p>From invitation to attendance.</p>
       </div>
       <nav class="footer-col" aria-label="Product">
         <h3>Product</h3>

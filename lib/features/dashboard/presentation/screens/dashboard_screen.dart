@@ -431,7 +431,7 @@ class _EventListItem extends StatelessWidget {
             width: 48,
             height: 56,
             decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
+              color: AppColors.bottleGreen,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(

@@ -160,7 +160,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
+            color: AppColors.bottleGreen,
             borderRadius: BorderRadius.circular(20),
           ),
            child: const Text(
@@ -271,7 +271,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
+                color: AppColors.bottleGreen,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
               ),
               child: const Text(

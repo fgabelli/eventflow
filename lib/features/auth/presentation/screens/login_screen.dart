@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:html' as html;
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
@@ -103,15 +103,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E1B4B),
-              Color(0xFF312E81),
-            ],
-          ),
+          color: AppColors.bottleGreen,
         ),
         child: SafeArea(
           child: Center(
@@ -339,44 +331,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   Widget _buildLogo(AppLocalizations l) {
     return Column(
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.4),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              'assets/images/ticketto_logo.png',
-              fit: BoxFit.cover,
-            ),
-          ),
+        SvgPicture.asset(
+          'assets/brand/ticketto-logo-dark.svg',
+          height: 48,
         ),
-        const SizedBox(height: 20),
-        const Text(
-          'Ticketto',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         Text(
           l['footer_tagline'],
           style: TextStyle(
-            fontSize: 16,
-            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 15,
+            color: Colors.white.withValues(alpha: 0.8),
           ),
         ),
       ],

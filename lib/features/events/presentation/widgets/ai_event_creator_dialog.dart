@@ -225,7 +225,7 @@ class _AiEventCreatorDialogState extends ConsumerState<AiEventCreatorDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    color: AppColors.bottleGreen,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
@@ -465,7 +465,7 @@ class _AiEventCreatorDialogState extends ConsumerState<AiEventCreatorDialog> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
+                    color: AppColors.bottleGreen,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Row(

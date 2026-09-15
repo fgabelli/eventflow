@@ -18,6 +18,7 @@ import 'package:eventflow/features/auth/presentation/providers/auth_providers.da
 import 'package:eventflow/features/events/presentation/screens/events_screen.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
+import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/utils/feature_gate.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -38,7 +39,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   late TextEditingController _printerIpCtrl;
   late TextEditingController _meetingUrlCtrl;
   late TextEditingController _hexColorCtrl;
-  String? _selectedColor = '#6366F1';
+  String? _selectedColor = '#0E6B52';
   bool _showAttendeesCount = false;
   bool _isPaid = false;
   bool _allowGroupRegistration = false;
@@ -72,7 +73,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _priceCtrl = TextEditingController();
     _printerIpCtrl = TextEditingController();
     _meetingUrlCtrl = TextEditingController();
-    _hexColorCtrl = TextEditingController(text: '#6366F1');
+    _hexColorCtrl = TextEditingController(text: '#0E6B52');
     _editDate = DateTime.now();
     _editTime = TimeOfDay.now();
   }
@@ -120,8 +121,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _allowGroupRegistration = event.allowGroupRegistration;
     _hasTimeSlots = event.hasTimeSlots;
     _editTimeSlots = List.from(event.timeSlots);
-    _selectedColor = event.primaryColor ?? '#6366F1';
-    _hexColorCtrl.text = _selectedColor ?? '#6366F1';
+    _selectedColor = event.primaryColor ?? '#0E6B52';
+    _hexColorCtrl.text = _selectedColor ?? '#0E6B52';
     _showAttendeesCount = event.showAttendeesCount;
     _reminderEnabled = event.reminderEnabled;
     _reminderDaysBefore = event.reminderDaysBefore;
@@ -986,7 +987,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     Text(
                       event.primaryColor != null && event.primaryColor!.isNotEmpty
                           ? 'Colore impostato: ${event.primaryColor}'
-                          : 'Colore predefinito (#6366F1)',
+                          : 'Colore predefinito (#0E6B52)',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],
@@ -1609,16 +1610,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                               curve: Curves.easeOut,
                               height: barHeight > 0 ? barHeight : 4,
                               decoration: BoxDecoration(
-                                gradient: isToday
-                                    ? AppColors.primaryGradient
-                                    : LinearGradient(
-                                        begin: Alignment.bottomCenter,
-                                        end: Alignment.topCenter,
-                                        colors: [
-                                          AppColors.primary.withValues(alpha: 0.3),
-                                          AppColors.primary.withValues(alpha: 0.15),
-                                        ],
-                                      ),
+                                color: isToday
+                                    ? AppColors.bottleGreen
+                                    : AppColors.bottleGreen.withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -1807,6 +1801,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
+                  {'name': 'Verde Ticketto', 'hex': '#0E6B52', 'color': const Color(0xFF0E6B52)},
+                  {'name': 'Lime', 'hex': '#9AD530', 'color': const Color(0xFF9AD530)},
                   {'name': 'Viola', 'hex': '#6366F1', 'color': const Color(0xFF6366F1)},
                   {'name': 'Blu Oceano', 'hex': '#1B5E9E', 'color': const Color(0xFF1B5E9E)},
                   {'name': 'Teal', 'hex': '#0D9488', 'color': const Color(0xFF0D9488)},
@@ -1947,14 +1943,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 children: [
                   Text(AppLocalizations.of(context)['enable_pricing'], style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                  ),
+                  const TicketBadge(label: 'PRO'),
                   Switch(
                     value: _isPaid,
                     onChanged: (v) {
@@ -1993,14 +1982,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 children: [
                   Text('Registrazione di gruppo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                  ),
+                  const TicketBadge(label: 'PRO'),
                   const SizedBox(height: 2),
                   Text('Consenti la prenotazione per più persone', style: TextStyle(color: AppColors.textTertiary, fontSize: 12)),
                 ],
@@ -2043,14 +2025,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 children: [
                   Text(AppLocalizations.of(context)['time_slot_booking'], style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                  ),
+                  const TicketBadge(label: 'PRO'),
                   Switch(value: _hasTimeSlots, onChanged: (v) {
                     final plan = ref.read(currentOrgProvider).value?.plan ?? SubscriptionPlan.free;
                     if (v && plan.isFree) {
@@ -2189,14 +2164,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                           children: [
                             const Text('🔔 Notifiche real-time', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                             const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Text('PRO', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF6366F1))),
-                            ),
+                            const TicketBadge(label: 'PRO'),
                           ],
                         ),
                         Text('Ricevi un\'email per ogni iscrizione', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
