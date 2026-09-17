@@ -10,8 +10,7 @@ import 'package:eventflow/core/constants/app_constants.dart';
 
 enum CouponPrintFormat {
   deskStandA4('Locandina da Banco A4 (210x297 mm)', 'Cartello verticale con grande QR code per desk ed espositori in plexiglass', 210, 297),
-  businessCardPrintReady('Biglietto Tipografia — Print Ready (85x55 mm)', 'File master con abbondanze di 2mm e crocini di taglio per tipografie (Pixartprinting, ecc.)', 85, 55),
-  businessCard('Biglietto da Visita — Anteprima (85x55 mm)', 'Taglio netto a formato finito per visualizzazione o stampa diretta da ufficio', 85, 55),
+  businessCard('Biglietto da Visita (85x55 mm)', 'Ideale da distribuire a clienti o inserire in buste e packaging', 85, 55),
   flyerA6('Flyer A6 (105x148 mm)', 'Ideale da banco reception ed espositori partner', 105, 148),
   a4Grid('Foglio A4 a griglia (6 coupon)', 'Ideale per stampa immediata in ufficio con linee di ritaglio tratteggiate', 210, 297);
 
@@ -583,6 +582,7 @@ class PromotionPdfService {
     String? orgWhatsapp,
     String? orgWebsite,
     String? orgAddress,
+    bool isPrintReady = false,
   }) async {
     switch (format) {
       case CouponPrintFormat.deskStandA4:
@@ -600,24 +600,7 @@ class PromotionPdfService {
           orgWhatsapp: orgWhatsapp,
           orgWebsite: orgWebsite,
           orgAddress: orgAddress,
-        );
-      case CouponPrintFormat.businessCardPrintReady:
-        return generateBusinessCards(
-          promotion: promotion,
-          vouchers: vouchers,
-          orgName: orgName,
-          orgLogo: orgLogo,
-          partnerLogo: partnerLogo,
-          baseUrl: baseUrl,
-          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-          theme: theme,
-          customBrandColor: customBrandColor,
-          orgEmail: orgEmail,
-          orgPhone: orgPhone,
-          orgWhatsapp: orgWhatsapp,
-          orgWebsite: orgWebsite,
-          orgAddress: orgAddress,
-          isPrintReady: true,
+          isPrintReady: isPrintReady,
         );
       case CouponPrintFormat.businessCard:
         return generateBusinessCards(
@@ -635,7 +618,7 @@ class PromotionPdfService {
           orgWhatsapp: orgWhatsapp,
           orgWebsite: orgWebsite,
           orgAddress: orgAddress,
-          isPrintReady: false,
+          isPrintReady: isPrintReady,
         );
       case CouponPrintFormat.flyerA6:
         return generateFlyersA6(
@@ -652,6 +635,7 @@ class PromotionPdfService {
           orgPhone: orgPhone,
           orgWhatsapp: orgWhatsapp,
           orgWebsite: orgWebsite,
+          isPrintReady: isPrintReady,
         );
       case CouponPrintFormat.a4Grid:
         return generateCouponSheet(
@@ -672,8 +656,403 @@ class PromotionPdfService {
     }
   }
 
+  /// Poster content widget (A4 210x297mm).
+  /// When [hasBleed] is true (Tipografia Print-Ready), canvas is 214x301mm (+2mm bleed per side)
+  /// and padding is 10mm (2mm bleed + 8mm safe margin).
+  /// When [hasBleed] is false (Anteprima Visiva), canvas is 210x297mm and padding is 8mm.
+  static pw.Widget _buildDeskStandPosterContent({
+    required PromotionModel promotion,
+    required String orgName,
+    required pw.ImageProvider? orgLogoImage,
+    required pw.ImageProvider? partnerLogoImage,
+    required String claimUrl,
+    required String? expDateStr,
+    required pw.Font fontRegular,
+    required pw.Font fontBold,
+    required pw.Font fontSemiBold,
+    required CouponVisualTheme theme,
+    String? customBrandColor,
+    bool? overridePartnerLogoDarkBg,
+    required bool hasBleed,
+    pw.ImageProvider? heroBgImage,
+    String? orgPhone,
+    String? orgWhatsapp,
+    String? orgEmail,
+    String? orgWebsite,
+    String? orgAddress,
+    pw.ImageProvider? waIcon,
+  }) {
+    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
+    final isDark = theme.isDark;
+    final solidTextColor = isDark ? PdfColors.white : palette.textPrimary;
+    final solidSecondaryColor = isDark ? PdfColor.fromHex('CBD5E1') : palette.textSecondary;
+
+    final outerPadding = hasBleed ? 10.0 * PdfPageFormat.mm : 8.0 * PdfPageFormat.mm;
+
+    return pw.Container(
+      color: palette.surfaceLevel0,
+      padding: pw.EdgeInsets.all(outerPadding),
+      child: pw.Container(
+        padding: const pw.EdgeInsets.all(3),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: palette.accentColor, width: 0.8),
+          borderRadius: pw.BorderRadius.circular(8),
+        ),
+        child: pw.Container(
+          decoration: pw.BoxDecoration(
+            color: palette.surfaceLevel0,
+            border: pw.Border.all(color: palette.borderColor, width: 0.5),
+            borderRadius: pw.BorderRadius.circular(6),
+          ),
+          child: pw.Column(
+            children: [
+              // 1. HERO PHOTO BANNER (top ~35%)
+              pw.Expanded(
+                flex: 35,
+                child: pw.Container(
+                  width: double.infinity,
+                  child: pw.ClipRRect(
+                    horizontalRadius: 5.5,
+                    verticalRadius: 5.5,
+                    child: pw.Stack(
+                      children: [
+                        // Background: photo or solid surface
+                        pw.Positioned.fill(
+                          child: pw.Container(color: palette.surfaceLevel1),
+                        ),
+                        if (heroBgImage != null)
+                          pw.Positioned.fill(
+                            child: pw.Image(heroBgImage, fit: pw.BoxFit.cover),
+                          ),
+                        // Floating badge (top-right)
+                        pw.Positioned(
+                          top: 16,
+                          right: 16,
+                          child: pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel0,
+                              borderRadius: pw.BorderRadius.circular(4),
+                              border: pw.Border.all(color: palette.accentColor, width: 0.5),
+                            ),
+                            child: pw.Text(
+                              promotion.isPartnership ? 'CONVENZIONE PARTNER' : 'PROMOZIONE ESCLUSIVA',
+                              style: pw.TextStyle(
+                                font: fontBold,
+                                fontSize: 8,
+                                color: palette.badgeText,
+                                letterSpacing: 2.0,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Co-branding lockup (bottom-left)
+                        pw.Positioned(
+                          bottom: 14,
+                          left: 16,
+                          child: pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel0,
+                              borderRadius: pw.BorderRadius.circular(4),
+                            ),
+                            child: _buildHeaderLogos(
+                              orgLogoImage: orgLogoImage,
+                              partnerLogoImage: partnerLogoImage,
+                              orgName: orgName,
+                              promotion: promotion,
+                              fontBold: fontBold,
+                              fontSemiBold: fontSemiBold,
+                              logoHeight: 22,
+                              overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                              textLightColor: isDark ? PdfColors.white : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. MAIN PROPOSITION (middle ~30%)
+              pw.Expanded(
+                flex: 30,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      // Category pill
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        decoration: pw.BoxDecoration(
+                          color: palette.surfaceLevel1,
+                          borderRadius: pw.BorderRadius.circular(4),
+                          border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                        ),
+                        child: pw.Text(
+                          theme.occasionTag != null
+                              ? '${theme.occasionTag!}  |  ${promotion.offerType.label.toUpperCase()}'
+                              : promotion.offerType.label.toUpperCase(),
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 10,
+                            color: palette.badgeText,
+                            letterSpacing: 2.0,
+                          ),
+                        ),
+                      ),
+                      pw.SizedBox(height: 14),
+                      // Headline
+                      pw.Text(
+                        promotion.title,
+                        style: pw.TextStyle(
+                          font: fontBold,
+                          fontSize: 28,
+                          color: solidTextColor,
+                          letterSpacing: -0.3,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
+                        pw.SizedBox(height: 10),
+                        pw.Container(
+                          constraints: const pw.BoxConstraints(maxWidth: 420),
+                          child: pw.Text(
+                            promotion.description!,
+                            style: pw.TextStyle(
+                              font: fontRegular,
+                              fontSize: 11,
+                              color: solidSecondaryColor,
+                              lineSpacing: 2.0,
+                            ),
+                            textAlign: pw.TextAlign.center,
+                            maxLines: 3,
+                          ),
+                        ),
+                      ],
+                      if (promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
+                        pw.SizedBox(height: 8),
+                        pw.Text(
+                          'Riservata ai soci ${promotion.partnerName!}',
+                          style: pw.TextStyle(
+                            font: fontSemiBold,
+                            fontSize: 10,
+                            color: palette.accentColor,
+                            letterSpacing: 0.5,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              // Hairline divider
+              pw.Container(
+                margin: const pw.EdgeInsets.symmetric(horizontal: 40),
+                height: 0.5,
+                color: palette.borderColor,
+              ),
+
+              // 3. SCAN HUB (bottom ~35%)
+              pw.Expanded(
+                flex: 35,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    children: [
+                      // QR + Instructions row
+                      pw.Container(
+                        padding: const pw.EdgeInsets.all(16),
+                        decoration: pw.BoxDecoration(
+                          color: palette.surfaceLevel1,
+                          borderRadius: pw.BorderRadius.circular(8),
+                        ),
+                        child: pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+                          children: [
+                            // QR on white ground (140pt ≈ 49.4mm)
+                            pw.Container(
+                              padding: const pw.EdgeInsets.all(10),
+                              decoration: pw.BoxDecoration(
+                                color: PdfColors.white,
+                                borderRadius: pw.BorderRadius.circular(6),
+                                border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                              ),
+                              child: pw.BarcodeWidget(
+                                barcode: pw.Barcode.qrCode(),
+                                data: claimUrl,
+                                width: 140,
+                                height: 140,
+                                color: PdfColors.black,
+                              ),
+                            ),
+                            pw.SizedBox(width: 24),
+                            // Instructions
+                            pw.Expanded(
+                              child: pw.Column(
+                                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                mainAxisSize: pw.MainAxisSize.min,
+                                children: [
+                                  pw.Text(
+                                    'ATTIVA IL TUO PASS',
+                                    style: pw.TextStyle(
+                                      font: fontBold,
+                                      fontSize: 16,
+                                      color: palette.accentColor,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                  pw.SizedBox(height: 8),
+                                  pw.Text(
+                                    'Inquadra il QR code con la fotocamera dello smartphone per registrarti e sbloccare la convenzione.',
+                                    style: pw.TextStyle(
+                                      font: fontRegular,
+                                      fontSize: 10,
+                                      color: solidSecondaryColor,
+                                      lineSpacing: 1.5,
+                                    ),
+                                  ),
+                                  pw.SizedBox(height: 12),
+                                  // Validity info
+                                  pw.Container(
+                                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: pw.BoxDecoration(
+                                      color: palette.surfaceLevel2,
+                                      borderRadius: pw.BorderRadius.circular(4),
+                                    ),
+                                    child: pw.Text(
+                                      expDateStr != null
+                                          ? 'Attiva entro il $expDateStr  |  Validità: ${promotion.validityDescription} dalla registrazione'
+                                          : 'Validità: ${promotion.validityDescription} dalla registrazione',
+                                      style: pw.TextStyle(
+                                        font: fontSemiBold,
+                                        fontSize: 9,
+                                        color: palette.badgeText,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      pw.SizedBox(height: 12),
+
+                      // 3-step inline footer
+                      pw.Text(
+                        '1. Inquadra il QR   |   2. Inserisci nome ed email   |   3. Mostra il pass alla reception',
+                        style: pw.TextStyle(
+                          font: fontRegular,
+                          fontSize: 8,
+                          color: solidSecondaryColor,
+                          letterSpacing: 0.3,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom brand bar
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                decoration: pw.BoxDecoration(
+                  color: palette.surfaceLevel1,
+                  borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(5.5)),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    // Org contact info (2 lines)
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        mainAxisSize: pw.MainAxisSize.min,
+                        children: [
+                          pw.Text(
+                            [
+                              orgName,
+                              if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
+                            ].join('  |  '),
+                            style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: solidTextColor),
+                            maxLines: 1,
+                          ),
+                          if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.only(top: 2),
+                              child: pw.Row(
+                                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                                children: [
+                                  if (orgPhone != null && orgPhone.trim().isNotEmpty)
+                                    pw.Text(
+                                      'Tel: $orgPhone',
+                                      style: pw.TextStyle(font: fontRegular, fontSize: 7, color: solidSecondaryColor),
+                                    ),
+                                  if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) ...[
+                                    if (orgPhone != null && orgPhone.trim().isNotEmpty)
+                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 7, color: solidSecondaryColor)),
+                                    _buildWhatsappSnippet(
+                                      number: orgWhatsapp,
+                                      waIcon: waIcon,
+                                      font: fontRegular,
+                                      fontSize: 7,
+                                      color: solidSecondaryColor,
+                                    ),
+                                  ],
+                                  if (orgEmail != null && orgEmail.trim().isNotEmpty) ...[
+                                    if ((orgPhone != null && orgPhone.trim().isNotEmpty) || (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty))
+                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 7, color: solidSecondaryColor)),
+                                    pw.Text(
+                                      orgEmail,
+                                      style: pw.TextStyle(font: fontRegular, fontSize: 7, color: solidSecondaryColor),
+                                    ),
+                                  ],
+                                  if (orgWebsite != null && orgWebsite.trim().isNotEmpty) ...[
+                                    pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 7, color: solidSecondaryColor)),
+                                    pw.Text(
+                                      orgWebsite,
+                                      style: pw.TextStyle(font: fontRegular, fontSize: 7, color: solidSecondaryColor),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 12),
+                    pw.Text(
+                      'Powered by ticketto.it',
+                      style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: palette.accentColor),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 1. Locandina da Banco A4 (210 x 297 mm)
-  /// Double-hairline banknote frame, hero photo, large QR, editorial typography.
+  /// Double-hairline banknote frame, hero photo, large QR (≈5cm), editorial typography.
+  /// If [isPrintReady] is true:
+  ///   Generates pre-press master (220 x 307 mm sheet) with 2mm bleed (214 x 301 mm graphics),
+  ///   vector crop marks at 210 x 297 mm, slug metadata, and >=8mm safe margin.
+  /// If [isPrintReady] is false:
+  ///   Generates exact 210 x 297 mm trimmed preview without crop marks.
   static Future<Uint8List> generateDeskStandPoster({
     required PromotionModel promotion,
     required String orgName,
@@ -688,6 +1067,7 @@ class PromotionPdfService {
     String? orgWhatsapp,
     String? orgWebsite,
     String? orgAddress,
+    bool isPrintReady = false,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -701,373 +1081,135 @@ class PromotionPdfService {
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
-    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
-    final isDark = theme.isDark;
 
     final heroBgImage = await _loadThemeBgImage(theme);
-
     final waIcon = await _loadWhatsappIcon();
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(18),
-        build: (context) {
-          // Double-hairline banknote frame
-          return pw.Container(
-            padding: const pw.EdgeInsets.all(3),
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: palette.accentColor, width: 0.8),
-              borderRadius: pw.BorderRadius.circular(8),
-            ),
-            child: pw.Container(
-              decoration: pw.BoxDecoration(
-                color: palette.surfaceLevel0,
-                border: pw.Border.all(color: palette.borderColor, width: 0.5),
-                borderRadius: pw.BorderRadius.circular(6),
-              ),
-              child: pw.Column(
-                children: [
-                  // 1. HERO PHOTO BANNER (top ~35%)
-                  pw.Expanded(
-                    flex: 35,
-                    child: pw.Container(
-                      width: double.infinity,
-                      child: pw.ClipRRect(
-                        horizontalRadius: 5.5,
-                        verticalRadius: 5.5,
-                        child: pw.Stack(
-                          children: [
-                            // Background: photo or solid surface
-                            pw.Positioned.fill(
-                              child: pw.Container(color: palette.surfaceLevel1),
-                            ),
-                            if (heroBgImage != null)
-                              pw.Positioned.fill(
-                                child: pw.Image(heroBgImage, fit: pw.BoxFit.cover),
-                              ),
-                            // Floating badge (top-right)
-                            pw.Positioned(
-                              top: 16,
-                              right: 16,
-                              child: pw.Container(
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                                decoration: pw.BoxDecoration(
-                                  color: palette.surfaceLevel0,
-                                  borderRadius: pw.BorderRadius.circular(4),
-                                  border: pw.Border.all(color: palette.accentColor, width: 0.5),
-                                ),
-                                child: pw.Text(
-                                  promotion.isPartnership ? 'CONVENZIONE PARTNER' : 'PROMOZIONE ESCLUSIVA',
-                                  style: pw.TextStyle(
-                                    font: fontBold,
-                                    fontSize: 8,
-                                    color: palette.badgeText,
-                                    letterSpacing: 2.0,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Co-branding lockup (bottom-left)
-                            pw.Positioned(
-                              bottom: 14,
-                              left: 16,
-                              child: pw.Container(
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: pw.BoxDecoration(
-                                  color: palette.surfaceLevel0,
-                                  borderRadius: pw.BorderRadius.circular(4),
-                                ),
-                                child: _buildHeaderLogos(
-                                  orgLogoImage: orgLogoImage,
-                                  partnerLogoImage: partnerLogoImage,
-                                  orgName: orgName,
-                                  promotion: promotion,
-                                  fontBold: fontBold,
-                                  fontSemiBold: fontSemiBold,
-                                  logoHeight: 22,
-                                  overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                                  textLightColor: isDark ? PdfColors.white : null,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+    const trimWidthMm = 210.0;
+    const trimHeightMm = 297.0;
+    const bleedMm = 2.0;
+    const slugMm = 3.0;
+
+    if (isPrintReady) {
+      // 220 x 307 mm sheet (210x297 trim + 2mm bleed + 3mm slug for crop marks)
+      final pageWidthMm = trimWidthMm + (bleedMm + slugMm) * 2;
+      final pageHeightMm = trimHeightMm + (bleedMm + slugMm) * 2;
+      final posterFormat = PdfPageFormat(
+        pageWidthMm * PdfPageFormat.mm,
+        pageHeightMm * PdfPageFormat.mm,
+        marginAll: 0,
+      );
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: posterFormat,
+          build: (context) {
+            return pw.Stack(
+              children: [
+                // Clean white slug background
+                pw.Positioned.fill(
+                  child: pw.Container(color: PdfColors.white),
+                ),
+                // Pre-press slug info text at top
+                pw.Positioned(
+                  top: 1.2 * PdfPageFormat.mm,
+                  left: 0,
+                  right: 0,
+                  child: pw.Center(
+                    child: pw.Text(
+                      '210 x 297 mm (A4 +2mm abbondanza) | Master Tipografico Ticketto - Formato Finito con Crocini di Taglio',
+                      style: pw.TextStyle(
+                        font: fontRegular,
+                        fontSize: 5.5,
+                        color: PdfColor.fromHex('64748B'),
                       ),
                     ),
                   ),
-
-                  // 2. MAIN PROPOSITION (middle ~30%)
-                  pw.Expanded(
-                    flex: 30,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      child: pw.Column(
-                        mainAxisAlignment: pw.MainAxisAlignment.center,
-                        crossAxisAlignment: pw.CrossAxisAlignment.center,
-                        children: [
-                          // Category pill
-                          pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                            decoration: pw.BoxDecoration(
-                              color: palette.surfaceLevel1,
-                              borderRadius: pw.BorderRadius.circular(4),
-                              border: pw.Border.all(color: palette.borderColor, width: 0.5),
-                            ),
-                            child: pw.Text(
-                              theme.occasionTag != null
-                                  ? '${theme.occasionTag!}  |  ${promotion.offerType.label.toUpperCase()}'
-                                  : promotion.offerType.label.toUpperCase(),
-                              style: pw.TextStyle(
-                                font: fontBold,
-                                fontSize: 10,
-                                color: palette.badgeText,
-                                letterSpacing: 2.0,
-                              ),
-                            ),
-                          ),
-                          pw.SizedBox(height: 14),
-                          // Headline
-                          pw.Text(
-                            promotion.title,
-                            style: pw.TextStyle(
-                              font: fontBold,
-                              fontSize: 28,
-                              color: palette.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
-                            textAlign: pw.TextAlign.center,
-                          ),
-                          if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
-                            pw.SizedBox(height: 10),
-                            pw.Container(
-                              constraints: const pw.BoxConstraints(maxWidth: 420),
-                              child: pw.Text(
-                                promotion.description!,
-                                style: pw.TextStyle(
-                                  font: fontRegular,
-                                  fontSize: 11,
-                                  color: palette.textSecondary,
-                                  lineSpacing: 2.0,
-                                ),
-                                textAlign: pw.TextAlign.center,
-                                maxLines: 3,
-                              ),
-                            ),
-                          ],
-                          if (promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
-                            pw.SizedBox(height: 8),
-                            pw.Text(
-                              'Riservata ai soci ${promotion.partnerName!}',
-                              style: pw.TextStyle(
-                                font: fontSemiBold,
-                                fontSize: 10,
-                                color: palette.accentColor,
-                                letterSpacing: 0.5,
-                              ),
-                              textAlign: pw.TextAlign.center,
-                            ),
-                          ],
-                        ],
-                      ),
+                ),
+                // 214 x 301 mm Bleed box placed at (3mm, 3mm)
+                pw.Positioned(
+                  left: slugMm * PdfPageFormat.mm,
+                  top: slugMm * PdfPageFormat.mm,
+                  child: pw.SizedBox(
+                    width: (trimWidthMm + bleedMm * 2) * PdfPageFormat.mm,
+                    height: (trimHeightMm + bleedMm * 2) * PdfPageFormat.mm,
+                    child: _buildDeskStandPosterContent(
+                      promotion: promotion,
+                      orgName: orgName,
+                      orgLogoImage: orgLogoImage,
+                      partnerLogoImage: partnerLogoImage,
+                      claimUrl: claimUrl,
+                      expDateStr: expDateStr,
+                      fontRegular: fontRegular,
+                      fontBold: fontBold,
+                      fontSemiBold: fontSemiBold,
+                      theme: theme,
+                      customBrandColor: customBrandColor,
+                      overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                      hasBleed: true,
+                      heroBgImage: heroBgImage,
+                      orgPhone: orgPhone,
+                      orgWhatsapp: orgWhatsapp,
+                      orgEmail: orgEmail,
+                      orgWebsite: orgWebsite,
+                      orgAddress: orgAddress,
+                      waIcon: waIcon,
                     ),
                   ),
+                ),
+                // Vector crop marks at 210 x 297 mm trim line
+                _buildCropMarks(
+                  trimLeft: (bleedMm + slugMm) * PdfPageFormat.mm,
+                  trimTop: (bleedMm + slugMm) * PdfPageFormat.mm,
+                  trimWidth: trimWidthMm * PdfPageFormat.mm,
+                  trimHeight: trimHeightMm * PdfPageFormat.mm,
+                  bleed: bleedMm * PdfPageFormat.mm,
+                  markLength: 2.5 * PdfPageFormat.mm,
+                  markThickness: 0.35,
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      // 210 x 297 mm exact preview format
+      final posterFormat = PdfPageFormat(
+        trimWidthMm * PdfPageFormat.mm,
+        trimHeightMm * PdfPageFormat.mm,
+        marginAll: 0,
+      );
 
-                  // Hairline divider
-                  pw.Container(
-                    margin: const pw.EdgeInsets.symmetric(horizontal: 40),
-                    height: 0.5,
-                    color: palette.borderColor,
-                  ),
-
-                  // 3. SCAN HUB (bottom ~35%)
-                  pw.Expanded(
-                    flex: 35,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                      child: pw.Column(
-                        mainAxisAlignment: pw.MainAxisAlignment.center,
-                        children: [
-                          // QR + Instructions row
-                          pw.Container(
-                            padding: const pw.EdgeInsets.all(16),
-                            decoration: pw.BoxDecoration(
-                              color: palette.surfaceLevel1,
-                              borderRadius: pw.BorderRadius.circular(8),
-                            ),
-                            child: pw.Row(
-                              crossAxisAlignment: pw.CrossAxisAlignment.center,
-                              children: [
-                                // QR on white ground
-                                pw.Container(
-                                  padding: const pw.EdgeInsets.all(10),
-                                  decoration: pw.BoxDecoration(
-                                    color: PdfColors.white,
-                                    borderRadius: pw.BorderRadius.circular(6),
-                                    border: pw.Border.all(color: palette.borderColor, width: 0.5),
-                                  ),
-                                  child: pw.BarcodeWidget(
-                                    barcode: pw.Barcode.qrCode(),
-                                    data: claimUrl,
-                                    width: 140,
-                                    height: 140,
-                                    color: PdfColors.black,
-                                  ),
-                                ),
-                                pw.SizedBox(width: 24),
-                                // Instructions
-                                pw.Expanded(
-                                  child: pw.Column(
-                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                    mainAxisSize: pw.MainAxisSize.min,
-                                    children: [
-                                      pw.Text(
-                                        'ATTIVA IL TUO PASS',
-                                        style: pw.TextStyle(
-                                          font: fontBold,
-                                          fontSize: 16,
-                                          color: palette.accentColor,
-                                          letterSpacing: 1.0,
-                                        ),
-                                      ),
-                                      pw.SizedBox(height: 8),
-                                      pw.Text(
-                                        'Inquadra il QR code con la fotocamera dello smartphone per registrarti e sbloccare la convenzione.',
-                                        style: pw.TextStyle(
-                                          font: fontRegular,
-                                          fontSize: 10,
-                                          color: palette.textSecondary,
-                                          lineSpacing: 1.5,
-                                        ),
-                                      ),
-                                      pw.SizedBox(height: 12),
-                                      // Validity info
-                                      pw.Container(
-                                        padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                        decoration: pw.BoxDecoration(
-                                          color: palette.surfaceLevel2,
-                                          borderRadius: pw.BorderRadius.circular(4),
-                                        ),
-                                        child: pw.Text(
-                                          expDateStr != null
-                                              ? 'Attiva entro il $expDateStr  |  Validità: ${promotion.validityDescription} dalla registrazione'
-                                              : 'Validità: ${promotion.validityDescription} dalla registrazione',
-                                          style: pw.TextStyle(
-                                            font: fontSemiBold,
-                                            fontSize: 9,
-                                            color: palette.badgeText,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          pw.SizedBox(height: 12),
-
-                          // 3-step inline footer
-                          pw.Text(
-                            '1. Inquadra il QR   |   2. Inserisci nome ed email   |   3. Mostra il pass alla reception',
-                            style: pw.TextStyle(
-                              font: fontRegular,
-                              fontSize: 8,
-                              color: palette.textSecondary,
-                              letterSpacing: 0.3,
-                            ),
-                            textAlign: pw.TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Bottom brand bar
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                    decoration: pw.BoxDecoration(
-                      color: palette.surfaceLevel1,
-                      borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(5.5)),
-                    ),
-                    child: pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        // Org contact info (2 lines)
-                        pw.Expanded(
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            mainAxisSize: pw.MainAxisSize.min,
-                            children: [
-                              pw.Text(
-                                [
-                                  orgName,
-                                  if (orgAddress != null && orgAddress.trim().isNotEmpty) orgAddress,
-                                ].join('  |  '),
-                                style: pw.TextStyle(font: fontBold, fontSize: 7, color: palette.textPrimary),
-                                maxLines: 1,
-                              ),
-                              if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
-                                pw.Padding(
-                                  padding: const pw.EdgeInsets.only(top: 2),
-                                  child: pw.Row(
-                                    crossAxisAlignment: pw.CrossAxisAlignment.center,
-                                    children: [
-                                      if (orgPhone != null && orgPhone.trim().isNotEmpty)
-                                        pw.Text(
-                                          'Tel: $orgPhone',
-                                          style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary),
-                                        ),
-                                      if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) ...[
-                                        if (orgPhone != null && orgPhone.trim().isNotEmpty)
-                                          pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
-                                        _buildWhatsappSnippet(
-                                          number: orgWhatsapp,
-                                          waIcon: waIcon,
-                                          font: fontRegular,
-                                          fontSize: 6.5,
-                                          color: palette.textSecondary,
-                                        ),
-                                      ],
-                                      if (orgEmail != null && orgEmail.trim().isNotEmpty) ...[
-                                        if ((orgPhone != null && orgPhone.trim().isNotEmpty) || (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty))
-                                          pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
-                                        pw.Text(
-                                          orgEmail,
-                                          style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary),
-                                        ),
-                                      ],
-                                      if (orgWebsite != null && orgWebsite.trim().isNotEmpty) ...[
-                                        pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary)),
-                                        pw.Text(
-                                          orgWebsite,
-                                          style: pw.TextStyle(font: fontRegular, fontSize: 6.5, color: palette.textSecondary),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        pw.SizedBox(width: 12),
-                        pw.Text(
-                          'Powered by ticketto.it',
-                          style: pw.TextStyle(font: fontBold, fontSize: 7.5, color: palette.accentColor),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+      pdf.addPage(
+        pw.Page(
+          pageFormat: posterFormat,
+          build: (context) {
+            return _buildDeskStandPosterContent(
+              promotion: promotion,
+              orgName: orgName,
+              orgLogoImage: orgLogoImage,
+              partnerLogoImage: partnerLogoImage,
+              claimUrl: claimUrl,
+              expDateStr: expDateStr,
+              fontRegular: fontRegular,
+              fontBold: fontBold,
+              fontSemiBold: fontSemiBold,
+              theme: theme,
+              customBrandColor: customBrandColor,
+              overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+              hasBleed: false,
+              heroBgImage: heroBgImage,
+              orgPhone: orgPhone,
+              orgWhatsapp: orgWhatsapp,
+              orgEmail: orgEmail,
+              orgWebsite: orgWebsite,
+              orgAddress: orgAddress,
+              waIcon: waIcon,
+            );
+          },
+        ),
+      );
+    }
 
     return pdf.save();
   }
@@ -1601,8 +1743,378 @@ class PromotionPdfService {
     return pdf.save();
   }
 
+  /// Flyer A6 content widget (105x148mm).
+  /// When [hasBleed] is true (Tipografia Print-Ready), canvas is 109x152mm (+2mm bleed per side)
+  /// and padding is 6mm (2mm bleed + 4mm safe margin).
+  /// When [hasBleed] is false (Anteprima Visiva), canvas is 105x148mm and padding is 4mm.
+  static pw.Widget _buildFlyerA6Content({
+    required PromotionModel promotion,
+    required String orgName,
+    required pw.ImageProvider? orgLogoImage,
+    required pw.ImageProvider? partnerLogoImage,
+    required String claimUrl,
+    required String? expDateStr,
+    required pw.Font fontRegular,
+    required pw.Font fontBold,
+    required pw.Font fontSemiBold,
+    required CouponVisualTheme theme,
+    String? customBrandColor,
+    bool? overridePartnerLogoDarkBg,
+    required bool hasBleed,
+    pw.ImageProvider? flyerBgImage,
+    String? orgPhone,
+    String? orgWhatsapp,
+    String? orgEmail,
+    String? orgWebsite,
+    pw.ImageProvider? waIcon,
+  }) {
+    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
+    final isDark = theme.isDark;
+    final solidTextColor = isDark ? PdfColors.white : palette.textPrimary;
+    final solidSecondaryColor = isDark ? PdfColor.fromHex('CBD5E1') : palette.textSecondary;
+
+    final outerPadding = hasBleed ? 6.0 * PdfPageFormat.mm : 4.0 * PdfPageFormat.mm;
+
+    return pw.Container(
+      color: palette.surfaceLevel0,
+      padding: pw.EdgeInsets.all(outerPadding),
+      child: pw.Container(
+        padding: const pw.EdgeInsets.all(2),
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: palette.accentColor, width: 0.8),
+          borderRadius: pw.BorderRadius.circular(6),
+        ),
+        child: pw.Container(
+          decoration: pw.BoxDecoration(
+            color: palette.surfaceLevel0,
+            border: pw.Border.all(color: palette.borderColor, width: 0.5),
+            borderRadius: pw.BorderRadius.circular(4),
+          ),
+          child: pw.Column(
+            children: [
+              // ZONE 1: Hero visual (25%)
+              pw.Expanded(
+                flex: 25,
+                child: pw.Container(
+                  width: double.infinity,
+                  child: pw.ClipRRect(
+                    horizontalRadius: 3.5,
+                    verticalRadius: 3.5,
+                    child: pw.Stack(
+                      children: [
+                        pw.Positioned.fill(
+                          child: pw.Container(color: palette.surfaceLevel1),
+                        ),
+                        if (flyerBgImage != null)
+                          pw.Positioned.fill(
+                            child: pw.Image(flyerBgImage, fit: pw.BoxFit.cover),
+                          ),
+                        // Badge
+                        pw.Positioned(
+                          top: 8,
+                          right: 8,
+                          child: pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel0,
+                              borderRadius: pw.BorderRadius.circular(3),
+                              border: pw.Border.all(color: palette.accentColor, width: 0.5),
+                            ),
+                            child: pw.Text(
+                              promotion.isPartnership ? 'CONVENZIONE' : 'ESCLUSIVA',
+                              style: pw.TextStyle(
+                                font: fontBold,
+                                fontSize: 7,
+                                color: palette.badgeText,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Co-branding
+                        pw.Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: pw.Container(
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            decoration: pw.BoxDecoration(
+                              color: palette.surfaceLevel0,
+                              borderRadius: pw.BorderRadius.circular(3),
+                            ),
+                            child: _buildHeaderLogos(
+                              orgLogoImage: orgLogoImage,
+                              partnerLogoImage: partnerLogoImage,
+                              orgName: orgName,
+                              promotion: promotion,
+                              fontBold: fontBold,
+                              fontSemiBold: fontSemiBold,
+                              logoHeight: 14,
+                              overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                              textLightColor: isDark ? PdfColors.white : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ZONE 2: Offer content (35%)
+              pw.Expanded(
+                flex: 35,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      // Category pill
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: pw.BoxDecoration(
+                          color: palette.surfaceLevel1,
+                          borderRadius: pw.BorderRadius.circular(3),
+                          border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                        ),
+                        child: pw.Text(
+                          theme.occasionTag != null
+                              ? '${theme.occasionTag!}  |  ${promotion.offerType.label.toUpperCase()}'
+                              : promotion.offerType.label.toUpperCase(),
+                          style: pw.TextStyle(
+                            font: fontBold,
+                            fontSize: 7.5,
+                            color: palette.badgeText,
+                            letterSpacing: 1.8,
+                          ),
+                        ),
+                      ),
+                      pw.SizedBox(height: 6),
+                      // Title
+                      pw.Text(
+                        promotion.title,
+                        style: pw.TextStyle(
+                          font: fontBold,
+                          fontSize: 18,
+                          color: solidTextColor,
+                          letterSpacing: -0.3,
+                        ),
+                        textAlign: pw.TextAlign.center,
+                        maxLines: 2,
+                      ),
+                      if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          promotion.description!,
+                          style: pw.TextStyle(
+                            font: fontRegular,
+                            fontSize: 8.5,
+                            color: solidSecondaryColor,
+                            lineSpacing: 1.5,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                          maxLines: 2,
+                        ),
+                      ],
+                      if (promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Riservata ai soci ${promotion.partnerName!}',
+                          style: pw.TextStyle(
+                            font: fontSemiBold,
+                            fontSize: 7.5,
+                            color: palette.accentColor,
+                          ),
+                          textAlign: pw.TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              // Hairline divider
+              pw.Container(
+                margin: const pw.EdgeInsets.symmetric(horizontal: 20),
+                height: 0.5,
+                color: palette.borderColor,
+              ),
+
+              // ZONE 3: QR panel (28%)
+              pw.Expanded(
+                flex: 28,
+                child: pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: pw.Container(
+                    padding: const pw.EdgeInsets.all(8),
+                    decoration: pw.BoxDecoration(
+                      color: palette.surfaceLevel1,
+                      borderRadius: pw.BorderRadius.circular(6),
+                    ),
+                    child: pw.Row(
+                      crossAxisAlignment: pw.CrossAxisAlignment.center,
+                      children: [
+                        // QR code (68pt ≈ 24mm)
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(5),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.white,
+                            borderRadius: pw.BorderRadius.circular(4),
+                            border: pw.Border.all(color: palette.borderColor, width: 0.5),
+                          ),
+                          child: pw.BarcodeWidget(
+                            barcode: pw.Barcode.qrCode(),
+                            data: claimUrl,
+                            width: 68,
+                            height: 68,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                        pw.SizedBox(width: 10),
+                        // Instructions
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            mainAxisAlignment: pw.MainAxisAlignment.center,
+                            mainAxisSize: pw.MainAxisSize.min,
+                            children: [
+                              pw.Text(
+                                'ATTIVA IL PASS',
+                                style: pw.TextStyle(
+                                  font: fontBold,
+                                  fontSize: 9,
+                                  color: palette.accentColor,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              pw.SizedBox(height: 3),
+                              pw.Text(
+                                'Inquadra il QR con la fotocamera per registrarti.',
+                                style: pw.TextStyle(
+                                  font: fontRegular,
+                                  fontSize: 7.5,
+                                  color: solidSecondaryColor,
+                                ),
+                              ),
+                              pw.SizedBox(height: 5),
+                              pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                decoration: pw.BoxDecoration(
+                                  color: palette.surfaceLevel2,
+                                  borderRadius: pw.BorderRadius.circular(3),
+                                ),
+                                child: pw.Text(
+                                  expDateStr != null
+                                      ? 'Entro $expDateStr  |  Validità: ${promotion.validityDescription} dalla registrazione'
+                                      : 'Validità: ${promotion.validityDescription} dalla registrazione',
+                                  style: pw.TextStyle(
+                                    font: fontSemiBold,
+                                    fontSize: 7,
+                                    color: palette.badgeText,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // ZONE 4: Footer (12%)
+              pw.Container(
+                width: double.infinity,
+                padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: pw.BoxDecoration(
+                  color: palette.surfaceLevel1,
+                  borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(3.5)),
+                ),
+                child: pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        mainAxisSize: pw.MainAxisSize.min,
+                        children: [
+                          pw.Text(
+                            orgName,
+                            style: pw.TextStyle(
+                              font: fontBold,
+                              fontSize: 7.0,
+                              color: solidTextColor,
+                            ),
+                            maxLines: 1,
+                          ),
+                          if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
+                            pw.Row(
+                              mainAxisSize: pw.MainAxisSize.min,
+                              crossAxisAlignment: pw.CrossAxisAlignment.center,
+                              children: [
+                                if (orgPhone != null && orgPhone.trim().isNotEmpty)
+                                  pw.Text(
+                                    orgPhone,
+                                    style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidSecondaryColor),
+                                  ),
+                                if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) ...[
+                                  if (orgPhone != null && orgPhone.trim().isNotEmpty)
+                                    pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidSecondaryColor)),
+                                  _buildWhatsappSnippet(
+                                    number: orgWhatsapp,
+                                    waIcon: waIcon,
+                                    font: fontRegular,
+                                    fontSize: 6.2,
+                                    color: solidSecondaryColor,
+                                  ),
+                                ],
+                                if (orgEmail != null && orgEmail.trim().isNotEmpty) ...[
+                                  if ((orgPhone != null && orgPhone.trim().isNotEmpty) || (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty))
+                                    pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidSecondaryColor)),
+                                  pw.Text(
+                                    orgEmail,
+                                    style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidSecondaryColor),
+                                  ),
+                                ],
+                                if (orgWebsite != null && orgWebsite.trim().isNotEmpty) ...[
+                                  pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidSecondaryColor)),
+                                  pw.Text(
+                                    orgWebsite,
+                                    style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidSecondaryColor),
+                                  ),
+                                ],
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 6),
+                    pw.Text(
+                      'Powered by ticketto.it',
+                      style: pw.TextStyle(
+                        font: fontBold,
+                        fontSize: 6.5,
+                        color: palette.accentColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 3. Flyer A6 (105 x 148 mm) — vertical boutique certificate with 4-zone flow.
-  /// Double-hairline frame, editorial typography, min font 7pt.
+  /// If [isPrintReady] is true:
+  ///   Generates pre-press master (115 x 158 mm sheet) with 2mm bleed (109 x 152 mm graphics),
+  ///   vector crop marks at 105 x 148 mm, slug metadata, and >=4mm safe margin.
+  /// If [isPrintReady] is false:
+  ///   Generates exact 105 x 148 mm trimmed preview without crop marks.
   static Future<Uint8List> generateFlyersA6({
     required PromotionModel promotion,
     List<VoucherModel>? vouchers,
@@ -1617,6 +2129,7 @@ class PromotionPdfService {
     String? orgPhone,
     String? orgWhatsapp,
     String? orgWebsite,
+    bool isPrintReady = false,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -1630,350 +2143,133 @@ class PromotionPdfService {
     final claimUrl = '$origin/p/c/${promotion.id}';
     final dateFormat = DateFormat('dd/MM/yyyy');
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
-    final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
-    final isDark = theme.isDark;
 
     final flyerBgImage = await _loadThemeBgImage(theme);
-
     final waIcon = await _loadWhatsappIcon();
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a6,
-        margin: const pw.EdgeInsets.all(8),
-        build: (context) {
-          // Double-hairline frame
-          return pw.Container(
-            padding: const pw.EdgeInsets.all(2),
-            decoration: pw.BoxDecoration(
-              border: pw.Border.all(color: palette.accentColor, width: 0.8),
-              borderRadius: pw.BorderRadius.circular(6),
-            ),
-            child: pw.Container(
-              decoration: pw.BoxDecoration(
-                color: palette.surfaceLevel0,
-                border: pw.Border.all(color: palette.borderColor, width: 0.5),
-                borderRadius: pw.BorderRadius.circular(4),
-              ),
-              child: pw.Column(
-                children: [
-                  // ZONE 1: Hero visual (25%)
-                  pw.Expanded(
-                    flex: 25,
-                    child: pw.Container(
-                      width: double.infinity,
-                      child: pw.ClipRRect(
-                        horizontalRadius: 3.5,
-                        verticalRadius: 3.5,
-                        child: pw.Stack(
-                          children: [
-                            pw.Positioned.fill(
-                              child: pw.Container(color: palette.surfaceLevel1),
-                            ),
-                            if (flyerBgImage != null)
-                              pw.Positioned.fill(
-                                child: pw.Image(flyerBgImage, fit: pw.BoxFit.cover),
-                              ),
-                            // Badge
-                            pw.Positioned(
-                              top: 8,
-                              right: 8,
-                              child: pw.Container(
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: pw.BoxDecoration(
-                                  color: palette.surfaceLevel0,
-                                  borderRadius: pw.BorderRadius.circular(3),
-                                  border: pw.Border.all(color: palette.accentColor, width: 0.5),
-                                ),
-                                child: pw.Text(
-                                  promotion.isPartnership ? 'CONVENZIONE' : 'ESCLUSIVA',
-                                  style: pw.TextStyle(
-                                    font: fontBold,
-                                    fontSize: 7,
-                                    color: palette.badgeText,
-                                    letterSpacing: 1.5,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Co-branding
-                            pw.Positioned(
-                              bottom: 8,
-                              left: 8,
-                              child: pw.Container(
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                decoration: pw.BoxDecoration(
-                                  color: palette.surfaceLevel0,
-                                  borderRadius: pw.BorderRadius.circular(3),
-                                ),
-                                child: _buildHeaderLogos(
-                                  orgLogoImage: orgLogoImage,
-                                  partnerLogoImage: partnerLogoImage,
-                                  orgName: orgName,
-                                  promotion: promotion,
-                                  fontBold: fontBold,
-                                  fontSemiBold: fontSemiBold,
-                                  logoHeight: 14,
-                                  overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-                                  textLightColor: isDark ? PdfColors.white : null,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+    const trimWidthMm = 105.0;
+    const trimHeightMm = 148.0;
+    const bleedMm = 2.0;
+    const slugMm = 3.0;
+
+    if (isPrintReady) {
+      // 115 x 158 mm sheet (105x148 trim + 2mm bleed + 3mm slug for crop marks)
+      final pageWidthMm = trimWidthMm + (bleedMm + slugMm) * 2;
+      final pageHeightMm = trimHeightMm + (bleedMm + slugMm) * 2;
+      final flyerFormat = PdfPageFormat(
+        pageWidthMm * PdfPageFormat.mm,
+        pageHeightMm * PdfPageFormat.mm,
+        marginAll: 0,
+      );
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: flyerFormat,
+          build: (context) {
+            return pw.Stack(
+              children: [
+                // Clean white slug background
+                pw.Positioned.fill(
+                  child: pw.Container(color: PdfColors.white),
+                ),
+                // Pre-press slug info text at top
+                pw.Positioned(
+                  top: 1.2 * PdfPageFormat.mm,
+                  left: 0,
+                  right: 0,
+                  child: pw.Center(
+                    child: pw.Text(
+                      '105 x 148 mm (A6 +2mm abbondanza) | Master Tipografico Ticketto - Formato Finito con Crocini di Taglio',
+                      style: pw.TextStyle(
+                        font: fontRegular,
+                        fontSize: 5.0,
+                        color: PdfColor.fromHex('64748B'),
                       ),
                     ),
                   ),
-
-                  // ZONE 2: Offer content (35%)
-                  pw.Expanded(
-                    flex: 35,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      child: pw.Column(
-                        mainAxisAlignment: pw.MainAxisAlignment.center,
-                        crossAxisAlignment: pw.CrossAxisAlignment.center,
-                        children: [
-                          // Category pill
-                          pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                            decoration: pw.BoxDecoration(
-                              color: palette.surfaceLevel1,
-                              borderRadius: pw.BorderRadius.circular(3),
-                              border: pw.Border.all(color: palette.borderColor, width: 0.5),
-                            ),
-                            child: pw.Text(
-                              theme.occasionTag != null
-                                  ? '${theme.occasionTag!}  |  ${promotion.offerType.label.toUpperCase()}'
-                                  : promotion.offerType.label.toUpperCase(),
-                              style: pw.TextStyle(
-                                font: fontBold,
-                                fontSize: 7.5,
-                                color: palette.badgeText,
-                                letterSpacing: 1.8,
-                              ),
-                            ),
-                          ),
-                          pw.SizedBox(height: 6),
-                          // Title
-                          pw.Text(
-                            promotion.title,
-                            style: pw.TextStyle(
-                              font: fontBold,
-                              fontSize: 18,
-                              color: palette.textPrimary,
-                              letterSpacing: -0.3,
-                            ),
-                            textAlign: pw.TextAlign.center,
-                            maxLines: 2,
-                          ),
-                          if (promotion.description != null && promotion.description!.trim().isNotEmpty) ...[
-                            pw.SizedBox(height: 4),
-                            pw.Text(
-                              promotion.description!,
-                              style: pw.TextStyle(
-                                font: fontRegular,
-                                fontSize: 8.5,
-                                color: palette.textSecondary,
-                                lineSpacing: 1.5,
-                              ),
-                              textAlign: pw.TextAlign.center,
-                              maxLines: 2,
-                            ),
-                          ],
-                          if (promotion.isPartnership && promotion.partnerName != null && promotion.partnerName!.trim().isNotEmpty) ...[
-                            pw.SizedBox(height: 4),
-                            pw.Text(
-                              'Riservata ai soci ${promotion.partnerName!}',
-                              style: pw.TextStyle(
-                                font: fontSemiBold,
-                                fontSize: 7.5,
-                                color: palette.accentColor,
-                              ),
-                              textAlign: pw.TextAlign.center,
-                            ),
-                          ],
-                        ],
-                      ),
+                ),
+                // 109 x 152 mm Bleed box placed at (3mm, 3mm)
+                pw.Positioned(
+                  left: slugMm * PdfPageFormat.mm,
+                  top: slugMm * PdfPageFormat.mm,
+                  child: pw.SizedBox(
+                    width: (trimWidthMm + bleedMm * 2) * PdfPageFormat.mm,
+                    height: (trimHeightMm + bleedMm * 2) * PdfPageFormat.mm,
+                    child: _buildFlyerA6Content(
+                      promotion: promotion,
+                      orgName: orgName,
+                      orgLogoImage: orgLogoImage,
+                      partnerLogoImage: partnerLogoImage,
+                      claimUrl: claimUrl,
+                      expDateStr: expDateStr,
+                      fontRegular: fontRegular,
+                      fontBold: fontBold,
+                      fontSemiBold: fontSemiBold,
+                      theme: theme,
+                      customBrandColor: customBrandColor,
+                      overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                      hasBleed: true,
+                      flyerBgImage: flyerBgImage,
+                      orgPhone: orgPhone,
+                      orgWhatsapp: orgWhatsapp,
+                      orgEmail: orgEmail,
+                      orgWebsite: orgWebsite,
+                      waIcon: waIcon,
                     ),
                   ),
+                ),
+                // Vector crop marks at 105 x 148 mm trim line
+                _buildCropMarks(
+                  trimLeft: (bleedMm + slugMm) * PdfPageFormat.mm,
+                  trimTop: (bleedMm + slugMm) * PdfPageFormat.mm,
+                  trimWidth: trimWidthMm * PdfPageFormat.mm,
+                  trimHeight: trimHeightMm * PdfPageFormat.mm,
+                  bleed: bleedMm * PdfPageFormat.mm,
+                  markLength: 2.5 * PdfPageFormat.mm,
+                  markThickness: 0.35,
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      // 105 x 148 mm exact preview format
+      final flyerFormat = PdfPageFormat(
+        trimWidthMm * PdfPageFormat.mm,
+        trimHeightMm * PdfPageFormat.mm,
+        marginAll: 0,
+      );
 
-                  // Hairline divider
-                  pw.Container(
-                    margin: const pw.EdgeInsets.symmetric(horizontal: 20),
-                    height: 0.5,
-                    color: palette.borderColor,
-                  ),
-
-                  // ZONE 3: QR panel (28%)
-                  pw.Expanded(
-                    flex: 28,
-                    child: pw.Padding(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      child: pw.Container(
-                        padding: const pw.EdgeInsets.all(8),
-                        decoration: pw.BoxDecoration(
-                          color: palette.surfaceLevel1,
-                          borderRadius: pw.BorderRadius.circular(6),
-                        ),
-                        child: pw.Row(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            // QR code
-                            pw.Container(
-                              padding: const pw.EdgeInsets.all(5),
-                              decoration: pw.BoxDecoration(
-                                color: PdfColors.white,
-                                borderRadius: pw.BorderRadius.circular(4),
-                                border: pw.Border.all(color: palette.borderColor, width: 0.5),
-                              ),
-                              child: pw.BarcodeWidget(
-                                barcode: pw.Barcode.qrCode(),
-                                data: claimUrl,
-                                width: 68,
-                                height: 68,
-                                color: PdfColors.black,
-                              ),
-                            ),
-                            pw.SizedBox(width: 10),
-                            // Instructions
-                            pw.Expanded(
-                              child: pw.Column(
-                                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                mainAxisAlignment: pw.MainAxisAlignment.center,
-                                mainAxisSize: pw.MainAxisSize.min,
-                                children: [
-                                  pw.Text(
-                                    'ATTIVA IL PASS',
-                                    style: pw.TextStyle(
-                                      font: fontBold,
-                                      fontSize: 9,
-                                      color: palette.accentColor,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                  pw.SizedBox(height: 3),
-                                  pw.Text(
-                                    'Inquadra il QR con la fotocamera per registrarti.',
-                                    style: pw.TextStyle(
-                                      font: fontRegular,
-                                      fontSize: 7.5,
-                                      color: palette.textSecondary,
-                                    ),
-                                  ),
-                                  pw.SizedBox(height: 5),
-                                  pw.Container(
-                                    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                    decoration: pw.BoxDecoration(
-                                      color: palette.surfaceLevel2,
-                                      borderRadius: pw.BorderRadius.circular(3),
-                                    ),
-                                    child: pw.Text(
-                                      expDateStr != null
-                                          ? 'Entro $expDateStr  |  Validità: ${promotion.validityDescription} dalla registrazione'
-                                          : 'Validità: ${promotion.validityDescription} dalla registrazione',
-                                      style: pw.TextStyle(
-                                        font: fontSemiBold,
-                                        fontSize: 7,
-                                        color: palette.badgeText,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // ZONE 4: Footer (12%)
-                  pw.Container(
-                    width: double.infinity,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: pw.BoxDecoration(
-                      color: palette.surfaceLevel1,
-                      borderRadius: const pw.BorderRadius.vertical(bottom: pw.Radius.circular(3.5)),
-                    ),
-                    child: pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: pw.CrossAxisAlignment.center,
-                      children: [
-                        pw.Expanded(
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            mainAxisSize: pw.MainAxisSize.min,
-                            children: [
-                              pw.Text(
-                                orgName,
-                                style: pw.TextStyle(
-                                  font: fontBold,
-                                  fontSize: 6.5,
-                                  color: palette.textPrimary,
-                                ),
-                                maxLines: 1,
-                              ),
-                              if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
-                                pw.Row(
-                                  mainAxisSize: pw.MainAxisSize.min,
-                                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                                  children: [
-                                    if (orgPhone != null && orgPhone.trim().isNotEmpty)
-                                      pw.Text(
-                                        orgPhone,
-                                        style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary),
-                                      ),
-                                    if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty) ...[
-                                      if (orgPhone != null && orgPhone.trim().isNotEmpty)
-                                        pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
-                                      _buildWhatsappSnippet(
-                                        number: orgWhatsapp,
-                                        waIcon: waIcon,
-                                        font: fontRegular,
-                                        fontSize: 5.5,
-                                        color: palette.textSecondary,
-                                      ),
-                                    ],
-                                    if (orgEmail != null && orgEmail.trim().isNotEmpty) ...[
-                                      if ((orgPhone != null && orgPhone.trim().isNotEmpty) || (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty))
-                                        pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
-                                      pw.Text(
-                                        orgEmail,
-                                        style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary),
-                                      ),
-                                    ],
-                                    if (orgWebsite != null && orgWebsite.trim().isNotEmpty) ...[
-                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary)),
-                                      pw.Text(
-                                        orgWebsite,
-                                        style: pw.TextStyle(font: fontRegular, fontSize: 5.5, color: palette.textSecondary),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                            ],
-                          ),
-                        ),
-                        pw.SizedBox(width: 6),
-                        pw.Text(
-                          'Powered by ticketto.it',
-                          style: pw.TextStyle(
-                            font: fontBold,
-                            fontSize: 6.5,
-                            color: palette.accentColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
+      pdf.addPage(
+        pw.Page(
+          pageFormat: flyerFormat,
+          build: (context) {
+            return _buildFlyerA6Content(
+              promotion: promotion,
+              orgName: orgName,
+              orgLogoImage: orgLogoImage,
+              partnerLogoImage: partnerLogoImage,
+              claimUrl: claimUrl,
+              expDateStr: expDateStr,
+              fontRegular: fontRegular,
+              fontBold: fontBold,
+              fontSemiBold: fontSemiBold,
+              theme: theme,
+              customBrandColor: customBrandColor,
+              overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+              hasBleed: false,
+              flyerBgImage: flyerBgImage,
+              orgPhone: orgPhone,
+              orgWhatsapp: orgWhatsapp,
+              orgEmail: orgEmail,
+              orgWebsite: orgWebsite,
+              waIcon: waIcon,
+            );
+          },
+        ),
+      );
+    }
 
     return pdf.save();
   }
@@ -2185,6 +2481,12 @@ class PromotionPdfService {
                   ),
                 ),
 
+                // Hairline vertical divider
+                pw.Container(
+                  width: 0.5,
+                  color: palette.dividerColor,
+                ),
+
                 // Right section (35%): QR stub
                 pw.Expanded(
                   flex: 35,
@@ -2236,44 +2538,6 @@ class PromotionPdfService {
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Ticket notches at the stub boundary
-          pw.Positioned(
-            top: -5,
-            right: 0,
-            child: pw.SizedBox(
-              width: 70, // ~35% of cell width
-              child: pw.Align(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const pw.BoxDecoration(
-                    color: PdfColors.white,
-                    shape: pw.BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          pw.Positioned(
-            bottom: -5,
-            right: 0,
-            child: pw.SizedBox(
-              width: 70,
-              child: pw.Align(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const pw.BoxDecoration(
-                    color: PdfColors.white,
-                    shape: pw.BoxShape.circle,
-                  ),
-                ),
-              ),
             ),
           ),
         ],
@@ -2375,6 +2639,7 @@ class PromotionPdfService {
     String? orgWhatsapp,
     String? orgWebsite,
     String? orgAddress,
+    bool isPrintReady = false,
   }) async {
     final pdfBytes = await generateDocument(
       promotion: promotion,
@@ -2392,11 +2657,16 @@ class PromotionPdfService {
       orgWhatsapp: orgWhatsapp,
       orgWebsite: orgWebsite,
       orgAddress: orgAddress,
+      isPrintReady: isPrintReady,
     );
+
+    final modeSuffix = format == CouponPrintFormat.a4Grid
+        ? ''
+        : (isPrintReady ? '_printReady' : '_preview');
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat _) async => pdfBytes,
-      name: 'Coupon_${promotion.codePrefix}_${format.name}_${theme.name}.pdf',
+      name: 'Coupon_${promotion.codePrefix}_${format.name}${modeSuffix}_${theme.name}.pdf',
     );
   }
 

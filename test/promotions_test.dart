@@ -305,11 +305,9 @@ void main() {
     });
 
     test('CouponPrintFormat values and dimensions', () {
-      expect(CouponPrintFormat.values.length, equals(5));
+      expect(CouponPrintFormat.values.length, equals(4));
       expect(CouponPrintFormat.deskStandA4.widthMm, equals(210));
       expect(CouponPrintFormat.deskStandA4.heightMm, equals(297));
-      expect(CouponPrintFormat.businessCardPrintReady.widthMm, equals(85));
-      expect(CouponPrintFormat.businessCardPrintReady.heightMm, equals(55));
       expect(CouponPrintFormat.businessCard.widthMm, equals(85));
       expect(CouponPrintFormat.businessCard.heightMm, equals(55));
       expect(CouponPrintFormat.flyerA6.widthMm, equals(105));
@@ -348,6 +346,7 @@ void main() {
         partnerLogo: promoWithDarkBg.partnerLogoUrl,
         format: CouponPrintFormat.deskStandA4,
         overridePartnerLogoDarkBg: true,
+        isPrintReady: true,
       );
       expect(pdfBytes.isNotEmpty, isTrue);
 
@@ -359,11 +358,12 @@ void main() {
         partnerLogo: promoWithDarkBg.partnerLogoUrl,
         format: CouponPrintFormat.businessCard,
         overridePartnerLogoDarkBg: true,
+        isPrintReady: true,
       );
       expect(cardBytes.isNotEmpty, isTrue);
     });
 
-    test('CouponVisualTheme themes and multi-format PDF generation', () async {
+    test('CouponVisualTheme themes and multi-format PDF generation (Print-Ready & Anteprima)', () async {
       TestWidgetsFlutterBinding.ensureInitialized();
 
       expect(CouponVisualTheme.values.length, equals(9));
@@ -388,37 +388,70 @@ void main() {
       );
 
       for (final theme in CouponVisualTheme.values) {
-        // Test businessCardPrintReady format for each theme
-        final cardPrintReadyDoc = await PromotionPdfService.generateDocument(
-          promotion: promo,
-          vouchers: [],
-          orgName: 'Devero SPA',
-          format: CouponPrintFormat.businessCardPrintReady,
-          theme: theme,
-        );
-        expect(cardPrintReadyDoc.isNotEmpty, isTrue, reason: 'Business card print-ready for ${theme.name} should generate valid bytes');
-
-        // Test businessCard format for each theme
-        final cardDoc = await PromotionPdfService.generateDocument(
+        // Test businessCard Print-Ready and Anteprima
+        final cardPrintReady = await PromotionPdfService.generateDocument(
           promotion: promo,
           vouchers: [],
           orgName: 'Devero SPA',
           format: CouponPrintFormat.businessCard,
           theme: theme,
+          isPrintReady: true,
         );
-        expect(cardDoc.isNotEmpty, isTrue, reason: 'Business card for ${theme.name} should generate valid bytes');
+        expect(cardPrintReady.isNotEmpty, isTrue);
 
-        // Test flyerA6 format for each theme
-        final flyerDoc = await PromotionPdfService.generateDocument(
+        final cardPreview = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.businessCard,
+          theme: theme,
+          isPrintReady: false,
+        );
+        expect(cardPreview.isNotEmpty, isTrue);
+
+        // Test flyerA6 Print-Ready and Anteprima
+        final flyerPrintReady = await PromotionPdfService.generateDocument(
           promotion: promo,
           vouchers: [],
           orgName: 'Devero SPA',
           format: CouponPrintFormat.flyerA6,
           theme: theme,
+          isPrintReady: true,
         );
-        expect(flyerDoc.isNotEmpty, isTrue, reason: 'Flyer A6 for ${theme.name} should generate valid bytes');
+        expect(flyerPrintReady.isNotEmpty, isTrue);
 
-        // Test a4Grid format for each theme
+        final flyerPreview = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.flyerA6,
+          theme: theme,
+          isPrintReady: false,
+        );
+        expect(flyerPreview.isNotEmpty, isTrue);
+
+        // Test deskStandA4 Print-Ready and Anteprima
+        final posterPrintReady = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.deskStandA4,
+          theme: theme,
+          isPrintReady: true,
+        );
+        expect(posterPrintReady.isNotEmpty, isTrue);
+
+        final posterPreview = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.deskStandA4,
+          theme: theme,
+          isPrintReady: false,
+        );
+        expect(posterPreview.isNotEmpty, isTrue);
+
+        // Test a4Grid format
         final gridDoc = await PromotionPdfService.generateDocument(
           promotion: promo,
           vouchers: [],
@@ -426,17 +459,7 @@ void main() {
           format: CouponPrintFormat.a4Grid,
           theme: theme,
         );
-        expect(gridDoc.isNotEmpty, isTrue, reason: 'A4 Grid for ${theme.name} should generate valid bytes');
-
-        // Test deskStandA4 format for each theme
-        final posterDoc = await PromotionPdfService.generateDocument(
-          promotion: promo,
-          vouchers: [],
-          orgName: 'Devero SPA',
-          format: CouponPrintFormat.deskStandA4,
-          theme: theme,
-        );
-        expect(posterDoc.isNotEmpty, isTrue, reason: 'Desk stand A4 for ${theme.name} should generate valid bytes');
+        expect(gridDoc.isNotEmpty, isTrue);
       }
     });
 
@@ -462,6 +485,7 @@ void main() {
           customBrandColor: '#00AAA7',
           orgPhone: '02 95339238',
           orgWhatsapp: '331 9986088',
+          isPrintReady: true,
         );
         expect(doc.isNotEmpty, isTrue, reason: 'Format ${format.name} with #00AAA7 brand color should generate bytes');
       }

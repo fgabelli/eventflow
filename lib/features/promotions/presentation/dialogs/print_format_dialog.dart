@@ -22,6 +22,7 @@ class PrintFormatDialog extends StatefulWidget {
 class _PrintFormatDialogState extends State<PrintFormatDialog> {
   CouponPrintFormat _selectedFormat = CouponPrintFormat.deskStandA4;
   CouponVisualTheme _selectedTheme = CouponVisualTheme.luxurySpa;
+  bool _isPrintReady = true;
   bool _isGenerating = false;
   late bool _partnerLogoDarkBg;
   late bool _useBrandColor;
@@ -57,6 +58,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
         orgLogo: widget.org.logo,
         partnerLogo: widget.promo.partnerLogoUrl,
         format: _selectedFormat,
+        isPrintReady: _selectedFormat == CouponPrintFormat.a4Grid ? false : _isPrintReady,
         overridePartnerLogoDarkBg: _partnerLogoDarkBg,
         theme: _selectedTheme,
         customBrandColor: _useBrandColor ? _brandColorHex : null,
@@ -180,7 +182,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                                             color: isSelected ? AppColors.primary : AppColors.textPrimary,
                                           ),
                                         ),
-                                        if (format == CouponPrintFormat.businessCardPrintReady) ...[
+                                        if (_isPrintReady && format != CouponPrintFormat.a4Grid) ...[
                                           const SizedBox(width: 8),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -190,7 +192,7 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                                               border: Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 0.8),
                                             ),
                                             child: const Text(
-                                              'TIPOGRAFIA',
+                                              'PRINT READY',
                                               style: TextStyle(
                                                 fontSize: 9,
                                                 fontWeight: FontWeight.w800,
@@ -215,6 +217,98 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                         ),
                       );
                     }),
+
+                    if (_selectedFormat != CouponPrintFormat.a4Grid) ...[
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _isPrintReady ? AppColors.primary.withValues(alpha: 0.06) : AppColors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _isPrintReady ? AppColors.primary : AppColors.border,
+                            width: _isPrintReady ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _isPrintReady ? Icons.print_rounded : Icons.remove_red_eye_outlined,
+                              color: _isPrintReady ? AppColors.primary : AppColors.textSecondary,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        _isPrintReady ? 'Pronto per Tipografia (Print-Ready)' : 'Anteprima Visiva / Ufficio',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12.5,
+                                          color: _isPrintReady ? AppColors.primary : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      if (_isPrintReady) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'CONSIGLIATO',
+                                            style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _isPrintReady
+                                        ? 'Abbondanze di 2mm, crocini di taglio vettoriali e margini di sicurezza. Ideale per tipografie e service online (Pixartprinting, ecc.).'
+                                        : 'Taglio netto a formato finito senza crocini. Ideale a video, WhatsApp/email o per espositori plexiglass.',
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch(
+                              value: _isPrintReady,
+                              activeThumbColor: AppColors.primary,
+                              onChanged: (val) => setState(() => _isPrintReady = val),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, bottom: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.info_outline, color: AppColors.textSecondary, size: 18),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Il foglio A4 a griglia è già ottimizzato per la stampa immediata da stampante d\'ufficio con linee guida per il ritaglio manuale.',
+                                style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 14),
                     const Text(
