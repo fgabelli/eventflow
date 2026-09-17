@@ -1052,7 +1052,7 @@ exports.stripeWebhook = onRequest(
                 for (const att of allAttendees) {
                   if (!att.email) continue;
                   const email = att.email.toLowerCase();
-                  const docId = `${eventId}_${Math.abs(hashCode(email))}`;
+                  const docId = db.collection("attendees").doc().id;
                   const qrCode = uuidv4();
 
                   await db.collection("attendees").doc(docId).set({
@@ -1088,7 +1088,7 @@ exports.stripeWebhook = onRequest(
 
             if (eventId && attendeeData.email) {
               const email = attendeeData.email.toLowerCase();
-              const docId = `${eventId}_${Math.abs(hashCode(email))}`;
+              const docId = db.collection("attendees").doc().id;
               const qrCode = uuidv4();
 
               // Create attendee

@@ -1367,8 +1367,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
           }
 
           final email = a['email']!;
-          final docId = '${_selectedEventId}_${email.hashCode.abs()}';
-          final docRef = db.collection(Collections.attendees).doc(docId);
+          final docRef = db.collection(Collections.attendees).doc();
           
           final qrCode = const Uuid().v4();
           batch.set(docRef, {

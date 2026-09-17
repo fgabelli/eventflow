@@ -120,26 +120,15 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       }
 
       final db = FirebaseFirestore.instance;
+      final batch = db.batch();
 
-      // Register primary attendee
+      // Register primary attendee with auto-generated ID (guaranteed unique)
       final email = _emailCtrl.text.trim().toLowerCase();
-      final docId = '${widget.eventId}_${email.hashCode.abs()}';
-      final docRef = db.collection(Collections.attendees).doc(docId);
-
-      try {
-        final existingDoc = await docRef.get();
-        if (existingDoc.exists) {
-          setState(() {
-            _registrationError = AppLocalizations.of(_localizedCtx ?? context)['already_registered'];
-            _isSubmitting = false;
-          });
-          return;
-        }
-      } catch (_) {}
-
+      final primaryDocRef = db.collection(Collections.attendees).doc();
       final qrCode = const Uuid().v4();
       _qrCodeData = qrCode;
-      await docRef.set({
+
+      batch.set(primaryDocRef, {
         'eventId': widget.eventId,
         'orgId': event.orgId,
         'firstName': _firstNameCtrl.text.trim(),
@@ -156,31 +145,34 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
         'registeredAt': Timestamp.now(),
       });
 
-      // Register extra attendees
+      // Register extra attendees in the same atomic batch
       for (final extra in _extraAttendees) {
-        final extraEmail = extra.emailCtrl.text.trim().toLowerCase();
-        if (extraEmail.isEmpty) continue;
-        final extraDocId = '${widget.eventId}_${extraEmail.hashCode.abs()}';
+        final extraEmailRaw = extra.emailCtrl.text.trim().toLowerCase();
+        // If extra attendee email is empty, default to primary attendee email so tickets are delivered
+        final extraEmail = extraEmailRaw.isNotEmpty ? extraEmailRaw : email;
+        final extraDocRef = db.collection(Collections.attendees).doc();
         final extraQr = const Uuid().v4();
-        try {
-          await db.collection(Collections.attendees).doc(extraDocId).set({
-            'eventId': widget.eventId,
-            'orgId': event.orgId,
-            'firstName': extra.firstNameCtrl.text.trim(),
-            'lastName': extra.lastNameCtrl.text.trim(),
-            'email': extraEmail,
-            'phone': null,
-            'category': 'Standard',
-            'status': RegistrationStatus.confirmed.name,
-            'checkInStatus': CheckInStatus.notCheckedIn.name,
-            'checkInTime': null,
-            'qrCode': extraQr,
-            'timeSlotId': _selectedSlotId,
-            'customData': _customFieldValues,
-            'registeredAt': Timestamp.now(),
-          });
-        } catch (_) {}
+
+        batch.set(extraDocRef, {
+          'eventId': widget.eventId,
+          'orgId': event.orgId,
+          'firstName': extra.firstNameCtrl.text.trim(),
+          'lastName': extra.lastNameCtrl.text.trim(),
+          'email': extraEmail,
+          'phone': null,
+          'category': 'Standard',
+          'status': RegistrationStatus.confirmed.name,
+          'checkInStatus': CheckInStatus.notCheckedIn.name,
+          'checkInTime': null,
+          'qrCode': extraQr,
+          'timeSlotId': _selectedSlotId,
+          'customData': _customFieldValues,
+          'registeredAt': Timestamp.now(),
+        });
       }
+
+      // Commit all attendees atomically (all succeed or none)
+      await batch.commit();
 
       // Track successful registration
       AnalyticsService.instance.logEvent('registration_completed', params: {
@@ -224,11 +216,14 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
           'email': _emailCtrl.text.trim().toLowerCase(),
           'phone': _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
         },
-        ..._extraAttendees.map((a) => {
-          'firstName': a.firstNameCtrl.text.trim(),
-          'lastName': a.lastNameCtrl.text.trim(),
-          'email': a.emailCtrl.text.trim().toLowerCase(),
-          'phone': null,
+        ..._extraAttendees.map((a) {
+          final aEmail = a.emailCtrl.text.trim().toLowerCase();
+          return {
+            'firstName': a.firstNameCtrl.text.trim(),
+            'lastName': a.lastNameCtrl.text.trim(),
+            'email': aEmail.isNotEmpty ? aEmail : _emailCtrl.text.trim().toLowerCase(),
+            'phone': null,
+          };
         }),
       ];
 
@@ -787,10 +782,13 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
                                 const SizedBox(height: 8),
                                 TextFormField(
                                   controller: extra.emailCtrl,
-                                  decoration: InputDecoration(labelText: '${AppLocalizations.of(_localizedCtx ?? context)['email_reg']}', isDense: true),
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(_localizedCtx ?? context)['email_companion_reg'],
+                                    isDense: true,
+                                  ),
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return AppLocalizations.of(_localizedCtx ?? context)['required_field'];
+                                    if (v == null || v.trim().isEmpty) return null;
                                     if (!v.contains('@') || !v.contains('.')) return AppLocalizations.of(_localizedCtx ?? context)['invalid_email'];
                                     return null;
                                   },
