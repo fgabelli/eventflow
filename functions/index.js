@@ -939,6 +939,108 @@ exports.testEmail = onRequest(
   }
 );
 
+// ─── HTTP: Resend Attendee Confirmation ──────────────────────────
+exports.resendAttendeeConfirmation = onRequest(
+  {
+    cors: true,
+  },
+  async (req, res) => {
+    const { attendeeId } = req.query;
+    if (!attendeeId) {
+      res.status(400).json({ error: "Missing attendeeId query parameter" });
+      return;
+    }
+
+    try {
+      const attendeeDoc = await db.collection("attendees").doc(attendeeId).get();
+      if (!attendeeDoc.exists) {
+        res.status(404).json({ error: "Attendee not found" });
+        return;
+      }
+      const attendee = attendeeDoc.data();
+
+      // Fetch event data
+      const eventDoc = await db.collection("events").doc(attendee.eventId).get();
+      if (!eventDoc.exists) {
+        res.status(404).json({ error: "Event not found" });
+        return;
+      }
+      const eventData = eventDoc.data();
+      const lang = getEventLang(eventData);
+
+      // Fetch org data
+      let orgData = null;
+      if (attendee.orgId) {
+        const orgDoc = await db.collection("organizations").doc(attendee.orgId).get();
+        if (orgDoc.exists) orgData = orgDoc.data();
+      }
+
+      const orgPlan = orgData?.plan || "free";
+      const isPaidPlan = orgPlan !== "free";
+
+      // Find time slot if applicable
+      let timeSlot = null;
+      if (attendee.timeSlotId && eventData.timeSlots) {
+        timeSlot = eventData.timeSlots.find((s) => s.id === attendee.timeSlotId);
+      }
+
+      // Generate Apple Wallet pass (Pro/Business only)
+      let applePassBuffer = null;
+      if (isPaidPlan) {
+        try {
+          applePassBuffer = await generateApplePass(attendee, eventData, orgData, attendeeId, lang);
+        } catch (walletErr) {
+          console.warn("⚠️ Apple Wallet pass generation failed (non-blocking):", walletErr.message);
+        }
+      }
+
+      const hasApplePass = applePassBuffer !== null;
+      const html = buildConfirmationEmail(attendee, eventData, orgData, timeSlot, hasApplePass, null, lang);
+
+      const resend = new Resend(RESEND_API_KEY);
+      const emailPayload = {
+        from: EMAIL_FROM,
+        to: [attendee.email],
+        subject: t(lang, 'email', 'confirmationSubject', { eventTitle: eventData.title }),
+        html: html,
+      };
+
+      const organizerEmail = await getOrganizerEmail(attendee.orgId, orgData);
+      if (organizerEmail) {
+        emailPayload.reply_to = [organizerEmail];
+      }
+
+      if (applePassBuffer) {
+        emailPayload.attachments = [{
+          filename: t(lang, 'email', 'passFilename'),
+          content: applePassBuffer.toString("base64"),
+          content_type: "application/vnd.apple.pkpass",
+        }];
+      }
+
+      const { data, error } = await resend.emails.send(emailPayload);
+      if (error) {
+        throw new Error(JSON.stringify(error));
+      }
+
+      const updateData = {
+        emailSent: true,
+        emailSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        emailId: data.id,
+        emailError: admin.firestore.FieldValue.delete(),
+      };
+      if (applePassBuffer) updateData.hasApplePass = true;
+      await db.collection("attendees").doc(attendeeId).update(updateData);
+
+      console.log(`✅ Confirmation email resent to ${attendee.email} for "${eventData.title}" | Resend ID: ${data.id}`);
+      res.json({ success: true, message: `Email sent to ${attendee.email}`, id: data.id });
+    } catch (error) {
+      console.error("Error resending confirmation:", error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+);
+
 // ═══════════════════════════════════════════════════════════════
 // ─── STRIPE SUBSCRIPTION MANAGEMENT ──────────────────────────
 // ═══════════════════════════════════════════════════════════════
