@@ -41,15 +41,49 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   String? _lastScannedCode;
   CheckInResult? _scanResult;
 
+  Stream<QuerySnapshot>? _eventsStream;
+  String? _cachedEventsOrgId;
+
+  Stream<QuerySnapshot>? _attendeesStream;
+  String? _cachedEventId;
+  String? _cachedOrgId;
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+  void _syncStreams(String? orgId) {
+    if (_cachedEventsOrgId != orgId) {
+      _cachedEventsOrgId = orgId;
+      _eventsStream = orgId != null
+          ? FirebaseFirestore.instance
+              .collection(Collections.events)
+              .where('orgId', isEqualTo: orgId)
+              .where('status', isEqualTo: EventStatus.published.name)
+              .orderBy('date')
+              .snapshots()
+          : null;
+    }
+
+    if (_cachedEventId != _selectedEventId || _cachedOrgId != orgId) {
+      _cachedEventId = _selectedEventId;
+      _cachedOrgId = orgId;
+      _attendeesStream = (orgId != null && _selectedEventId != null)
+          ? FirebaseFirestore.instance
+              .collection(Collections.attendees)
+              .where('eventId', isEqualTo: _selectedEventId)
+              .where('orgId', isEqualTo: orgId)
+              .snapshots()
+          : null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final org = ref.watch(currentOrgProvider).value;
+    _syncStreams(org?.id);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -141,19 +175,16 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     if (org == null) return const SizedBox.shrink();
 
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection(Collections.events)
-          .where('orgId', isEqualTo: org.id)
-          .where('status', isEqualTo: EventStatus.published.name)
-          .orderBy('date')
-          .snapshots(),
+      stream: _eventsStream,
       builder: (context, snapshot) {
         final events = snapshot.data?.docs
             .map((d) => EventModel.fromFirestore(d))
             .toList() ?? [];
 
+        final currentVal = events.any((e) => e.id == _selectedEventId) ? _selectedEventId : null;
+
         return DropdownButtonFormField<String>(
-          value: _selectedEventId,
+          value: currentVal,
           decoration: InputDecoration(
             labelText: AppLocalizations.of(context)['select_event_label'],
             prefixIcon: const Icon(Icons.event),
@@ -311,6 +342,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
   Future<void> _handleQrScan(String qrCode) async {
     final l = AppLocalizations.of(context);
+    final org = ref.read(currentOrgProvider).value;
     if (_selectedEventId == null) {
       setState(() {
         _scanResult = CheckInResult(
@@ -324,12 +356,14 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     }
 
     try {
-      final query = await FirebaseFirestore.instance
+      var queryRef = FirebaseFirestore.instance
           .collection(Collections.attendees)
           .where('eventId', isEqualTo: _selectedEventId)
-          .where('qrCode', isEqualTo: qrCode)
-          .limit(1)
-          .get();
+          .where('qrCode', isEqualTo: qrCode);
+      if (org != null) {
+        queryRef = queryRef.where('orgId', isEqualTo: org.id);
+      }
+      final query = await queryRef.limit(1).get();
 
       if (query.docs.isEmpty) {
         setState(() {
@@ -408,29 +442,58 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   Widget _buildAttendeesList() {
     final searchQuery = _searchController.text.toLowerCase();
 
+    if (_attendeesStream == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection(Collections.attendees)
-          .where('eventId', isEqualTo: _selectedEventId)
-          .orderBy('lastName')
-          .snapshots(),
+      stream: _attendeesStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        var attendees = snapshot.data?.docs
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                  const SizedBox(height: 12),
+                  Text(
+                    '${AppLocalizations.of(context)['error_generic_short']}: ${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: AppColors.error),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        var allAttendees = snapshot.data?.docs
             .map((d) => Attendee.fromFirestore(d))
             .toList() ?? [];
 
+        // Sort alphabetically by lastName, then firstName
+        allAttendees.sort((a, b) {
+          final cmp = a.lastName.toLowerCase().compareTo(b.lastName.toLowerCase());
+          if (cmp != 0) return cmp;
+          return a.firstName.toLowerCase().compareTo(b.firstName.toLowerCase());
+        });
+
+        final totalCount = allAttendees.length;
+        final totalCheckedIn = allAttendees.where((a) => a.checkInStatus == CheckInStatus.checkedIn).length;
+
+        var displayedAttendees = allAttendees;
         if (searchQuery.isNotEmpty) {
-          attendees = attendees.where((a) =>
+          displayedAttendees = allAttendees.where((a) =>
             a.fullName.toLowerCase().contains(searchQuery) ||
             a.email.toLowerCase().contains(searchQuery)
           ).toList();
         }
-
-        final checkedIn = attendees.where((a) => a.checkInStatus == CheckInStatus.checkedIn).length;
 
         return Column(
           children: [
@@ -446,9 +509,9 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _CountStat(label: AppLocalizations.of(context)['total'], count: attendees.length, color: AppColors.primary),
-                  _CountStat(label: AppLocalizations.of(context)['checked_in'], count: checkedIn, color: AppColors.success),
-                  _CountStat(label: AppLocalizations.of(context)['remaining'], count: attendees.length - checkedIn, color: AppColors.warning),
+                  _CountStat(label: AppLocalizations.of(context)['total'], count: totalCount, color: AppColors.primary),
+                  _CountStat(label: AppLocalizations.of(context)['checked_in'], count: totalCheckedIn, color: AppColors.success),
+                  _CountStat(label: AppLocalizations.of(context)['remaining'], count: totalCount - totalCheckedIn, color: AppColors.warning),
                 ],
               ),
             ),
@@ -456,16 +519,16 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
             // List
             Expanded(
-              child: attendees.isEmpty
+              child: displayedAttendees.isEmpty
                   ? Center(
                       child: Text(AppLocalizations.of(context)['no_attendees_found'], style: Theme.of(context).textTheme.bodyMedium),
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: attendees.length,
+                      itemCount: displayedAttendees.length,
                       itemBuilder: (context, index) => _AttendeeCheckInTile(
-                        attendee: attendees[index],
-                        onCheckIn: () => _manualCheckIn(attendees[index]),
+                        attendee: displayedAttendees[index],
+                        onCheckIn: () => _manualCheckIn(displayedAttendees[index]),
                       ),
                     ),
             ),
@@ -496,23 +559,34 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
       return;
     }
     
-    await FirebaseFirestore.instance
-        .collection(Collections.attendees)
-        .doc(attendee.id)
-        .update({
-      'checkInStatus': CheckInStatus.checkedIn.name,
-      'checkInTime': Timestamp.now(),
-    });
+    try {
+      await FirebaseFirestore.instance
+          .collection(Collections.attendees)
+          .doc(attendee.id)
+          .update({
+        'checkInStatus': CheckInStatus.checkedIn.name,
+        'checkInTime': Timestamp.now(),
+      });
 
-    setState(() {
-      _scanResult = CheckInResult(
-        type: CheckInResultType.success,
-        title: l['checkin_success_title'],
-        attendeeName: attendee.fullName,
-        subtitle: l['checkin_success_subtitle'],
-        icon: Icons.check_circle_rounded,
-      );
-    });
+      setState(() {
+        _scanResult = CheckInResult(
+          type: CheckInResultType.success,
+          title: l['checkin_success_title'],
+          attendeeName: attendee.fullName,
+          subtitle: l['checkin_success_subtitle'],
+          icon: Icons.check_circle_rounded,
+        );
+      });
+    } catch (e) {
+      setState(() {
+        _scanResult = CheckInResult(
+          type: CheckInResultType.error,
+          title: l['error_generic_short'],
+          subtitle: '$e',
+          icon: Icons.error_outline_rounded,
+        );
+      });
+    }
   }
 }
 
@@ -574,7 +648,9 @@ class _AttendeeCheckInTile extends StatelessWidget {
             child: isCheckedIn
                 ? const Icon(Icons.check, color: AppColors.success, size: 20)
                 : Text(
-                    attendee.firstName[0].toUpperCase(),
+                    attendee.firstName.isNotEmpty
+                        ? attendee.firstName[0].toUpperCase()
+                        : (attendee.lastName.isNotEmpty ? attendee.lastName[0].toUpperCase() : '?'),
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
