@@ -10,7 +10,8 @@ import 'package:eventflow/core/constants/app_constants.dart';
 
 enum CouponPrintFormat {
   deskStandA4('Locandina da Banco A4 (210x297 mm)', 'Cartello verticale con grande QR code per desk ed espositori in plexiglass', 210, 297),
-  businessCard('Biglietto da Visita (85x55 mm)', 'File master per tipografia (Pixartprinting, Vistaprint, ecc.) con QR unico', 85, 55),
+  businessCardPrintReady('Biglietto Tipografia — Print Ready (85x55 mm)', 'File master con abbondanze di 2mm e crocini di taglio per tipografie (Pixartprinting, ecc.)', 85, 55),
+  businessCard('Biglietto da Visita — Anteprima (85x55 mm)', 'Taglio netto a formato finito per visualizzazione o stampa diretta da ufficio', 85, 55),
   flyerA6('Flyer A6 (105x148 mm)', 'Ideale da banco reception ed espositori partner', 105, 148),
   a4Grid('Foglio A4 a griglia (6 coupon)', 'Ideale per stampa immediata in ufficio con linee di ritaglio tratteggiate', 210, 297);
 
@@ -600,6 +601,24 @@ class PromotionPdfService {
           orgWebsite: orgWebsite,
           orgAddress: orgAddress,
         );
+      case CouponPrintFormat.businessCardPrintReady:
+        return generateBusinessCards(
+          promotion: promotion,
+          vouchers: vouchers,
+          orgName: orgName,
+          orgLogo: orgLogo,
+          partnerLogo: partnerLogo,
+          baseUrl: baseUrl,
+          overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+          theme: theme,
+          customBrandColor: customBrandColor,
+          orgEmail: orgEmail,
+          orgPhone: orgPhone,
+          orgWhatsapp: orgWhatsapp,
+          orgWebsite: orgWebsite,
+          orgAddress: orgAddress,
+          isPrintReady: true,
+        );
       case CouponPrintFormat.businessCard:
         return generateBusinessCards(
           promotion: promotion,
@@ -615,6 +634,8 @@ class PromotionPdfService {
           orgPhone: orgPhone,
           orgWhatsapp: orgWhatsapp,
           orgWebsite: orgWebsite,
+          orgAddress: orgAddress,
+          isPrintReady: false,
         );
       case CouponPrintFormat.flyerA6:
         return generateFlyersA6(
@@ -1050,8 +1071,83 @@ class PromotionPdfService {
 
     return pdf.save();
   }
-  /// Reusable Split-Card Widget: brand spine + ticket notch + clean QR stub.
-  /// Used for standard business card (85x55mm). Min font: 6.5pt.
+  /// Draws 8 standard pre-press vector crop marks (crocini di taglio) at 0.35 pt thickness.
+  /// Marks start at the bleed boundary and extend outward into the slug margin,
+  /// perfectly aligned with the 85x55 mm trim lines.
+  static pw.Widget _buildCropMarks({
+    required double trimLeft,
+    required double trimTop,
+    required double trimWidth,
+    required double trimHeight,
+    required double bleed,
+    required double markLength,
+    double markThickness = 0.35,
+  }) {
+    final x0 = trimLeft;
+    final y0 = trimTop;
+    final x1 = trimLeft + trimWidth;
+    final y1 = trimTop + trimHeight;
+
+    final markColor = PdfColors.black;
+
+    return pw.Stack(
+      children: [
+        // Top-Left corner
+        pw.Positioned(
+          left: x0,
+          top: y0 - bleed - markLength,
+          child: pw.Container(width: markThickness, height: markLength, color: markColor),
+        ),
+        pw.Positioned(
+          left: x0 - bleed - markLength,
+          top: y0,
+          child: pw.Container(width: markLength, height: markThickness, color: markColor),
+        ),
+
+        // Top-Right corner
+        pw.Positioned(
+          left: x1 - markThickness,
+          top: y0 - bleed - markLength,
+          child: pw.Container(width: markThickness, height: markLength, color: markColor),
+        ),
+        pw.Positioned(
+          left: x1 + bleed,
+          top: y0,
+          child: pw.Container(width: markLength, height: markThickness, color: markColor),
+        ),
+
+        // Bottom-Left corner
+        pw.Positioned(
+          left: x0,
+          top: y1 + bleed,
+          child: pw.Container(width: markThickness, height: markLength, color: markColor),
+        ),
+        pw.Positioned(
+          left: x0 - bleed - markLength,
+          top: y1 - markThickness,
+          child: pw.Container(width: markLength, height: markThickness, color: markColor),
+        ),
+
+        // Bottom-Right corner
+        pw.Positioned(
+          left: x1 - markThickness,
+          top: y1 + bleed,
+          child: pw.Container(width: markThickness, height: markLength, color: markColor),
+        ),
+        pw.Positioned(
+          left: x1 + bleed,
+          top: y1 - markThickness,
+          child: pw.Container(width: markLength, height: markThickness, color: markColor),
+        ),
+      ],
+    );
+  }
+
+  /// Reusable Split-Card Widget: brand spine + clean QR stub.
+  /// Used for standard European business card (85x55mm).
+  /// When [hasBleed] is true (Tipografia Print-Ready), the card canvas is 89x59mm (+2mm bleed per lato),
+  /// the spine is 6mm (4mm visible + 2mm bleed), and content is safely padded by 6mm (2mm bleed + 4mm safe area).
+  /// When [hasBleed] is false (Anteprima Visiva), card canvas is 85x55mm, spine is 4mm, safe area is 4mm.
   static pw.Widget _buildSplitBusinessCard({
     required PromotionModel promotion,
     required String orgName,
@@ -1066,17 +1162,22 @@ class PromotionPdfService {
     String? customBrandColor,
     bool? overridePartnerLogoDarkBg,
     bool isGridItem = false,
+    bool hasBleed = false,
     pw.ImageProvider? ticketBgImage,
     String? orgPhone,
     String? orgWhatsapp,
     String? orgEmail,
     String? orgWebsite,
+    String? orgAddress,
     pw.ImageProvider? waIcon,
   }) {
     final palette = _ThemePalette.fromTheme(theme, customBrandColor: customBrandColor);
     final isDark = theme.isDark;
-    // Page background for ticket notch cutouts
-    final pageBg = isGridItem ? PdfColors.white : (isDark ? palette.surfaceLevel0 : PdfColors.white);
+
+    // Millimeter constants for typography precision
+    final spineWidth = hasBleed ? 6.0 * PdfPageFormat.mm : 4.0 * PdfPageFormat.mm;
+    final safeAreaPadding = hasBleed ? 6.0 * PdfPageFormat.mm : 4.0 * PdfPageFormat.mm;
+    final solidTextColor = isDark ? PdfColors.white : const PdfColor.fromInt(0xFF1E293B);
 
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -1101,9 +1202,9 @@ class PromotionPdfService {
             child: pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                // Brand spine (accent color bar on left edge)
+                // Brand spine (accent color bar on left edge, min 4mm visible + 2mm bleed)
                 pw.Container(
-                  width: 3,
+                  width: spineWidth,
                   color: palette.accentColor,
                 ),
 
@@ -1111,12 +1212,17 @@ class PromotionPdfService {
                 pw.Expanded(
                   flex: 62,
                   child: pw.Padding(
-                    padding: const pw.EdgeInsets.fromLTRB(7, 5, 4, 5),
+                    padding: pw.EdgeInsets.fromLTRB(
+                      4.0 * PdfPageFormat.mm, // Safe margin after spine
+                      safeAreaPadding,        // Safe margin from top
+                      3.0 * PdfPageFormat.mm, // Right margin before divider
+                      safeAreaPadding,        // Safe margin from bottom
+                    ),
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                       children: [
-                        // Header: logo + partner
+                        // Header: logo + partner (height 22pt ≈ 7.8mm for digital printing clarity)
                         _buildHeaderLogos(
                           orgLogoImage: orgLogoImage,
                           partnerLogoImage: partnerLogoImage,
@@ -1124,14 +1230,14 @@ class PromotionPdfService {
                           promotion: promotion,
                           fontBold: fontBold,
                           fontSemiBold: fontSemiBold,
-                          logoHeight: 12,
+                          logoHeight: 22,
                           overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
                           textLightColor: isDark ? PdfColors.white : null,
                         ),
                         // Occasion tag if present
                         if (theme.occasionTag != null)
                           pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                             decoration: pw.BoxDecoration(
                               color: palette.surfaceLevel2,
                               borderRadius: pw.BorderRadius.circular(2),
@@ -1141,7 +1247,7 @@ class PromotionPdfService {
                               theme.occasionTag!,
                               style: pw.TextStyle(
                                 font: fontBold,
-                                fontSize: 4.8,
+                                fontSize: 5.5,
                                 color: palette.badgeText,
                                 letterSpacing: 0.8,
                               ),
@@ -1158,13 +1264,13 @@ class PromotionPdfService {
                           ),
                           maxLines: 2,
                         ),
-                        // Footer: code + validity
+                        // Footer: code + validity (solid colors, >= 6.0pt)
                         pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           mainAxisSize: pw.MainAxisSize.min,
                           children: [
                             pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                               decoration: pw.BoxDecoration(
                                 color: palette.codeBg,
                                 borderRadius: pw.BorderRadius.circular(2),
@@ -1173,15 +1279,15 @@ class PromotionPdfService {
                                 'COD: ${promotion.codePrefix}',
                                 style: pw.TextStyle(
                                   font: fontBold,
-                                  fontSize: 6.8,
+                                  fontSize: 7.2,
                                   color: palette.codeText,
-                                  letterSpacing: 1.0,
+                                  letterSpacing: 0.8,
                                 ),
                               ),
                             ),
                             pw.SizedBox(height: 2.5),
                             pw.Container(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                               decoration: pw.BoxDecoration(
                                 color: palette.surfaceLevel2,
                                 borderRadius: pw.BorderRadius.circular(2),
@@ -1189,11 +1295,11 @@ class PromotionPdfService {
                               ),
                               child: pw.Text(
                                 expDateStr != null
-                                    ? 'Entro $expDateStr | Validità ${promotion.validityDescription} dalla registrazione'
-                                    : 'Validità: ${promotion.validityDescription} dalla registrazione',
+                                    ? 'Entro $expDateStr | Validità ${promotion.validityDescription}'
+                                    : 'Validità: ${promotion.validityDescription}',
                                 style: pw.TextStyle(
                                   font: fontSemiBold,
-                                  fontSize: 5.2,
+                                  fontSize: 6.0,
                                   color: palette.badgeText,
                                 ),
                                 maxLines: 1,
@@ -1201,7 +1307,7 @@ class PromotionPdfService {
                             ),
                           ],
                         ),
-                        // Compact contact info (2 lines)
+                        // Compact contact info (2 lines, solid contrast, no halftoning/retinatura)
                         if (orgPhone != null || orgWhatsapp != null || orgEmail != null || orgWebsite != null)
                           pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1216,20 +1322,20 @@ class PromotionPdfService {
                                       pw.Text(
                                         'Tel $orgPhone',
                                         style: pw.TextStyle(
-                                          font: fontRegular,
-                                          fontSize: 4.8,
-                                          color: palette.textSecondary,
+                                          font: fontSemiBold,
+                                          fontSize: 6.2,
+                                          color: solidTextColor,
                                         ),
                                       ),
                                     if (orgPhone != null && orgPhone.trim().isNotEmpty && orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty)
-                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 4.8, color: palette.textSecondary)),
+                                      pw.Text('  |  ', style: pw.TextStyle(font: fontRegular, fontSize: 6.2, color: solidTextColor)),
                                     if (orgWhatsapp != null && orgWhatsapp.trim().isNotEmpty)
                                       _buildWhatsappSnippet(
                                         number: orgWhatsapp,
                                         waIcon: waIcon,
-                                        font: fontRegular,
-                                        fontSize: 4.8,
-                                        color: palette.textSecondary,
+                                        font: fontSemiBold,
+                                        fontSize: 6.2,
+                                        color: solidTextColor,
                                       ),
                                   ],
                                 ),
@@ -1242,8 +1348,8 @@ class PromotionPdfService {
                                   ].join('  |  '),
                                   style: pw.TextStyle(
                                     font: fontRegular,
-                                    fontSize: 4.8,
-                                    color: palette.textSecondary,
+                                    fontSize: 5.8,
+                                    color: solidTextColor,
                                   ),
                                   maxLines: 1,
                                 ),
@@ -1254,12 +1360,23 @@ class PromotionPdfService {
                   ),
                 ),
 
-                // Right stub (38%): QR area
+                // Hairline vertical divider
+                pw.Container(
+                  width: 0.5,
+                  color: palette.dividerColor,
+                ),
+
+                // Right stub (38%): QR area with min 1.5 cm QR code
                 pw.Expanded(
                   flex: 38,
                   child: pw.Container(
                     color: palette.surfaceLevel1,
-                    padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                    padding: pw.EdgeInsets.fromLTRB(
+                      3.0 * PdfPageFormat.mm,
+                      safeAreaPadding,
+                      safeAreaPadding,
+                      safeAreaPadding,
+                    ),
                     child: pw.Column(
                       mainAxisAlignment: pw.MainAxisAlignment.center,
                       crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -1268,36 +1385,36 @@ class PromotionPdfService {
                           'INQUADRA IL QR',
                           style: pw.TextStyle(
                             font: fontBold,
-                            fontSize: 6.5,
+                            fontSize: 6.8,
                             color: palette.accentColor,
-                            letterSpacing: 1.0,
+                            letterSpacing: 0.8,
                           ),
                           textAlign: pw.TextAlign.center,
                         ),
-                        pw.SizedBox(height: 3),
-                        // QR on white ground with quiet zone
+                        pw.SizedBox(height: 3.5),
+                        // QR on white ground with quiet zone: 43pt ≈ 15.2 mm (min 1.5 cm standard)
                         pw.Container(
-                          padding: const pw.EdgeInsets.all(4),
+                          padding: const pw.EdgeInsets.all(3),
                           decoration: pw.BoxDecoration(
                             color: PdfColors.white,
-                            borderRadius: pw.BorderRadius.circular(2),
+                            borderRadius: pw.BorderRadius.circular(3),
                             border: pw.Border.all(color: palette.borderColor, width: 0.5),
                           ),
                           child: pw.BarcodeWidget(
                             barcode: pw.Barcode.qrCode(),
                             data: claimUrl,
-                            width: 34,
-                            height: 34,
+                            width: 43,
+                            height: 43,
                             color: PdfColors.black,
                           ),
                         ),
-                        pw.SizedBox(height: 3),
+                        pw.SizedBox(height: 3.5),
                         pw.Text(
                           'Attiva il pass',
                           style: pw.TextStyle(
-                            font: fontRegular,
+                            font: fontSemiBold,
                             fontSize: 6.5,
-                            color: palette.textSecondary,
+                            color: isDark ? PdfColors.white : palette.textPrimary,
                           ),
                           textAlign: pw.TextAlign.center,
                         ),
@@ -1308,51 +1425,18 @@ class PromotionPdfService {
               ],
             ),
           ),
-
-          // Ticket notch cutouts (semicircles at the divider line, ~62% from left)
-          pw.Positioned(
-            top: -5,
-            right: 0,
-            child: pw.SizedBox(
-              width: 56, // ~38% of 148pt (85mm card width)
-              child: pw.Align(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Container(
-                  width: 10,
-                  height: 10,
-                  decoration: pw.BoxDecoration(
-                    color: pageBg,
-                    shape: pw.BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          pw.Positioned(
-            bottom: -5,
-            right: 0,
-            child: pw.SizedBox(
-              width: 56,
-              child: pw.Align(
-                alignment: pw.Alignment.centerLeft,
-                child: pw.Container(
-                  width: 10,
-                  height: 10,
-                  decoration: pw.BoxDecoration(
-                    color: pageBg,
-                    shape: pw.BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
+
   /// 2. Standard European Business Card format (85 x 55 mm)
-  /// Ready for online print shops (Pixartprinting, Vistaprint, Flyeralarm, Moo).
-  /// Contiene il QR Code unico di campagna: tutti i biglietti stampati sono identici.
+  /// If [isPrintReady] is true:
+  ///   Generates a professional prepress master (95 x 65 mm sheet)
+  ///   with 2mm bleed (89 x 59 mm graphics), vector crop marks at 85 x 55 mm,
+  ///   4mm+2mm spine, 4mm safe area and pre-press info.
+  /// If [isPrintReady] is false:
+  ///   Generates exact 85 x 55 mm trimmed preview file without crop marks.
   static Future<Uint8List> generateBusinessCards({
     required PromotionModel promotion,
     List<VoucherModel>? vouchers,
@@ -1367,6 +1451,8 @@ class PromotionPdfService {
     String? orgPhone,
     String? orgWhatsapp,
     String? orgWebsite,
+    String? orgAddress,
+    bool isPrintReady = false,
   }) async {
     final pdf = pw.Document();
     final fontRegular = await PdfGoogleFonts.interRegular();
@@ -1382,43 +1468,135 @@ class PromotionPdfService {
     final expDateStr = promotion.expirationDate != null ? dateFormat.format(promotion.expirationDate!) : null;
 
     final ticketBgImage = await _loadThemeBgImage(theme);
-
     final waIcon = await _loadWhatsappIcon();
 
-    final cardFormat = PdfPageFormat(
-      85 * PdfPageFormat.mm,
-      55 * PdfPageFormat.mm,
-      marginAll: ticketBgImage != null ? 0 : 2.5 * PdfPageFormat.mm,
-    );
+    const trimWidthMm = 85.0;
+    const trimHeightMm = 55.0;
+    const bleedMm = 2.0;
+    const slugMm = 3.0;
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: cardFormat,
-        build: (context) {
-          return _buildSplitBusinessCard(
-            promotion: promotion,
-            orgName: orgName,
-            orgLogoImage: orgLogoImage,
-            partnerLogoImage: partnerLogoImage,
-            claimUrl: claimUrl,
-            expDateStr: expDateStr,
-            fontRegular: fontRegular,
-            fontBold: fontBold,
-            fontSemiBold: fontSemiBold,
-            theme: theme,
-            customBrandColor: customBrandColor,
-            overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
-            isGridItem: false,
-            ticketBgImage: ticketBgImage,
-            orgPhone: orgPhone,
-            orgWhatsapp: orgWhatsapp,
-            orgEmail: orgEmail,
-            orgWebsite: orgWebsite,
-            waIcon: waIcon,
-          );
-        },
-      ),
-    );
+    if (isPrintReady) {
+      // 95 x 65 mm sheet (85x55 trim + 2mm bleed + 3mm slug for crop marks)
+      final pageWidthMm = trimWidthMm + (bleedMm + slugMm) * 2;
+      final pageHeightMm = trimHeightMm + (bleedMm + slugMm) * 2;
+      final cardFormat = PdfPageFormat(
+        pageWidthMm * PdfPageFormat.mm,
+        pageHeightMm * PdfPageFormat.mm,
+        marginAll: 0,
+      );
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: cardFormat,
+          build: (context) {
+            return pw.Stack(
+              children: [
+                // Clean white slug background
+                pw.Positioned.fill(
+                  child: pw.Container(color: PdfColors.white),
+                ),
+                // Pre-press slug info text at top
+                pw.Positioned(
+                  top: 1.2 * PdfPageFormat.mm,
+                  left: 0,
+                  right: 0,
+                  child: pw.Center(
+                    child: pw.Text(
+                      '85 x 55 mm (+2mm abbondanza) | Master Tipografico Ticketto - Formato Finito con Crocini di Taglio',
+                      style: pw.TextStyle(
+                        font: fontRegular,
+                        fontSize: 4.5,
+                        color: PdfColor.fromHex('64748B'),
+                      ),
+                    ),
+                  ),
+                ),
+                // 89 x 59 mm Bleed box placed at (3mm, 3mm)
+                pw.Positioned(
+                  left: slugMm * PdfPageFormat.mm,
+                  top: slugMm * PdfPageFormat.mm,
+                  child: pw.SizedBox(
+                    width: (trimWidthMm + bleedMm * 2) * PdfPageFormat.mm,
+                    height: (trimHeightMm + bleedMm * 2) * PdfPageFormat.mm,
+                    child: _buildSplitBusinessCard(
+                      promotion: promotion,
+                      orgName: orgName,
+                      orgLogoImage: orgLogoImage,
+                      partnerLogoImage: partnerLogoImage,
+                      claimUrl: claimUrl,
+                      expDateStr: expDateStr,
+                      fontRegular: fontRegular,
+                      fontBold: fontBold,
+                      fontSemiBold: fontSemiBold,
+                      theme: theme,
+                      customBrandColor: customBrandColor,
+                      overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+                      isGridItem: false,
+                      hasBleed: true,
+                      ticketBgImage: ticketBgImage,
+                      orgPhone: orgPhone,
+                      orgWhatsapp: orgWhatsapp,
+                      orgEmail: orgEmail,
+                      orgWebsite: orgWebsite,
+                      orgAddress: orgAddress,
+                      waIcon: waIcon,
+                    ),
+                  ),
+                ),
+                // Vector crop marks at 85 x 55 mm trim line
+                _buildCropMarks(
+                  trimLeft: (bleedMm + slugMm) * PdfPageFormat.mm,
+                  trimTop: (bleedMm + slugMm) * PdfPageFormat.mm,
+                  trimWidth: trimWidthMm * PdfPageFormat.mm,
+                  trimHeight: trimHeightMm * PdfPageFormat.mm,
+                  bleed: bleedMm * PdfPageFormat.mm,
+                  markLength: 2.5 * PdfPageFormat.mm,
+                  markThickness: 0.35,
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    } else {
+      // 85 x 55 mm exact preview format
+      final cardFormat = PdfPageFormat(
+        trimWidthMm * PdfPageFormat.mm,
+        trimHeightMm * PdfPageFormat.mm,
+        marginAll: 0,
+      );
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: cardFormat,
+          build: (context) {
+            return _buildSplitBusinessCard(
+              promotion: promotion,
+              orgName: orgName,
+              orgLogoImage: orgLogoImage,
+              partnerLogoImage: partnerLogoImage,
+              claimUrl: claimUrl,
+              expDateStr: expDateStr,
+              fontRegular: fontRegular,
+              fontBold: fontBold,
+              fontSemiBold: fontSemiBold,
+              theme: theme,
+              customBrandColor: customBrandColor,
+              overridePartnerLogoDarkBg: overridePartnerLogoDarkBg,
+              isGridItem: false,
+              hasBleed: false,
+              ticketBgImage: ticketBgImage,
+              orgPhone: orgPhone,
+              orgWhatsapp: orgWhatsapp,
+              orgEmail: orgEmail,
+              orgWebsite: orgWebsite,
+              orgAddress: orgAddress,
+              waIcon: waIcon,
+            );
+          },
+        ),
+      );
+    }
 
     return pdf.save();
   }

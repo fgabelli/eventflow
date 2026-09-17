@@ -305,9 +305,11 @@ void main() {
     });
 
     test('CouponPrintFormat values and dimensions', () {
-      expect(CouponPrintFormat.values.length, equals(4));
+      expect(CouponPrintFormat.values.length, equals(5));
       expect(CouponPrintFormat.deskStandA4.widthMm, equals(210));
       expect(CouponPrintFormat.deskStandA4.heightMm, equals(297));
+      expect(CouponPrintFormat.businessCardPrintReady.widthMm, equals(85));
+      expect(CouponPrintFormat.businessCardPrintReady.heightMm, equals(55));
       expect(CouponPrintFormat.businessCard.widthMm, equals(85));
       expect(CouponPrintFormat.businessCard.heightMm, equals(55));
       expect(CouponPrintFormat.flyerA6.widthMm, equals(105));
@@ -386,6 +388,16 @@ void main() {
       );
 
       for (final theme in CouponVisualTheme.values) {
+        // Test businessCardPrintReady format for each theme
+        final cardPrintReadyDoc = await PromotionPdfService.generateDocument(
+          promotion: promo,
+          vouchers: [],
+          orgName: 'Devero SPA',
+          format: CouponPrintFormat.businessCardPrintReady,
+          theme: theme,
+        );
+        expect(cardPrintReadyDoc.isNotEmpty, isTrue, reason: 'Business card print-ready for ${theme.name} should generate valid bytes');
+
         // Test businessCard format for each theme
         final cardDoc = await PromotionPdfService.generateDocument(
           promotion: promo,

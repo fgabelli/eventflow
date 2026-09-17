@@ -170,13 +170,37 @@ class _PrintFormatDialogState extends State<PrintFormatDialog> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      format.label,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 13,
-                                        color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          format.label,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 13,
+                                            color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        if (format == CouponPrintFormat.businessCardPrintReady) ...[
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primary.withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 0.8),
+                                            ),
+                                            child: const Text(
+                                              'TIPOGRAFIA',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: 0.5,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
