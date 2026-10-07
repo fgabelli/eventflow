@@ -1104,6 +1104,64 @@ exports.createCheckoutSession = onDocumentCreated(
   }
 );
 
+// ─── HTTP: Create Subscription Checkout Session ───────────────
+// Direct HTTPS endpoint returning the checkout URL immediately
+exports.createSubscriptionCheckout = onRequest(
+  {
+    cors: true,
+  },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    const { orgId, userId, email, priceId, plan, billingCycle, successUrl, cancelUrl } = req.body || {};
+
+    if (!orgId || !priceId || !plan) {
+      res.status(400).json({ error: "Missing required fields (orgId, priceId, plan)" });
+      return;
+    }
+
+    try {
+      const stripe = require("stripe")(STRIPE_SECRET_KEY);
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        customer_email: email,
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        success_url: successUrl || "https://ticketto.it/settings?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: cancelUrl || "https://ticketto.it/subscription",
+        metadata: {
+          orgId: orgId,
+          userId: userId || "",
+          plan: plan,
+          billingCycle: billingCycle || "monthly",
+        },
+        subscription_data: {
+          metadata: {
+            orgId: orgId,
+            plan: plan,
+            billingCycle: billingCycle || "monthly",
+          },
+        },
+      });
+
+      console.log(`✅ Direct checkout session created for org ${orgId}: ${session.id}`);
+      res.json({ url: session.url, sessionId: session.id });
+    } catch (error) {
+      console.error("❌ Error creating direct checkout session:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
 // ─── Stripe Webhook Handler ─────────────────────────────────
 exports.stripeWebhook = onRequest(
   {

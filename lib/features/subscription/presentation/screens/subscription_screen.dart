@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -32,7 +34,6 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create Stripe Checkout session via Cloud Function
       final user = ref.read(appUserProvider).value;
       if (user == null) return;
 
@@ -40,36 +41,79 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           ? _getYearlyPriceId(plan)
           : _getMonthlyPriceId(plan);
 
-      final docRef = await FirebaseFirestore.instance
-          .collection('stripe_checkout_sessions')
-          .add({
-        'orgId': org.id,
-        'userId': user.id,
-        'email': user.email,
-        'priceId': priceId,
-        'plan': plan.name,
-        'billingCycle': _isYearly ? 'yearly' : 'monthly',
-        'successUrl': '${Uri.base.origin}/settings?session_id={CHECKOUT_SESSION_ID}',
-        'cancelUrl': '${Uri.base.origin}/subscription',
-        'createdAt': FieldValue.serverTimestamp(),
-        'status': 'pending',
-      });
+      final successUrl = '${Uri.base.origin}/settings?session_id={CHECKOUT_SESSION_ID}';
+      final cancelUrl = '${Uri.base.origin}/subscription';
 
-      // Listen for the checkout URL created by Cloud Function
-      docRef.snapshots().listen((snap) {
-        final data = snap.data();
-        if (data != null && data['url'] != null) {
-          launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
-        }
-        if (data != null && data['error'] != null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${AppLocalizations.of(context)['error_generic_short']}: ${data['error']}'), backgroundColor: AppColors.error),
+      // 1. Try direct HTTPS Cloud Function endpoint first (immediate response)
+      bool launched = false;
+      try {
+        final response = await http.post(
+          Uri.parse('https://us-central1-eventflow-3541b.cloudfunctions.net/createSubscriptionCheckout'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'orgId': org.id,
+            'userId': user.id,
+            'email': user.email,
+            'priceId': priceId,
+            'plan': plan.name,
+            'billingCycle': _isYearly ? 'yearly' : 'monthly',
+            'successUrl': successUrl,
+            'cancelUrl': cancelUrl,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['url'] != null) {
+            final ok = await launchUrl(
+              Uri.parse(data['url']),
+              mode: LaunchMode.externalApplication,
             );
-            setState(() => _isLoading = false);
+            if (ok) {
+              launched = true;
+              if (mounted) setState(() => _isLoading = false);
+              return;
+            }
           }
         }
-      });
+      } catch (_) {
+        // Fallback to Firestore trigger mechanism
+      }
+
+      // 2. Fallback: Create Stripe Checkout session via Firestore collection
+      if (!launched) {
+        final docRef = await FirebaseFirestore.instance
+            .collection('stripe_checkout_sessions')
+            .add({
+          'orgId': org.id,
+          'userId': user.id,
+          'email': user.email,
+          'priceId': priceId,
+          'plan': plan.name,
+          'billingCycle': _isYearly ? 'yearly' : 'monthly',
+          'successUrl': successUrl,
+          'cancelUrl': cancelUrl,
+          'createdAt': FieldValue.serverTimestamp(),
+          'status': 'pending',
+        });
+
+        // Listen for the checkout URL created by Cloud Function
+        docRef.snapshots().listen((snap) {
+          final data = snap.data();
+          if (data != null && data['url'] != null) {
+            launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
+            if (mounted) setState(() => _isLoading = false);
+          }
+          if (data != null && data['error'] != null) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${AppLocalizations.of(context)['error_generic_short']}: ${data['error']}'), backgroundColor: AppColors.error),
+              );
+              setState(() => _isLoading = false);
+            }
+          }
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

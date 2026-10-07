@@ -104,5 +104,24 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'claimedAt', 'expiresAt', 'claimedFirstName', 'claimedLastName', 'claimedEmail', 'claimedPhone', 'paymentStatus']));
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
     }
+
+    // ─── Stripe Checkout Sessions ──────────────────────────────
+    match /stripe_checkout_sessions/{sessionId} {
+      // Allow org admin to create a checkout session
+      allow create: if isAuth()
+        && request.resource.data.userId == request.auth.uid
+        && isOrgAdmin(request.resource.data.orgId);
+      // Allow session creator or org admins to read session status and checkout URL
+      allow read: if isAuth()
+        && (resource.data.userId == request.auth.uid || isOrgAdmin(resource.data.orgId));
+      // Updates and deletions are only performed server-side by Cloud Functions
+      allow update, delete: if false;
+    }
+
+    // ─── Subscriptions ──────────────────────────────────────────
+    match /subscriptions/{orgId} {
+      allow read: if isAuth() && isOrgMember(orgId);
+      allow write: if false;
+    }
   }
 }
