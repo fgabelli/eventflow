@@ -1208,6 +1208,9 @@ exports.stripeWebhook = onRequest(
                 const pending = pendingDoc.data();
                 const allAttendees = [pending.primaryAttendee, ...(pending.extraAttendees || [])];
                 const perPersonAmount = session.amount_total / allAttendees.length / 100;
+                const mConsent = Boolean(pending.marketingConsent);
+                const pConsent = pending.photoConsent !== undefined && pending.photoConsent !== null ? Boolean(pending.photoConsent) : null;
+                const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
 
                 for (const att of allAttendees) {
                   if (!att.email) continue;
@@ -1229,10 +1232,16 @@ exports.stripeWebhook = onRequest(
                     qrCode: qrCode,
                     timeSlotId: pending.slotId || null,
                     customData: pending.customData || {},
+                    privacyAccepted: true,
+                    privacyAcceptedAt: nowTimestamp,
+                    marketingConsent: mConsent,
+                    marketingConsentAt: mConsent ? nowTimestamp : null,
+                    photoConsent: pConsent,
+                    photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
                     paymentStatus: "paid",
                     paymentId: session.payment_intent,
                     paymentAmount: perPersonAmount,
-                    registeredAt: admin.firestore.FieldValue.serverTimestamp(),
+                    registeredAt: nowTimestamp,
                   });
                 }
 
@@ -1250,6 +1259,10 @@ exports.stripeWebhook = onRequest(
               const email = attendeeData.email.toLowerCase();
               const docId = db.collection("attendees").doc().id;
               const qrCode = uuidv4();
+              const mConsent = session.metadata.marketing_consent === "true";
+              const pConsentRaw = session.metadata.photo_consent;
+              const pConsent = pConsentRaw === "true" ? true : (pConsentRaw === "false" ? false : null);
+              const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
 
               // Create attendee
               await db.collection("attendees").doc(docId).set({
@@ -1266,10 +1279,16 @@ exports.stripeWebhook = onRequest(
                 qrCode: qrCode,
                 timeSlotId: slotId,
                 customData: attendeeData.customData || {},
+                privacyAccepted: true,
+                privacyAcceptedAt: nowTimestamp,
+                marketingConsent: mConsent,
+                marketingConsentAt: mConsent ? nowTimestamp : null,
+                photoConsent: pConsent,
+                photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
                 paymentStatus: "paid",
                 paymentId: session.payment_intent,
                 paymentAmount: session.amount_total / 100,
-                registeredAt: admin.firestore.FieldValue.serverTimestamp(),
+                registeredAt: nowTimestamp,
               });
 
               console.log(`🎫 Ticket payment completed: event=${eventId} attendee=${email}`);
@@ -1567,6 +1586,7 @@ exports.createTicketCheckout = onRequest(
       firstName, lastName, email, phone,
       slotId, customData,
       quantity, extraAttendees,
+      marketingConsent, photoConsent,
     } = req.body || {};
 
     if (!eventId || !orgId || !email || !price) {
@@ -1621,6 +1641,8 @@ exports.createTicketCheckout = onRequest(
           orgId,
           slotId: slotId || null,
           customData: customData || {},
+          marketingConsent: Boolean(marketingConsent),
+          photoConsent: photoConsent !== undefined && photoConsent !== null ? Boolean(photoConsent) : null,
           primaryAttendee: { firstName, lastName, email: email.toLowerCase(), phone: phone || null },
           extraAttendees: extraAttendees.map((a) => ({
             firstName: a.firstName || "",
@@ -1666,6 +1688,8 @@ exports.createTicketCheckout = onRequest(
           slot_id: slotId || "",
           quantity: String(ticketQuantity),
           pending_registration_id: pendingRegId || "",
+          marketing_consent: marketingConsent ? "true" : "false",
+          photo_consent: photoConsent !== undefined && photoConsent !== null ? String(photoConsent) : "",
           attendee_data: pendingRegId ? "{}" : JSON.stringify({
             firstName, lastName, email, phone,
             customData: customData || {},

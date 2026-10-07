@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -29,6 +30,10 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
   bool _isSubmitting = false;
   bool _isRegistered = false;
   String? _registrationError;
+  bool _privacyAccepted = false;
+  bool _privacyError = false;
+  bool _marketingConsent = false;
+  bool _photoConsent = false;
   // Localized context from Builder below Localizations.override
   // so all methods use the event's language, not the device locale.
   BuildContext? _localizedCtx;
@@ -74,6 +79,15 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
   Future<void> _submitRegistration(EventModel event) async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Validate mandatory Privacy Policy & Terms acceptance
+    if (!_privacyAccepted) {
+      setState(() {
+        _privacyError = true;
+        _registrationError = AppLocalizations.of(_localizedCtx ?? context)['privacy_consent_required'];
+      });
+      return;
+    }
 
     // Validate time slot selection
     if (event.hasTimeSlots && event.timeSlots.isNotEmpty && _selectedSlotId == null) {
@@ -121,6 +135,9 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
       final db = FirebaseFirestore.instance;
       final batch = db.batch();
+      final nowTimestamp = Timestamp.now();
+      final marketingConsent = _marketingConsent;
+      final photoConsent = event.isOnline ? null : _photoConsent;
 
       // Register primary attendee with auto-generated ID (guaranteed unique)
       final email = _emailCtrl.text.trim().toLowerCase();
@@ -142,7 +159,13 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
         'qrCode': qrCode,
         'timeSlotId': _selectedSlotId,
         'customData': _customFieldValues,
-        'registeredAt': Timestamp.now(),
+        'privacyAccepted': true,
+        'privacyAcceptedAt': nowTimestamp,
+        'marketingConsent': marketingConsent,
+        'marketingConsentAt': marketingConsent ? nowTimestamp : null,
+        'photoConsent': photoConsent,
+        'photoConsentAt': (photoConsent == true) ? nowTimestamp : null,
+        'registeredAt': nowTimestamp,
       });
 
       // Register extra attendees in the same atomic batch
@@ -167,7 +190,13 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
           'qrCode': extraQr,
           'timeSlotId': _selectedSlotId,
           'customData': _customFieldValues,
-          'registeredAt': Timestamp.now(),
+          'privacyAccepted': true,
+          'privacyAcceptedAt': nowTimestamp,
+          'marketingConsent': marketingConsent,
+          'marketingConsentAt': marketingConsent ? nowTimestamp : null,
+          'photoConsent': photoConsent,
+          'photoConsentAt': (photoConsent == true) ? nowTimestamp : null,
+          'registeredAt': nowTimestamp,
         });
       }
 
@@ -243,6 +272,8 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
           'slotId': _selectedSlotId,
           'customData': _customFieldValues,
           'extraAttendees': _extraAttendees.isEmpty ? null : allAttendees.sublist(1),
+          'marketingConsent': _marketingConsent,
+          'photoConsent': event.isOnline ? null : _photoConsent,
         }),
       );
 
@@ -263,8 +294,6 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       });
     }
   }
-
-  String? _eventLanguage;
 
   @override
   Widget build(BuildContext context) {
@@ -820,6 +849,9 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
                   const SizedBox(height: 8),
                 ],
 
+                // Consents Section (GDPR: Privacy Policy & Terms, Marketing, Photo Release)
+                _buildConsentsSection(event),
+
                 if (_registrationError != null) ...[
                   const SizedBox(height: 16),
                   Container(
@@ -899,6 +931,200 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildConsentsSection(EventModel event) {
+    final localizations = AppLocalizations.of(_localizedCtx ?? context);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 20, bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _privacyError ? AppColors.error : AppColors.border,
+          width: _privacyError ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Mandatory Privacy Policy & Terms of Service
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 24,
+                width: 24,
+                child: Checkbox(
+                  value: _privacyAccepted,
+                  onChanged: (val) {
+                    setState(() {
+                      _privacyAccepted = val ?? false;
+                      if (_privacyAccepted) _privacyError = false;
+                    });
+                  },
+                  activeColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _privacyAccepted = !_privacyAccepted;
+                      if (_privacyAccepted) _privacyError = false;
+                    });
+                  },
+                  child: RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
+                      children: [
+                        TextSpan(text: '${localizations['privacy_consent_prefix']} '),
+                        TextSpan(
+                          text: localizations['privacy_policy_link'],
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => _openLegalUrl('${AppConfig.baseUrl}/privacy'),
+                        ),
+                        TextSpan(text: ' ${localizations['privacy_consent_and']} '),
+                        TextSpan(
+                          text: localizations['terms_link'],
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () => _openLegalUrl('${AppConfig.baseUrl}/terms'),
+                        ),
+                        const TextSpan(
+                          text: ' *',
+                          style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_privacyError) ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 34, top: 6),
+              child: Text(
+                localizations['privacy_consent_required'],
+                style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+
+          // 2. Optional Marketing Consent
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 24,
+                width: 24,
+                child: Checkbox(
+                  value: _marketingConsent,
+                  onChanged: (val) {
+                    setState(() => _marketingConsent = val ?? false);
+                  },
+                  activeColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _marketingConsent = !_marketingConsent);
+                  },
+                  child: RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
+                      children: [
+                        TextSpan(text: localizations['marketing_consent_label']),
+                        const TextSpan(text: ' '),
+                        TextSpan(
+                          text: localizations['optional_badge'],
+                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // 3. Conditional Photo & Video Release (In-presence events only: !event.isOnline)
+          if (!event.isOnline) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Checkbox(
+                    value: _photoConsent,
+                    onChanged: (val) {
+                      setState(() => _photoConsent = val ?? false);
+                    },
+                    activeColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _photoConsent = !_photoConsent);
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
+                        children: [
+                          TextSpan(text: localizations['photo_consent_label']),
+                          const TextSpan(text: ' '),
+                          TextSpan(
+                            text: localizations['optional_badge'],
+                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _openLegalUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _buildCustomField(CustomField field) {
@@ -1072,7 +1298,7 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
     }
   }
 
-  Widget _buildOrgLogoImage(String? url, {double? maxHeight = 64, double? maxWidth = 240, Widget Function()? fallback}) {
+  Widget _buildOrgLogoImage(String? url, {Widget Function()? fallback}) {
     if (url == null || url.trim().isEmpty) {
       return fallback != null ? fallback() : const SizedBox.shrink();
     }

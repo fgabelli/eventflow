@@ -543,6 +543,23 @@ class AppLocalizations {
     'registered_label': 'registrati',
     'confirmation_email': 'Un\'email di conferma è stata inviata al tuo indirizzo.',
 
+    // ─── GDPR & Privacy Consents ───
+    'privacy_consent_prefix': 'Dichiaro di aver letto e compreso l\'',
+    'privacy_policy_link': 'Informativa sulla Privacy',
+    'privacy_consent_and': 'e accetto i',
+    'terms_link': 'Termini di Servizio',
+    'privacy_consent_required': 'Devi accettare l\'Informativa sulla Privacy e i Termini per procedere.',
+    'marketing_consent_label': 'Acconsento al trattamento dei dati per ricevere comunicazioni informative, novità e aggiornamenti sui prossimi eventi dall\'organizzatore.',
+    'photo_consent_label': 'Autorizzo l\'acquisizione e l\'utilizzo di foto e riprese video durante l\'evento a scopo di documentazione e comunicazione sui canali dell\'organizzatore.',
+    'optional_badge': '(Facoltativo)',
+    'consent_section_title': 'Consensi e Privacy',
+    'privacy_accepted_label': 'Privacy e Termini',
+    'marketing_consent_status': 'Consenso Marketing',
+    'photo_consent_status': 'Liberatoria Foto/Video',
+    'consent_given': 'Accettato',
+    'consent_not_given': 'Non espresso',
+    'consent_not_applicable': 'N/A (Evento online)',
+
     // ─── Payment & Registration Buttons ───
     'pay_and_register': 'Paga €{amount} e Registrati',
     'pay_and_register_group': 'Paga €{amount} e Registra {count} persone',
@@ -1219,6 +1236,23 @@ class AppLocalizations {
     'your_qr': 'Your QR Code',
     'registered_label': 'registered',
     'confirmation_email': 'A confirmation email has been sent to your address.',
+
+    // ─── GDPR & Privacy Consents ───
+    'privacy_consent_prefix': 'I declare that I have read and understand the',
+    'privacy_policy_link': 'Privacy Policy',
+    'privacy_consent_and': 'and agree to the',
+    'terms_link': 'Terms of Service',
+    'privacy_consent_required': 'You must accept the Privacy Policy and Terms of Service to proceed.',
+    'marketing_consent_label': 'I consent to the processing of data to receive newsletters, updates, and promotional communications regarding future events from the organizer.',
+    'photo_consent_label': 'I authorize the taking and use of photographs and video footage during the event for documentation and communication by the organizer.',
+    'optional_badge': '(Optional)',
+    'consent_section_title': 'Consents & Privacy',
+    'privacy_accepted_label': 'Privacy & Terms',
+    'marketing_consent_status': 'Marketing Consent',
+    'photo_consent_status': 'Photo/Video Release',
+    'consent_given': 'Granted',
+    'consent_not_given': 'Not granted',
+    'consent_not_applicable': 'N/A (Online event)',
 
     // ─── Payment & Registration Buttons ───
     'pay_and_register': 'Pay €{amount} and Register',

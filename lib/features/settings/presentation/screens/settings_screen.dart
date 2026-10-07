@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -443,7 +442,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       child: const Icon(Icons.check_circle_outlined, color: AppColors.success, size: 22),
                     ),
                     title: Text(AppLocalizations.of(context)['stripe_connected']),
-                    subtitle: Text('Account: ${connectAccountId?.substring(0, 12) ?? ''}...'),
+                    subtitle: Text('Account: ${connectAccountId.substring(0, 12)}...'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _openStripeDashboard(context, org.id),
                   ),

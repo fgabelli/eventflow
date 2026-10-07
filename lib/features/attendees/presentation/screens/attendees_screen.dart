@@ -467,6 +467,59 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 16),
+
+                // Consents & Privacy Section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.security_rounded, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            AppLocalizations.of(context)['consent_section_title'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _DetailRow(
+                        label: AppLocalizations.of(context)['privacy_accepted_label'],
+                        value: attendee.privacyAccepted
+                            ? AppLocalizations.of(context)['consent_given']
+                            : AppLocalizations.of(context)['consent_not_given'],
+                      ),
+                      _DetailRow(
+                        label: AppLocalizations.of(context)['marketing_consent_status'],
+                        value: attendee.marketingConsent
+                            ? AppLocalizations.of(context)['consent_given']
+                            : AppLocalizations.of(context)['consent_not_given'],
+                      ),
+                      _DetailRow(
+                        label: AppLocalizations.of(context)['photo_consent_status'],
+                        value: attendee.photoConsent == null
+                            ? AppLocalizations.of(context)['consent_not_applicable']
+                            : (attendee.photoConsent!
+                                ? AppLocalizations.of(context)['consent_given']
+                                : AppLocalizations.of(context)['consent_not_given']),
+                      ),
+                    ],
+                  ),
+                ),
+
                 // Custom Data
                 if (attendee.customData.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -764,6 +817,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
         'First Name', 'Last Name', 'Email', 'Phone',
         'Category', 'Status', 'Check-in Status', 'Check-in Time',
         'Time Slot', 'Registered At',
+        'Privacy Policy Accepted', 'Marketing Consent', 'Photo/Video Release',
         ...sortedCustomKeys.map((k) => globalFieldLabelMap[k] ?? k),
       ];
 
@@ -796,6 +850,9 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
           a.checkInTime != null ? '${a.checkInTime!.day}/${a.checkInTime!.month}/${a.checkInTime!.year} ${a.checkInTime!.hour.toString().padLeft(2, '0')}:${a.checkInTime!.minute.toString().padLeft(2, '0')}' : '',
           slotLabel,
           '${a.registeredAt.day}/${a.registeredAt.month}/${a.registeredAt.year} ${a.registeredAt.hour.toString().padLeft(2, '0')}:${a.registeredAt.minute.toString().padLeft(2, '0')}',
+          a.privacyAccepted ? 'Sì' : 'No',
+          a.marketingConsent ? 'Sì' : 'No',
+          a.photoConsent == null ? 'N/A' : (a.photoConsent! ? 'Sì' : 'No'),
           ...sortedCustomKeys.map((k) {
             final v = a.customData[k];
             if (v is bool) return v ? 'Sì' : 'No';
@@ -1731,6 +1788,31 @@ class _AttendeeCard extends StatelessWidget {
                               'IN',
                               style: TextStyle(
                                 color: AppColors.success,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (attendee.marketingConsent) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.campaign_outlined, size: 10, color: AppColors.primary),
+                            const SizedBox(width: 2),
+                            Text(
+                              'MKTG',
+                              style: TextStyle(
+                                color: AppColors.primary,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
                               ),

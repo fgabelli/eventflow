@@ -552,6 +552,12 @@ class Attendee {
   final String? timeSlotId;
   final Map<String, dynamic> customData;
   final DateTime registeredAt;
+  final bool privacyAccepted;
+  final DateTime? privacyAcceptedAt;
+  final bool marketingConsent;
+  final DateTime? marketingConsentAt;
+  final bool? photoConsent;
+  final DateTime? photoConsentAt;
 
   Attendee({
     required this.id,
@@ -569,6 +575,12 @@ class Attendee {
     this.timeSlotId,
     this.customData = const {},
     DateTime? registeredAt,
+    this.privacyAccepted = true,
+    this.privacyAcceptedAt,
+    this.marketingConsent = false,
+    this.marketingConsentAt,
+    this.photoConsent,
+    this.photoConsentAt,
   }) : registeredAt = registeredAt ?? DateTime.now();
 
   String get fullName => '$firstName $lastName';
@@ -597,6 +609,12 @@ class Attendee {
       timeSlotId: data['timeSlotId'],
       customData: Map<String, dynamic>.from(data['customData'] ?? {}),
       registeredAt: (data['registeredAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      privacyAccepted: data['privacyAccepted'] ?? true,
+      privacyAcceptedAt: (data['privacyAcceptedAt'] as Timestamp?)?.toDate(),
+      marketingConsent: data['marketingConsent'] ?? false,
+      marketingConsentAt: (data['marketingConsentAt'] as Timestamp?)?.toDate(),
+      photoConsent: data['photoConsent'] as bool?,
+      photoConsentAt: (data['photoConsentAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -615,6 +633,18 @@ class Attendee {
     'timeSlotId': timeSlotId,
     'customData': customData,
     'registeredAt': Timestamp.fromDate(registeredAt),
+    'privacyAccepted': privacyAccepted,
+    'privacyAcceptedAt': privacyAcceptedAt != null
+        ? Timestamp.fromDate(privacyAcceptedAt!)
+        : Timestamp.fromDate(registeredAt),
+    'marketingConsent': marketingConsent,
+    'marketingConsentAt': marketingConsentAt != null
+        ? Timestamp.fromDate(marketingConsentAt!)
+        : null,
+    'photoConsent': photoConsent,
+    'photoConsentAt': photoConsentAt != null
+        ? Timestamp.fromDate(photoConsentAt!)
+        : null,
   };
 
   Attendee copyWith({
@@ -623,6 +653,12 @@ class Attendee {
     DateTime? checkInTime,
     String? timeSlotId,
     Map<String, dynamic>? customData,
+    bool? privacyAccepted,
+    DateTime? privacyAcceptedAt,
+    bool? marketingConsent,
+    DateTime? marketingConsentAt,
+    bool? photoConsent,
+    DateTime? photoConsentAt,
   }) {
     return Attendee(
       id: id,
@@ -640,6 +676,12 @@ class Attendee {
       timeSlotId: timeSlotId ?? this.timeSlotId,
       customData: customData ?? this.customData,
       registeredAt: registeredAt,
+      privacyAccepted: privacyAccepted ?? this.privacyAccepted,
+      privacyAcceptedAt: privacyAcceptedAt ?? this.privacyAcceptedAt,
+      marketingConsent: marketingConsent ?? this.marketingConsent,
+      marketingConsentAt: marketingConsentAt ?? this.marketingConsentAt,
+      photoConsent: photoConsent ?? this.photoConsent,
+      photoConsentAt: photoConsentAt ?? this.photoConsentAt,
     );
   }
 }

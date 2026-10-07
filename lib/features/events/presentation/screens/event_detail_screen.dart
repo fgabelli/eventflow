@@ -370,8 +370,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     children: [
                       _quickDetailRow(AppLocalizations.of(context)['category_label'], attendee.category),
                       _quickDetailRow(AppLocalizations.of(context)['registered_at_label'], '${attendee.registeredAt.day}/${attendee.registeredAt.month}/${attendee.registeredAt.year} ${attendee.registeredAt.hour.toString().padLeft(2, '0')}:${attendee.registeredAt.minute.toString().padLeft(2, '0')}'),
-                      if (attendee.customData != null)
-                        ...attendee.customData!.entries.map((e) => _quickDetailRow(e.key, e.value.toString())),
+                      if (attendee.customData.isNotEmpty)
+                        ...attendee.customData.entries.map((e) => _quickDetailRow(e.key, e.value.toString())),
                     ],
                   ),
                 ),
@@ -752,7 +752,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ),
                 FilledButton.icon(
                   icon: const Icon(Icons.edit, size: 16),
-                  label: Text(AppLocalizations.of(context)['edit'] ?? 'Modifica'),
+                  label: Text(AppLocalizations.of(context)['edit']),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
