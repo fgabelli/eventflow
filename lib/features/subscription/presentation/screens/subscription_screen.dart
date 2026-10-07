@@ -127,9 +127,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   String _getMonthlyPriceId(SubscriptionPlan plan) {
     switch (plan) {
       case SubscriptionPlan.pro:
-        return 'price_1T1ZfEACt8KFe0S0ofhDwKYq';
+        return 'price_1UNsQNExatX4plzR93aLmSUm';
       case SubscriptionPlan.business:
-        return 'price_1T1ZfSACt8KFe0S0IuMAPQTm';
+        return 'price_1UNsQOExatX4plzR1BTZSzOJ';
       default:
         return '';
     }
@@ -138,9 +138,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   String _getYearlyPriceId(SubscriptionPlan plan) {
     switch (plan) {
       case SubscriptionPlan.pro:
-        return 'price_1T1ZfLACt8KFe0S0rPJmtP4p';
+        return 'price_1UNsQNExatX4plzRMXPPyV4O';
       case SubscriptionPlan.business:
-        return 'price_1T1ZfZACt8KFe0S0DYxK6R9X';
+        return 'price_1UNsQOExatX4plzR6K56TmVZ';
       default:
         return '';
     }
