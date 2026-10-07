@@ -1459,7 +1459,7 @@ exports.createPortalSession = onRequest(
 // ─── STRIPE CONNECT (Ticket Payments) ────────────────────────
 // ═══════════════════════════════════════════════════════════════
 
-const PLATFORM_FEE_PERCENT = 5; // 5% platform commission
+const PLATFORM_FEE_PERCENT = 0; // 0% platform commission — Ticketto charges 0 platform fees
 
 // Helper: Java-style hashCode for deterministic doc IDs
 function hashCode(str) {
@@ -1673,7 +1673,7 @@ exports.createTicketCheckout = onRequest(
           },
         ],
         payment_intent_data: {
-          application_fee_amount: platformFee,
+          ...(platformFee > 0 ? { application_fee_amount: platformFee } : {}),
           transfer_data: {
             destination: connectedAccountId,
           },

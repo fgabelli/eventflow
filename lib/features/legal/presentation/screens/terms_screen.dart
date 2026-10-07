@@ -168,10 +168,10 @@ class TermsScreen extends StatelessWidget {
     },
     {
       'title': '5. Vendita biglietti e commissioni',
-      'body': 'Per la vendita di biglietti tramite Ticketto, viene applicata '
-          'una commissione del 5% sul prezzo del biglietto. I pagamenti vengono '
-          'trasferiti direttamente al tuo account Stripe Connect dopo la '
-          'deduzione della commissione. Ticketto non è responsabile per '
+      'body': 'Ticketto non applica alcuna commissione di piattaforma sulla '
+          'vendita dei biglietti. I pagamenti vengono trasferiti direttamente al '
+          'tuo account Stripe Connect, al netto unicamente delle tariffe standard '
+          'di elaborazione del gateway Stripe. Ticketto non è responsabile per '
           'rimborsi o contestazioni tra organizzatori e partecipanti.',
     },
     {
@@ -249,11 +249,11 @@ class TermsScreen extends StatelessWidget {
     },
     {
       'title': '5. Ticket Sales and Fees',
-      'body': 'For ticket sales through Ticketto, a 5% commission is applied '
-          'on the ticket price. Payments are transferred directly to your '
-          'Stripe Connect account after the commission is deducted. Ticketto '
-          'is not responsible for refunds or disputes between organizers and '
-          'attendees.',
+      'body': 'Ticketto does not charge any platform commission on ticket '
+          'sales. Payments are transferred directly to your Stripe Connect '
+          'account, net only of standard Stripe gateway processing fees. '
+          'Ticketto is not responsible for refunds or disputes between '
+          'organizers and attendees.',
     },
     {
       'title': '6. User Obligations',
