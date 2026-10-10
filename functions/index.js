@@ -1080,9 +1080,9 @@ exports.createCheckoutSession = onDocumentCreated(
           },
           {
             key: "codice_fiscale",
-            label: { type: "custom", custom: "Codice fiscale" },
+            label: { type: "custom", custom: "Codice fiscale (per le società spesso uguale alla P.IVA)" },
             type: "text",
-            optional: true,
+            optional: false,
           },
         ],
         line_items: [
@@ -1163,9 +1163,9 @@ exports.createSubscriptionCheckout = onRequest(
           },
           {
             key: "codice_fiscale",
-            label: { type: "custom", custom: "Codice fiscale" },
+            label: { type: "custom", custom: "Codice fiscale (per le società spesso uguale alla P.IVA)" },
             type: "text",
-            optional: true,
+            optional: false,
           },
         ],
         line_items: [
