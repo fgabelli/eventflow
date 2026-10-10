@@ -58,6 +58,8 @@ class MockFirestore {
             for (const [k, v] of Object.entries(updates)) {
               if (v && v._isIncrement) {
                 coll[docId][k] = (coll[docId][k] || 0) + v.val;
+              } else if (v && v._isDelete) {
+                delete coll[docId][k];
               } else {
                 coll[docId][k] = v;
               }
@@ -129,6 +131,7 @@ class MockFirestore {
 const mockFieldValue = {
   serverTimestamp: () => new Date().toISOString(),
   increment: (n) => ({ _isIncrement: true, val: n }),
+  delete: () => ({ _isDelete: true }),
 };
 
 // ─── Mock Stripe SDK ───────────────────────────────────────────
@@ -148,6 +151,9 @@ class MockStripe {
         return { id: "acct_test_standard_123" };
       },
       retrieve: async (accountId) => {
+        if (accountId === "acct_legacy_invalid") {
+          throw new Error("No such account: " + accountId);
+        }
         if (accountId === "acct_incomplete") {
           return { id: accountId, charges_enabled: false };
         }
@@ -346,11 +352,34 @@ async function runAllTests() {
     language: "it",
   });
 
-  // ─── 1. Account Creation (Standard Controller Properties) ───
+  // ─── 1. Account Creation (Standard Controller Properties & Legacy Replacement) ───
   await runTest(
     1,
-    "Organizer account creation with Stripe Standard controller properties",
+    "Organizer account creation with Stripe Standard controller properties and legacy replacement",
     async () => {
+      // 1a. Test legacy account replacement (like Bitle and TEST orgs)
+      await mockDb.collection("organizations").doc("org_legacy_bitle").set({
+        name: "Bitle Legacy Org",
+        plan: "pro",
+        stripeConnectAccountId: "acct_legacy_invalid", // exists in DB from old stripe account
+        stripeConnectStatus: "pending",
+        paymentMode: null, // old mode was null
+      });
+
+      const { req: reqLegacy, res: resLegacy } = createMockReqRes({
+        body: { orgId: "org_legacy_bitle", email: "info@bitle.it", orgName: "Bitle Legacy Org" },
+      });
+
+      await funcs.createConnectAccount(reqLegacy, resLegacy);
+      assert.strictEqual(resLegacy.statusCode, 200);
+
+      const bitleDoc = await mockDb.collection("organizations").doc("org_legacy_bitle").get();
+      assert.strictEqual(bitleDoc.data().stripeConnectAccountIdLegacy, "acct_legacy_invalid");
+      assert.strictEqual(bitleDoc.data().stripeConnectAccountId, "acct_test_standard_123");
+      assert.strictEqual(bitleDoc.data().paymentMode, "standard");
+      assert.strictEqual(bitleDoc.data().stripeConnectStatus, "pending");
+
+      // 1b. Fresh org creation
       const { req, res } = createMockReqRes({
         body: { orgId: "org_standard_1", email: "organizer@ticketto.it", orgName: "Org Standard Test" },
       });
@@ -579,14 +608,16 @@ async function runAllTests() {
     }
   );
 
-  // ─── 7. Incomplete Account Rejection (charges_enabled = false)
+  // ─── 7. Incomplete & Legacy Account Rejections ─────────────
   await runTest(
     7,
-    "createTicketCheckout rejects account with charges_enabled = false",
+    "createTicketCheckout rejects charges_enabled=false and legacy/invalid accounts",
     async () => {
+      // 7a. Account with charges_enabled = false
       await mockDb.collection("organizations").doc("org_incomplete").set({
         name: "Incomplete Org",
         plan: "pro",
+        paymentMode: "standard",
         stripeConnectAccountId: "acct_incomplete",
       });
 
@@ -605,6 +636,41 @@ async function runAllTests() {
       assert.strictEqual(
         res.data.error,
         "Completa la configurazione del tuo account Stripe per vendere biglietti"
+      );
+
+      // 7b. Organization with legacy/unretrievable account or paymentMode != standard
+      await mockDb.collection("organizations").doc("org_legacy_checkout").set({
+        name: "Legacy Org",
+        plan: "pro",
+        paymentMode: null,
+        stripeConnectAccountId: "acct_legacy_invalid",
+      });
+
+      const { req: lReq, res: lRes } = createMockReqRes({
+        body: {
+          eventId: "evt_paid_1",
+          orgId: "org_legacy_checkout",
+          price: 15,
+          email: "buyer@example.com",
+        },
+      });
+
+      await funcs.createTicketCheckout(lReq, lRes);
+      assert.strictEqual(lRes.statusCode, 400);
+      assert.strictEqual(
+        lRes.data.error,
+        "Ricollega il tuo account Stripe dalle Impostazioni"
+      );
+
+      // 7c. createConnectAccountLink with legacy/unretrievable account
+      const { req: linkReq, res: linkRes } = createMockReqRes({
+        query: { orgId: "org_legacy_checkout", type: "onboarding" },
+      });
+      await funcs.createConnectAccountLink(linkReq, linkRes);
+      assert.strictEqual(linkRes.statusCode, 400);
+      assert.strictEqual(
+        linkRes.data.error,
+        "Ricollega il tuo account Stripe dalle Impostazioni"
       );
     }
   );

@@ -393,12 +393,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         final data = snapshot.data?.data() as Map<String, dynamic>?;
         final connectAccountId = data?['stripeConnectAccountId'] as String?;
         final connectStatus = data?['stripeConnectStatus'] as String? ?? 'none';
+        final paymentMode = data?['paymentMode'] as String?;
+
+        final isStandard = paymentMode == 'standard';
+        final effectiveStatus = isStandard ? connectStatus : 'none';
+        final effectiveAccountId = isStandard ? connectAccountId : null;
 
         return Column(
           children: [
             _SettingsCard(
               children: [
-                if (connectAccountId == null || connectStatus == 'none') ...[
+                if (effectiveAccountId == null || effectiveStatus == 'none') ...[
                   // Not connected
                   ListTile(
                     leading: const _SettingsIcon(icon: Icons.account_balance_wallet_outlined, color: Color(0xFF635BFF)),
@@ -407,7 +412,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _connectStripe(context, org, userEmail: userEmail),
                   ),
-                ] else if (connectStatus == 'pending') ...[
+                ] else if (effectiveStatus == 'pending') ...[
                   // Pending onboarding
                   ListTile(
                     leading: Container(
@@ -442,7 +447,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       child: const Icon(Icons.check_circle_outlined, color: AppColors.success, size: 22),
                     ),
                     title: Text(AppLocalizations.of(context)['stripe_connected']),
-                    subtitle: Text('Account: ${connectAccountId.substring(0, 12)}...'),
+                    subtitle: Text('Account: ${effectiveAccountId.substring(0, 12)}...'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _openStripeDashboard(context, org.id),
                   ),
@@ -451,7 +456,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
 
             // Instructions — show only when not connected or pending
-            if (connectAccountId == null || connectStatus == 'none' || connectStatus == 'pending') ...[
+            if (effectiveAccountId == null || effectiveStatus == 'none' || effectiveStatus == 'pending') ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),

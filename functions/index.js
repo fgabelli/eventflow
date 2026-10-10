@@ -1934,15 +1934,39 @@ exports.createConnectAccount = onRequest(
 
       // Check if org already has a connect account
       const orgDoc = await db.collection("organizations").doc(orgId).get();
-      if (orgDoc.exists && orgDoc.data().stripeConnectAccountId) {
-        const accountLink = await stripe.accountLinks.create({
-          account: orgDoc.data().stripeConnectAccountId,
-          refresh_url: `https://ticketto.it/settings?stripe=refresh`,
-          return_url: `https://ticketto.it/settings?stripe=success`,
-          type: "account_onboarding",
+      const orgData = orgDoc.exists ? orgDoc.data() : {};
+      const existingAccountId = orgData.stripeConnectAccountId;
+      const paymentMode = orgData.paymentMode;
+
+      if (existingAccountId) {
+        // Reuse it ONLY if paymentMode === "standard" AND account exists on current Stripe account
+        if (paymentMode === "standard") {
+          try {
+            const existingAccount = await stripe.accounts.retrieve(existingAccountId);
+            if (existingAccount && !existingAccount.deleted) {
+              const accountLink = await stripe.accountLinks.create({
+                account: existingAccountId,
+                refresh_url: `https://ticketto.it/settings?stripe=refresh`,
+                return_url: `https://ticketto.it/settings?stripe=success`,
+                type: "account_onboarding",
+              });
+              res.json({ url: accountLink.url, accountId: existingAccountId });
+              return;
+            }
+          } catch (retrieveErr) {
+            console.warn(`⚠️ Existing account ${existingAccountId} invalid on current Stripe account (${retrieveErr.message}). Marking legacy and recreating.`);
+          }
+        } else {
+          console.log(`ℹ️ Existing account ${existingAccountId} has paymentMode="${paymentMode}". Treating as legacy and migrating to standard.`);
+        }
+
+        // Otherwise (error "not connected / does not exist", or paymentMode !== "standard"), consider ID obsolete:
+        // Save the old ID in stripeConnectAccountIdLegacy and proceed to create a new Standard account.
+        await db.collection("organizations").doc(orgId).update({
+          stripeConnectAccountIdLegacy: existingAccountId,
+          stripeConnectAccountId: admin.firestore.FieldValue.delete(),
+          stripeConnectStatus: "pending",
         });
-        res.json({ url: accountLink.url, accountId: orgDoc.data().stripeConnectAccountId });
-        return;
       }
 
       // Create Standard account with controller properties
@@ -2000,10 +2024,24 @@ exports.createConnectAccountLink = onRequest(
       const stripe = require("stripe")(STRIPE_SECRET_KEY);
 
       const orgDoc = await db.collection("organizations").doc(orgId).get();
-      const accountId = orgDoc.data()?.stripeConnectAccountId;
+      const orgData = orgDoc.data();
+      const accountId = orgData?.stripeConnectAccountId;
+      const paymentMode = orgData?.paymentMode;
 
-      if (!accountId) {
-        res.status(400).json({ error: "No Stripe Connect account found" });
+      if (!accountId || paymentMode !== "standard") {
+        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni" });
+        return;
+      }
+
+      // Verify that account exists on current Stripe account
+      try {
+        const account = await stripe.accounts.retrieve(accountId);
+        if (!account || account.deleted) {
+          throw new Error("Account not found or deleted");
+        }
+      } catch (err) {
+        console.warn(`⚠️ Account ${accountId} not retrievable on current Stripe account:`, err.message);
+        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni" });
         return;
       }
 
@@ -2021,6 +2059,7 @@ exports.createConnectAccountLink = onRequest(
         res.json({ url: accountLink.url });
       }
     } catch (error) {
+      console.error("❌ Error creating account link:", error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -2141,9 +2180,10 @@ exports.createTicketCheckout = onRequest(
       const orgDoc = await db.collection("organizations").doc(orgId).get();
       const orgData = orgDoc.data();
       const connectedAccountId = orgData?.stripeConnectAccountId;
+      const paymentMode = orgData?.paymentMode;
 
-      if (!connectedAccountId) {
-        res.status(400).json({ error: "Organizer has not connected Stripe" });
+      if (!connectedAccountId || paymentMode !== "standard") {
+        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni" });
         return;
       }
 
@@ -2154,8 +2194,19 @@ exports.createTicketCheckout = onRequest(
         return;
       }
 
-      // Check account status: charges_enabled must be true
-      const account = await stripe.accounts.retrieve(connectedAccountId);
+      // Check account status: charges_enabled must be true on current Stripe account
+      let account;
+      try {
+        account = await stripe.accounts.retrieve(connectedAccountId);
+        if (!account || account.deleted) {
+          throw new Error("Account not found or deleted");
+        }
+      } catch (retrieveErr) {
+        console.warn(`⚠️ Account ${connectedAccountId} not retrievable on current Stripe account (${retrieveErr.message}).`);
+        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni" });
+        return;
+      }
+
       if (!account.charges_enabled) {
         res.status(400).json({
           error: "Completa la configurazione del tuo account Stripe per vendere biglietti",
