@@ -1679,11 +1679,17 @@ exports.stripeConnectWebhook = onRequest(
         // ─── Account updated (onboarding / capabilities change) ───
         case "account.updated": {
           const account = stripeEvent.data.object;
+          const rawOrgId = account.metadata?.orgId || null;
           let orgRef = null;
 
-          if (account.metadata && account.metadata.orgId) {
-            orgRef = db.collection("organizations").doc(account.metadata.orgId);
-          } else {
+          if (rawOrgId) {
+            const orgDoc = await db.collection("organizations").doc(rawOrgId).get();
+            if (orgDoc.exists) {
+              orgRef = orgDoc.ref;
+            }
+          }
+
+          if (!orgRef) {
             const orgSnap = await db.collection("organizations")
               .where("stripeConnectAccountId", "==", account.id)
               .limit(1)
@@ -1693,21 +1699,25 @@ exports.stripeConnectWebhook = onRequest(
             }
           }
 
-          if (orgRef) {
-            const isChargesEnabled = Boolean(account.charges_enabled);
-            const isPayoutsEnabled = Boolean(account.payouts_enabled);
-            const status = isChargesEnabled ? "active" : (account.details_submitted ? "pending_verification" : "pending");
-
-            await orgRef.update({
-              stripeConnectStatus: status,
-              stripeChargesEnabled: isChargesEnabled,
-              stripePayoutsEnabled: isPayoutsEnabled,
-              paymentMode: "standard",
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-
-            console.log(`🏢 Org Stripe Connect updated: account=${account.id} status=${status} charges_enabled=${isChargesEnabled}`);
+          if (!orgRef) {
+            console.warn(`⚠️ Organization not found for Stripe Connect account: ${account.id}, metadata.orgId: ${rawOrgId}. Event ignored.`);
+            res.status(200).json({ received: true, ignored: true });
+            return;
           }
+
+          const isChargesEnabled = Boolean(account.charges_enabled);
+          const isPayoutsEnabled = Boolean(account.payouts_enabled);
+          const status = isChargesEnabled ? "active" : (account.details_submitted ? "pending_verification" : "pending");
+
+          await orgRef.update({
+            stripeConnectStatus: status,
+            stripeChargesEnabled: isChargesEnabled,
+            stripePayoutsEnabled: isPayoutsEnabled,
+            paymentMode: "standard",
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+
+          console.log(`🏢 Org Stripe Connect updated: org=${orgRef.id} account=${account.id} status=${status} charges_enabled=${isChargesEnabled}`);
           break;
         }
 
