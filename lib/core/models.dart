@@ -12,7 +12,7 @@ class Organization {
   final String? whatsapp;
   final String? website;
   final String? address;
-  final String? fiscalInfo;
+  final dynamic fiscalInfo;
   final String? primaryColor;
   final SubscriptionPlan plan;
   final DateTime createdAt;

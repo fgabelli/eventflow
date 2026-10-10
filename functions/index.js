@@ -1064,7 +1064,25 @@ exports.createCheckoutSession = onDocumentCreated(
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card"],
-        customer_email: sessionData.email,
+        ...(sessionData.customerId
+          ? { customer: sessionData.customerId, customer_update: { name: "auto", address: "auto" } }
+          : { customer_email: sessionData.email }),
+        billing_address_collection: "required",
+        tax_id_collection: { enabled: true },
+        custom_fields: [
+          {
+            key: "sdi_pec",
+            label: { type: "custom", custom: "Codice destinatario SDI o PEC (solo aziende)" },
+            type: "text",
+            optional: true,
+          },
+          {
+            key: "codice_fiscale",
+            label: { type: "custom", custom: "Codice fiscale" },
+            type: "text",
+            optional: true,
+          },
+        ],
         line_items: [
           {
             price: sessionData.priceId,
@@ -1116,7 +1134,7 @@ exports.createSubscriptionCheckout = onRequest(
       return;
     }
 
-    const { orgId, userId, email, priceId, plan, billingCycle, successUrl, cancelUrl } = req.body || {};
+    const { orgId, userId, email, customerId, priceId, plan, billingCycle, successUrl, cancelUrl } = req.body || {};
 
     if (!orgId || !priceId || !plan) {
       res.status(400).json({ error: "Missing required fields (orgId, priceId, plan)" });
@@ -1129,7 +1147,25 @@ exports.createSubscriptionCheckout = onRequest(
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         payment_method_types: ["card"],
-        customer_email: email,
+        ...(customerId
+          ? { customer: customerId, customer_update: { name: "auto", address: "auto" } }
+          : { customer_email: email }),
+        billing_address_collection: "required",
+        tax_id_collection: { enabled: true },
+        custom_fields: [
+          {
+            key: "sdi_pec",
+            label: { type: "custom", custom: "Codice destinatario SDI o PEC (solo aziende)" },
+            type: "text",
+            optional: true,
+          },
+          {
+            key: "codice_fiscale",
+            label: { type: "custom", custom: "Codice fiscale" },
+            type: "text",
+            optional: true,
+          },
+        ],
         line_items: [
           {
             price: priceId,
@@ -1301,12 +1337,48 @@ exports.stripeWebhook = onRequest(
           const plan = session.metadata?.plan;
 
           if (orgId && plan) {
+            // Extract custom fields (sdi_pec, codice_fiscale)
+            const customFields = Array.isArray(session.custom_fields) ? session.custom_fields : [];
+            const sdiPecField = customFields.find((f) => f.key === "sdi_pec");
+            const sdiPec = sdiPecField?.text?.value || null;
+
+            const cfField = customFields.find((f) => f.key === "codice_fiscale");
+            const codiceFiscale = cfField?.text?.value || null;
+
+            // Extract tax ID (Partita IVA)
+            const taxIds = session.customer_details?.tax_ids || [];
+            const vatId = taxIds.length > 0 && taxIds[0]?.value ? taxIds[0].value : null;
+
+            // Extract address
+            let address = null;
+            if (session.customer_details?.address) {
+              const a = session.customer_details.address;
+              address = {
+                city: a.city || null,
+                country: a.country || null,
+                line1: a.line1 || null,
+                line2: a.line2 || null,
+                postal_code: a.postal_code || null,
+                state: a.state || null,
+              };
+            }
+
+            const fiscalInfo = {
+              name: session.customer_details?.name || null,
+              address: address,
+              vatId: vatId,
+              sdiOrPec: sdiPec,
+              codiceFiscale: codiceFiscale,
+              isBusiness: Boolean(vatId),
+            };
+
             await db.collection("organizations").doc(orgId).update({
               plan: plan,
               stripeCustomerId: session.customer,
               stripeSubscriptionId: session.subscription,
               subscriptionStatus: "active",
               subscriptionUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              fiscalInfo: fiscalInfo,
             });
 
             // Save subscription details
@@ -1316,11 +1388,27 @@ exports.stripeWebhook = onRequest(
               stripeCustomerId: session.customer,
               stripeSubscriptionId: session.subscription,
               status: "active",
+              fiscalInfo: fiscalInfo,
               createdAt: admin.firestore.FieldValue.serverTimestamp(),
               updatedAt: admin.firestore.FieldValue.serverTimestamp(),
             });
 
-            console.log(`✅ Subscription activated: org=${orgId} plan=${plan}`);
+            // Update Stripe customer metadata for electronic billing
+            if (session.customer) {
+              try {
+                await stripe.customers.update(session.customer, {
+                  metadata: {
+                    sdi_pec: sdiPec || "",
+                    codice_fiscale: codiceFiscale || "",
+                  },
+                });
+                console.log(`📋 Updated Stripe customer ${session.customer} metadata with fiscal info`);
+              } catch (customerUpdateErr) {
+                console.error("⚠️ Failed to update customer metadata:", customerUpdateErr);
+              }
+            }
+
+            console.log(`✅ Subscription activated with fiscal info: org=${orgId} plan=${plan}`);
           }
           break;
         }

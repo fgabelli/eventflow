@@ -138,9 +138,9 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   String _getYearlyPriceId(SubscriptionPlan plan) {
     switch (plan) {
       case SubscriptionPlan.pro:
-        return 'price_1UNsQNExatX4plzRMXPPyV4O';
+        return 'price_1UOwviExatX4plzRVILZifj1';
       case SubscriptionPlan.business:
-        return 'price_1UNsQOExatX4plzR6K56TmVZ';
+        return 'price_1UOwvjExatX4plzRlr6DiEJe';
       default:
         return '';
     }
