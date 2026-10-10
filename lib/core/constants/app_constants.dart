@@ -191,27 +191,3 @@ enum VoucherPaymentStatus {
   const VoucherPaymentStatus(this.label);
 }
 
-// Helper commissioni Stripe per stima incassi organizzatore
-class StripeFeeHelper {
-  static const double percent = 0.015; // 1.5%
-  static const int fixedCents = 25; // 0.25 €
-
-  static int estimateStripeFeeCents(int amountCents) {
-    if (amountCents <= 0) return 0;
-    return (amountCents * percent).round() + fixedCents;
-  }
-
-  static double estimateStripeFeeEur(double priceEur) {
-    if (priceEur <= 0) return 0.0;
-    final cents = (priceEur * 100).round();
-    return estimateStripeFeeCents(cents) / 100.0;
-  }
-
-  static double estimateNetEur(double priceEur) {
-    if (priceEur <= 0) return 0.0;
-    final fee = estimateStripeFeeEur(priceEur);
-    final net = priceEur - fee;
-    return net > 0 ? net : 0.0;
-  }
-}
-

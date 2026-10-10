@@ -409,8 +409,7 @@ class AppLocalizations {
     'stripe_step2_desc': 'Stripe ti chiederà dati personali, indirizzo, documento di identità e coordinate bancarie (IBAN).',
     'stripe_step3_title': 'Inizia a incassare',
     'stripe_step3_desc': 'Una volta verificato, i pagamenti dei biglietti verranno accreditati direttamente sul tuo conto.',
-    'stripe_fee_note': 'Zero commissioni trattenute da Ticketto: dall\'incasso viene trattenuta solo la commissione reale di elaborazione Stripe, al costo e senza ricarichi. L\'organizzatore è il venditore ufficiale dei biglietti ed è responsabile di rimborsi e contestazioni.',
-    'ticket_earnings_estimate': 'Riceverai circa {net} € a biglietto (commissione Stripe circa {fee} €)',
+    'stripe_fee_note': 'Zero commissioni trattenute da Ticketto: paghi solo le commissioni standard del gateway Stripe.',
     'stripe_security_note': 'Ticketto non memorizza mai i dati della tua carta o del tuo conto. Tutto è gestito in sicurezza da Stripe.',
 
     // ─── Attendees ───
@@ -1104,8 +1103,7 @@ class AppLocalizations {
     'stripe_step2_desc': 'Stripe will ask for personal details, address, ID document and bank details (IBAN).',
     'stripe_step3_title': 'Start earning',
     'stripe_step3_desc': 'Once verified, ticket payments will be credited directly to your account.',
-    'stripe_fee_note': 'Zero platform fees from Ticketto: only actual Stripe processing fees are deducted at cost with no markup. The organizer is the official ticket seller and is responsible for refunds and disputes.',
-    'ticket_earnings_estimate': 'You will receive approx. {net} € per ticket (Stripe fee approx. {fee} €)',
+    'stripe_fee_note': 'Zero platform fees from Ticketto: you only pay standard Stripe processing fees.',
     'stripe_security_note': 'Ticketto never stores your card or bank details. Everything is securely managed by Stripe.',
 
     // ─── Attendees ───

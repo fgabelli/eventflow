@@ -169,17 +169,10 @@ class TermsScreen extends StatelessWidget {
     {
       'title': '5. Vendita biglietti e commissioni',
       'body': 'Ticketto non applica alcuna commissione di piattaforma sulla '
-          'vendita dei biglietti. L\'Organizzatore agisce quale venditore ufficiale '
-          'e commerciante registrato (merchant of record) dei biglietti emessi. '
-          'Dall\'incasso delle vendite viene trattenuta unicamente la commissione '
-          'reale del circuito di pagamento Stripe, trasferita al costo effettivo e '
-          'senza alcun ricarico da parte di Ticketto. I pagamenti sono accreditati '
-          'direttamente sull\'account Stripe Connect dell\'Organizzatore. L\'Organizzatore '
-          'è l\'unico ed esclusivo responsabile della gestione, autorizzazione ed emissione '
-          'dei rimborsi verso i partecipanti, nonché della gestione e degli oneri '
-          'relativi a eventuali contestazioni di pagamento (chargeback), i cui importi '
-          'e relative commissioni Stripe vengono addebitati direttamente sull\'account '
-          'dell\'Organizzatore.',
+          'vendita dei biglietti. I pagamenti vengono trasferiti direttamente al '
+          'tuo account Stripe Connect, al netto unicamente delle tariffe standard '
+          'di elaborazione del gateway Stripe. Ticketto non è responsabile per '
+          'rimborsi o contestazioni tra organizzatori e partecipanti.',
     },
     {
       'title': '6. Obblighi dell\'utente',
@@ -257,15 +250,10 @@ class TermsScreen extends StatelessWidget {
     {
       'title': '5. Ticket Sales and Fees',
       'body': 'Ticketto does not charge any platform commission on ticket '
-          'sales. The Organizer acts as the official seller and merchant of '
-          'record for the issued tickets. From ticket sale proceeds, only the '
-          'actual Stripe payment processing fee is retained, passed through at '
-          'cost without any markup by Ticketto. Payments are credited directly '
-          'to the Organizer\'s Stripe Connect account. The Organizer is solely '
-          'responsible for managing, approving, and issuing refunds to attendees, '
-          'as well as handling and bearing the costs of any payment disputes '
-          '(chargebacks), the amounts and related Stripe dispute fees of which '
-          'are charged directly to the Organizer\'s account.',
+          'sales. Payments are transferred directly to your Stripe Connect '
+          'account, net only of standard Stripe gateway processing fees. '
+          'Ticketto is not responsible for refunds or disputes between '
+          'organizers and attendees.',
     },
     {
       'title': '6. User Obligations',

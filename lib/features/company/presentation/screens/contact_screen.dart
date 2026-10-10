@@ -290,11 +290,8 @@ class ContactScreen extends StatelessWidget {
     {
       'q': 'Posso vendere biglietti a pagamento?',
       'a': 'Sì, puoi vendere biglietti tramite Stripe Connect. Ticketto non applica '
-          'alcuna commissione di piattaforma: agisci come venditore ufficiale dei '
-          'biglietti e dall\'incasso viene trattenuta solo la commissione reale del '
-          'gateway Stripe al costo, senza alcun ricarico. I pagamenti vengono accreditati '
-          'direttamente sul tuo conto Stripe Connect, sul quale sono gestiti anche '
-          'eventuali rimborsi e contestazioni.',
+          'alcuna commissione di piattaforma: paghi solo le commissioni standard '
+          'di Stripe e i pagamenti vengono trasferiti direttamente sul tuo conto.',
     },
     {
       'q': 'I miei dati sono al sicuro?',
@@ -325,10 +322,8 @@ class ContactScreen extends StatelessWidget {
     {
       'q': 'Can I sell paid tickets?',
       'a': 'Yes, you can sell tickets through Stripe Connect. Ticketto does not '
-          'charge any platform fees: you act as the official ticket seller and only '
-          'actual Stripe gateway processing fees are deducted at cost with no markup. '
-          'Payments are credited directly to your Stripe Connect account, where refunds '
-          'and disputes are also managed.',
+          'charge any platform fees: you only pay standard Stripe processing '
+          'fees, and payments are transferred directly to your account.',
     },
     {
       'q': 'Is my data secure?',
