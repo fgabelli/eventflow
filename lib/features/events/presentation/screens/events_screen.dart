@@ -1127,6 +1127,29 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                               prefixIcon: Icon(Icons.euro),
                             ),
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: (_) => setState(() {}),
+                          ),
+                          Builder(
+                            builder: (context) {
+                              final price = double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0.0;
+                              if (price <= 0) return const SizedBox.shrink();
+                              final fee = StripeFeeHelper.estimateStripeFeeEur(price);
+                              final net = StripeFeeHelper.estimateNetEur(price);
+                              final estimateStr = AppLocalizations.of(context)['ticket_earnings_estimate']
+                                  .replaceAll('{net}', net.toStringAsFixed(2))
+                                  .replaceAll('{fee}', fee.toStringAsFixed(2));
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8, left: 4),
+                                child: Text(
+                                  estimateStr,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ],

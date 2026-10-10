@@ -6,6 +6,7 @@ import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/services/ai_service.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/features/events/presentation/screens/events_screen.dart';
+import 'package:eventflow/core/l10n/app_localizations.dart';
 
 class AiEventCreatorDialog extends ConsumerStatefulWidget {
   const AiEventCreatorDialog({super.key});
@@ -592,6 +593,29 @@ class _AiEventCreatorDialogState extends ConsumerState<AiEventCreatorDialog> {
                       prefixIcon: Icon(Icons.euro),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  Builder(
+                    builder: (context) {
+                      final price = double.tryParse(_priceCtrl.text.replaceAll(',', '.')) ?? 0.0;
+                      if (price <= 0) return const SizedBox.shrink();
+                      final fee = StripeFeeHelper.estimateStripeFeeEur(price);
+                      final net = StripeFeeHelper.estimateNetEur(price);
+                      final estimateStr = AppLocalizations.of(context)['ticket_earnings_estimate']
+                          .replaceAll('{net}', net.toStringAsFixed(2))
+                          .replaceAll('{fee}', fee.toStringAsFixed(2));
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 4, left: 4),
+                        child: Text(
+                          estimateStr,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                 ],
