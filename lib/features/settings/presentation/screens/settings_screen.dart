@@ -408,7 +408,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ListTile(
                     leading: const _SettingsIcon(icon: Icons.account_balance_wallet_outlined, color: Color(0xFF635BFF)),
                     title: Text(AppLocalizations.of(context)['connect_stripe']),
-                    subtitle: Text(AppLocalizations.of(context)['stripe_subtitle']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(AppLocalizations.of(context)['stripe_subtitle']),
+                        const SizedBox(height: 6),
+                        Text(
+                          AppLocalizations.of(context)['stripe_bitle_managed_note'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _connectStripe(context, org, userEmail: userEmail),
                   ),
@@ -425,7 +439,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       child: const Icon(Icons.pending_outlined, color: AppColors.warning, size: 22),
                     ),
                     title: Text(AppLocalizations.of(context)['stripe_pending']),
-                    subtitle: Text(AppLocalizations.of(context)['stripe_pending_desc']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(AppLocalizations.of(context)['stripe_pending_desc']),
+                        const SizedBox(height: 6),
+                        Text(
+                          AppLocalizations.of(context)['stripe_bitle_managed_note'],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
                     trailing: FilledButton(
                       onPressed: () => _connectStripe(context, org, userEmail: userEmail),
                       style: FilledButton.styleFrom(
@@ -534,6 +562,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Expanded(
                             child: Text(
                               AppLocalizations.of(context)['stripe_security_note'],
+                              style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.business_outlined, size: 14, color: AppColors.textTertiary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              AppLocalizations.of(context)['stripe_bitle_managed_note'],
                               style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.4),
                             ),
                           ),
