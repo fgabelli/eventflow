@@ -1934,7 +1934,11 @@ exports.createConnectAccount = onRequest(
 
       // Check if org already has a connect account
       const orgDoc = await db.collection("organizations").doc(orgId).get();
-      const orgData = orgDoc.exists ? orgDoc.data() : {};
+      if (!orgDoc.exists) {
+        res.status(404).json({ error: "Organizzazione non trovata" });
+        return;
+      }
+      const orgData = orgDoc.data() || {};
       const existingAccountId = orgData.stripeConnectAccountId;
       const paymentMode = orgData.paymentMode;
 
@@ -1962,11 +1966,11 @@ exports.createConnectAccount = onRequest(
 
         // Otherwise (error "not connected / does not exist", or paymentMode !== "standard"), consider ID obsolete:
         // Save the old ID in stripeConnectAccountIdLegacy and proceed to create a new Standard account.
-        await db.collection("organizations").doc(orgId).update({
+        await db.collection("organizations").doc(orgId).set({
           stripeConnectAccountIdLegacy: existingAccountId,
           stripeConnectAccountId: admin.firestore.FieldValue.delete(),
           stripeConnectStatus: "pending",
-        });
+        }, { merge: true });
       }
 
       // Create Standard account with controller properties
@@ -1986,11 +1990,11 @@ exports.createConnectAccount = onRequest(
       });
 
       // Save account ID and paymentMode to organization
-      await db.collection("organizations").doc(orgId).update({
+      await db.collection("organizations").doc(orgId).set({
         stripeConnectAccountId: account.id,
         stripeConnectStatus: "pending",
         paymentMode: "standard",
-      });
+      }, { merge: true });
 
       // Create onboarding link
       const accountLink = await stripe.accountLinks.create({

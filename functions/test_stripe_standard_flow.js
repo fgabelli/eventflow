@@ -50,7 +50,10 @@ class MockFirestore {
               data: () => (docData ? JSON.parse(JSON.stringify(docData)) : undefined),
             };
           },
-          async set(data) {
+          async set(data, options) {
+            if (options && options.merge) {
+              return this.update(data);
+            }
             coll[docId] = JSON.parse(JSON.stringify(data));
           },
           async update(updates) {
