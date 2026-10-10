@@ -409,7 +409,15 @@ class AppLocalizations {
     'stripe_step2_desc': 'Stripe ti chiederà dati personali, indirizzo, documento di identità e coordinate bancarie (IBAN).',
     'stripe_step3_title': 'Inizia a incassare',
     'stripe_step3_desc': 'Una volta verificato, i pagamenti dei biglietti verranno accreditati direttamente sul tuo conto.',
-    'stripe_fee_note': 'Zero commissioni trattenute da Ticketto: paghi solo le commissioni standard del gateway Stripe.',
+    'stripe_fee_note': 'Collega il tuo account Stripe (nuovo o esistente). I pagamenti dei biglietti arrivano direttamente sul tuo conto Stripe. Ticketto non trattiene commissioni: paghi solo la commissione di Stripe (per le carte europee 1,5% + 0,25 €).',
+    'ticket_earnings_estimate': 'Su un biglietto da {price} € ricevi circa {net} € (commissione Stripe circa {fee} €)',
+    'refund_ticket': 'Rimborsa biglietto',
+    'refund_confirm_title': 'Conferma rimborso',
+    'refund_confirm_msg': 'Sei sicuro di voler rimborsare il biglietto di {name}? L\'importo di {amount} € verrà rimborsato all\'acquirente dal tuo conto Stripe e il posto verrà liberato.',
+    'refund_success': 'Biglietto rimborsato con successo',
+    'refund_status': 'Rimborsato',
+    'terms_section3_title': '3. Modelli di Prezzo e Pagamenti',
+    'terms_section3_body': 'Ticketto non applica commissioni proprie sui biglietti venduti. I ricavi di Bitle derivano esclusivamente dagli abbonamenti alla piattaforma, con i seguenti prezzi (IVA inclusa, soggetti a variazioni future):\n\n• Piano Free: gratuito, per eventi fino a 50 partecipanti.\n• Piano Pro: €29 al mese oppure €249 all\'anno.\n• Piano Business: €79 al mese oppure €699 all\'anno.\n\n3.1 Vendita dei biglietti. Per vendere biglietti l\'Organizzatore collega a Ticketto un proprio account Stripe, nuovo o già esistente, e ne completa la verifica con Stripe. I pagamenti dei biglietti avvengono direttamente sull\'account Stripe dell\'Organizzatore, che è il venditore dei biglietti: il suo nome compare nell\'estratto conto del Partecipante e l\'incasso viene versato da Stripe sul suo conto bancario. Bitle non riceve, non trattiene e non gestisce in alcun modo le somme incassate, e non è parte del contratto di vendita tra Organizzatore e Partecipante.\n\n3.2 Commissioni di pagamento. Ticketto non trattiene commissioni sui biglietti. Le commissioni per l\'elaborazione dei pagamenti sono applicate da Stripe direttamente all\'Organizzatore, secondo le condizioni del suo contratto con Stripe.\n\n3.3 Rimborsi, contestazioni e obblighi dell\'Organizzatore. Il rapporto con Stripe è regolato dal contratto tra l\'Organizzatore e Stripe. L\'Organizzatore è l\'unico responsabile dei rimborsi ai Partecipanti, della gestione delle contestazioni dei pagamenti (chargeback), della corretta configurazione del proprio account Stripe, degli adempimenti fiscali relativi ai biglietti venduti (documenti fiscali, IVA e, ove dovuti, diritti SIAE) e dei rapporti con i Partecipanti. Ticketto mette a disposizione strumenti per eseguire i rimborsi, che vengono comunque effettuati sull\'account Stripe dell\'Organizzatore.',
     'stripe_security_note': 'Ticketto non memorizza mai i dati della tua carta o del tuo conto. Tutto è gestito in sicurezza da Stripe.',
 
     // ─── Attendees ───
@@ -1103,7 +1111,15 @@ class AppLocalizations {
     'stripe_step2_desc': 'Stripe will ask for personal details, address, ID document and bank details (IBAN).',
     'stripe_step3_title': 'Start earning',
     'stripe_step3_desc': 'Once verified, ticket payments will be credited directly to your account.',
-    'stripe_fee_note': 'Zero platform fees from Ticketto: you only pay standard Stripe processing fees.',
+    'stripe_fee_note': 'Connect your Stripe account (new or existing). Ticket payments go directly to your Stripe account. Ticketto does not retain fees: you only pay Stripe processing fees (for European cards 1.5% + €0.25).',
+    'ticket_earnings_estimate': 'On a {price} € ticket you receive approx. {net} € (Stripe fee approx. {fee} €)',
+    'refund_ticket': 'Refund ticket',
+    'refund_confirm_title': 'Confirm refund',
+    'refund_confirm_msg': 'Are you sure you want to refund {name}\'s ticket? The amount of {amount} € will be refunded to the buyer from your Stripe account and the spot will be released.',
+    'refund_success': 'Ticket refunded successfully',
+    'refund_status': 'Refunded',
+    'terms_section3_title': '3. Pricing and Payments',
+    'terms_section3_body': 'Ticketto charges no commission of its own on the tickets you sell. Bitle\'s revenue comes exclusively from platform subscriptions, priced as follows (VAT included, subject to future change):\n\n• Free plan: free, for events of up to 50 attendees.\n• Pro plan: €29 per month or €249 per year.\n• Business plan: €79 per month or €699 per year.\n\n3.1 Ticket sales. To sell tickets, the Organizer connects their own Stripe account to Ticketto, either a new or an existing one, and completes its verification with Stripe. Ticket payments are made directly to the Organizer\'s Stripe account, and the Organizer is the seller of the tickets: their name appears on the Attendee\'s card statement and Stripe pays the revenue out to their bank account. Bitle does not receive, withhold or handle the collected funds in any way, and is not a party to the sales contract between the Organizer and the Attendee.\n\n3.2 Payment processing fees. Ticketto takes no commission on tickets. Payment processing fees are charged by Stripe directly to the Organizer, under the terms of the Organizer\'s agreement with Stripe.\n\n3.3 Refunds, disputes and Organizer obligations. The relationship with Stripe is governed by the agreement between the Organizer and Stripe. The Organizer is solely responsible for refunds to Attendees, for handling payment disputes (chargebacks), for correctly configuring their Stripe account, for all tax obligations relating to the tickets sold (tax documents, VAT and any applicable copyright or performance fees) and for their relationship with Attendees. Ticketto provides tools to issue refunds, which are in any case carried out on the Organizer\'s Stripe account.',
     'stripe_security_note': 'Ticketto never stores your card or bank details. Everything is securely managed by Stripe.',
 
     // ─── Attendees ───

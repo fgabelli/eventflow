@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:uuid/uuid.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
@@ -271,6 +272,9 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                   attendee: attendee,
                   onStatusChange: (status) => _changeStatus(attendee.id, status),
                   onDelete: () => _deleteAttendee(attendee.id),
+                  onRefund: (attendee.paymentStatus == 'paid' || attendee.paymentId != null) && attendee.status != RegistrationStatus.refunded
+                      ? () => _refundAttendee(attendee)
+                      : null,
                   onTap: () {
                     if (org != null) _showAttendeeDetail(context, attendee, org);
                   },
@@ -315,6 +319,77 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
           .collection(Collections.attendees)
           .doc(attendeeId)
           .delete();
+    }
+  }
+
+  Future<void> _refundAttendee(Attendee attendee) async {
+    final l = AppLocalizations.of(context);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l['refund_confirm_title']),
+          content: Text(
+            l['refund_confirm_msg']
+                .replaceAll('{name}', attendee.fullName)
+                .replaceAll('{amount}', attendee.paymentAmount?.toStringAsFixed(2) ?? '0.00'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l['cancel']),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l['refund_ticket']),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              SizedBox(width: 12),
+              Text('Elaborazione rimborso in corso...'),
+            ],
+          ),
+          duration: Duration(seconds: 10),
+        ),
+      );
+
+      final callable = FirebaseFunctions.instanceFor(region: 'us-central1').httpsCallable('refundTicket');
+      await callable.call({
+        'eventId': attendee.eventId,
+        'attendeeId': attendee.id,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l['refund_success']),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore durante il rimborso: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
@@ -373,12 +448,16 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                           ? AppLocalizations.of(context)['status_confirmed']
                           : attendee.status == RegistrationStatus.pending
                               ? AppLocalizations.of(context)['status_pending']
-                              : AppLocalizations.of(context)['status_canceled'],
+                              : attendee.status == RegistrationStatus.refunded
+                                  ? AppLocalizations.of(context)['refund_status']
+                                  : AppLocalizations.of(context)['status_canceled'],
                       color: attendee.status == RegistrationStatus.confirmed
                           ? AppColors.success
                           : attendee.status == RegistrationStatus.pending
                               ? AppColors.warning
-                              : AppColors.error,
+                              : attendee.status == RegistrationStatus.refunded
+                                  ? AppColors.warning
+                                  : AppColors.error,
                     ),
                     const SizedBox(width: 8),
                     if (attendee.checkInStatus == CheckInStatus.checkedIn)
@@ -632,6 +711,27 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                     ),
                   ],
                 ),
+                if ((attendee.paymentStatus == 'paid' || attendee.paymentId != null) && attendee.status != RegistrationStatus.refunded) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _refundAttendee(attendee);
+                      },
+                      icon: const Icon(Icons.replay_rounded, size: 18, color: AppColors.warning),
+                      label: Text(
+                        AppLocalizations.of(context)['refund_ticket'],
+                        style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w600),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.warning),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
               ],
             ),
@@ -1702,12 +1802,14 @@ class _AttendeeCard extends StatelessWidget {
   final Attendee attendee;
   final ValueChanged<RegistrationStatus> onStatusChange;
   final VoidCallback onDelete;
+  final VoidCallback? onRefund;
   final VoidCallback onTap;
 
   const _AttendeeCard({
     required this.attendee,
     required this.onStatusChange,
     required this.onDelete,
+    this.onRefund,
     required this.onTap,
   });
 
@@ -1763,7 +1865,9 @@ class _AttendeeCard extends StatelessWidget {
                             ? AppLocalizations.of(context)['status_confirmed']
                             : attendee.status == RegistrationStatus.pending
                                 ? AppLocalizations.of(context)['status_pending']
-                                : AppLocalizations.of(context)['status_canceled'],
+                                : attendee.status == RegistrationStatus.refunded
+                                    ? AppLocalizations.of(context)['refund_status']
+                                    : AppLocalizations.of(context)['status_canceled'],
                         style: TextStyle(
                           color: _statusColor(attendee.status),
                           fontSize: 10,
@@ -1835,6 +1939,17 @@ class _AttendeeCard extends StatelessWidget {
                 PopupMenuItem(value: 'confirm', child: Text(AppLocalizations.of(context)['confirm'])),
               if (attendee.status == RegistrationStatus.confirmed)
                 PopupMenuItem(value: 'cancel', child: Text(AppLocalizations.of(context)['cancel_registration'])),
+              if (onRefund != null)
+                PopupMenuItem(
+                  value: 'refund',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.replay_rounded, size: 16, color: AppColors.warning),
+                      const SizedBox(width: 8),
+                      Text(AppLocalizations.of(context)['refund_ticket'], style: const TextStyle(color: AppColors.warning)),
+                    ],
+                  ),
+                ),
               PopupMenuItem(
                 value: 'delete',
                 child: Text(AppLocalizations.of(context)['remove'], style: const TextStyle(color: AppColors.error)),
@@ -1846,6 +1961,8 @@ class _AttendeeCard extends StatelessWidget {
                   onStatusChange(RegistrationStatus.confirmed);
                 case 'cancel':
                   onStatusChange(RegistrationStatus.canceled);
+                case 'refund':
+                  onRefund?.call();
                 case 'delete':
                   onDelete();
               }
@@ -1863,6 +1980,7 @@ class _AttendeeCard extends StatelessWidget {
       case RegistrationStatus.pending: return AppColors.warning;
       case RegistrationStatus.canceled: return AppColors.error;
       case RegistrationStatus.waitlist: return AppColors.textTertiary;
+      case RegistrationStatus.refunded: return AppColors.warning;
     }
   }
 

@@ -620,15 +620,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _openStripeDashboard(BuildContext context, String orgId) async {
     try {
-      final response = await http.get(
-        Uri.parse('https://us-central1-eventflow-3541b.cloudfunctions.net/createConnectAccountLink?orgId=$orgId&type=dashboard'),
+      await launchUrl(
+        Uri.parse('https://dashboard.stripe.com'),
+        mode: LaunchMode.externalApplication,
       );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && data['url'] != null) {
-        await launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
-      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1966,7 +1966,35 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               ),
               if (_isPaid) ...[
                 const SizedBox(height: 12),
-                TextField(controller: _priceCtrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(hintText: '0.00', prefixIcon: Icon(Icons.euro))),
+                TextField(
+                  controller: _priceCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(hintText: '0.00', prefixIcon: Icon(Icons.euro)),
+                  onChanged: (_) => setState(() {}),
+                ),
+                Builder(
+                  builder: (context) {
+                    final price = double.tryParse(_priceCtrl.text.replaceAll(',', '.')) ?? 0.0;
+                    if (price <= 0) return const SizedBox.shrink();
+                    final fee = StripeFeeHelper.estimateStripeFeeEur(price);
+                    final net = StripeFeeHelper.estimateNetEur(price);
+                    final estimateStr = AppLocalizations.of(context)['ticket_earnings_estimate']
+                        .replaceAll('{price}', price.toStringAsFixed(2))
+                        .replaceAll('{net}', net.toStringAsFixed(2))
+                        .replaceAll('{fee}', fee.toStringAsFixed(2));
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8, left: 4),
+                      child: Text(
+                        estimateStr,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ],
           ),

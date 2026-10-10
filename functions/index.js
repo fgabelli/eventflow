@@ -1047,6 +1047,8 @@ exports.resendAttendeeConfirmation = onRequest(
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const STRIPE_CONNECT_WEBHOOK_SECRET = process.env.STRIPE_CONNECT_WEBHOOK_SECRET || process.env.STRIPE_WEBHOOK_SECRET;
+const STRIPE_CLIENT_ID = process.env.STRIPE_CLIENT_ID;
 
 // ─── Create Stripe Checkout Session ──────────────────────────
 // Triggered when a document is created in stripe_checkout_sessions
@@ -1229,106 +1231,9 @@ exports.stripeWebhook = onRequest(
           const session = stripeEvent.data.object;
           const paymentType = session.metadata?.payment_type;
 
-          // ─── Ticket Payment (Stripe Connect) ───
+          // ─── Ticket Payment (Handled by stripeConnectWebhook) ───
           if (paymentType === "ticket_payment") {
-            const eventId = session.metadata.event_id;
-            const orgId = session.metadata.org_id;
-            const slotId = session.metadata.slot_id || null;
-            const pendingRegId = session.metadata.pending_registration_id;
-            const { v4: uuidv4 } = require("uuid");
-
-            // ─── Group registration (from pending_registrations) ───
-            if (pendingRegId) {
-              const pendingDoc = await db.collection("pending_registrations").doc(pendingRegId).get();
-              if (pendingDoc.exists) {
-                const pending = pendingDoc.data();
-                const allAttendees = [pending.primaryAttendee, ...(pending.extraAttendees || [])];
-                const perPersonAmount = session.amount_total / allAttendees.length / 100;
-                const mConsent = Boolean(pending.marketingConsent);
-                const pConsent = pending.photoConsent !== undefined && pending.photoConsent !== null ? Boolean(pending.photoConsent) : null;
-                const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
-
-                for (const att of allAttendees) {
-                  if (!att.email) continue;
-                  const email = att.email.toLowerCase();
-                  const docId = db.collection("attendees").doc().id;
-                  const qrCode = uuidv4();
-
-                  await db.collection("attendees").doc(docId).set({
-                    eventId: eventId,
-                    orgId: orgId,
-                    firstName: att.firstName || "",
-                    lastName: att.lastName || "",
-                    email: email,
-                    phone: att.phone || null,
-                    category: "Standard",
-                    status: "confirmed",
-                    checkInStatus: "notCheckedIn",
-                    checkInTime: null,
-                    qrCode: qrCode,
-                    timeSlotId: pending.slotId || null,
-                    customData: pending.customData || {},
-                    privacyAccepted: true,
-                    privacyAcceptedAt: nowTimestamp,
-                    marketingConsent: mConsent,
-                    marketingConsentAt: mConsent ? nowTimestamp : null,
-                    photoConsent: pConsent,
-                    photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
-                    paymentStatus: "paid",
-                    paymentId: session.payment_intent,
-                    paymentAmount: perPersonAmount,
-                    registeredAt: nowTimestamp,
-                  });
-                }
-
-                // Cleanup pending registration
-                await db.collection("pending_registrations").doc(pendingRegId).delete();
-                console.log(`🎫 Group ticket payment completed: event=${eventId} count=${allAttendees.length}`);
-              }
-              break;
-            }
-
-            // ─── Single registration (legacy / no pending) ───
-            const attendeeData = JSON.parse(session.metadata.attendee_data || "{}");
-
-            if (eventId && attendeeData.email) {
-              const email = attendeeData.email.toLowerCase();
-              const docId = db.collection("attendees").doc().id;
-              const qrCode = uuidv4();
-              const mConsent = session.metadata.marketing_consent === "true";
-              const pConsentRaw = session.metadata.photo_consent;
-              const pConsent = pConsentRaw === "true" ? true : (pConsentRaw === "false" ? false : null);
-              const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
-
-              // Create attendee
-              await db.collection("attendees").doc(docId).set({
-                eventId: eventId,
-                orgId: orgId,
-                firstName: attendeeData.firstName || "",
-                lastName: attendeeData.lastName || "",
-                email: email,
-                phone: attendeeData.phone || null,
-                category: "Standard",
-                status: "confirmed",
-                checkInStatus: "notCheckedIn",
-                checkInTime: null,
-                qrCode: qrCode,
-                timeSlotId: slotId,
-                customData: attendeeData.customData || {},
-                privacyAccepted: true,
-                privacyAcceptedAt: nowTimestamp,
-                marketingConsent: mConsent,
-                marketingConsentAt: mConsent ? nowTimestamp : null,
-                photoConsent: pConsent,
-                photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
-                paymentStatus: "paid",
-                paymentId: session.payment_intent,
-                paymentAmount: session.amount_total / 100,
-                registeredAt: nowTimestamp,
-              });
-
-              console.log(`🎫 Ticket payment completed: event=${eventId} attendee=${email}`);
-            }
+            console.log("ℹ️ Ticket payment event received on platform webhook, ignored (handled by stripeConnectWebhook).");
             break;
           }
 
@@ -1544,10 +1449,8 @@ exports.createPortalSession = onRequest(
 );
 
 // ═══════════════════════════════════════════════════════════════
-// ─── STRIPE CONNECT (Ticket Payments) ────────────────────────
+// ─── STRIPE CONNECT (Ticket Payments & Standard Accounts) ────
 // ═══════════════════════════════════════════════════════════════
-
-const PLATFORM_FEE_PERCENT = 0; // 0% platform commission — Ticketto charges 0 platform fees
 
 // Helper: Java-style hashCode for deterministic doc IDs
 function hashCode(str) {
@@ -1560,7 +1463,462 @@ function hashCode(str) {
   return hash;
 }
 
-// ─── Create Stripe Connect Express Account ──────────────────
+// ─── Stripe Connect Webhook (Events on Connected Accounts) ─────
+exports.stripeConnectWebhook = onRequest(
+  {
+    cors: false,
+  },
+  async (req, res) => {
+    const stripe = require("stripe")(STRIPE_SECRET_KEY);
+
+    let stripeEvent;
+    try {
+      const sig = req.headers["stripe-signature"];
+      stripeEvent = stripe.webhooks.constructEvent(
+        req.rawBody,
+        sig,
+        STRIPE_CONNECT_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error("⚠️ Connect Webhook signature verification failed:", err.message);
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    const connectedAccountId = stripeEvent.account;
+    console.log(`📩 Stripe Connect event: ${stripeEvent.type} (account: ${connectedAccountId || 'n/a'})`);
+
+    try {
+      switch (stripeEvent.type) {
+        // ─── Checkout completed on connected account → Confirm ticket registration ───
+        case "checkout.session.completed": {
+          const session = stripeEvent.data.object;
+          const paymentType = session.metadata?.payment_type;
+
+          if (paymentType === "ticket_payment") {
+            const eventId = session.metadata.event_id;
+            const orgId = session.metadata.org_id;
+            const slotId = session.metadata.slot_id || null;
+            const pendingRegId = session.metadata.pending_registration_id;
+            const paymentIntentId = session.payment_intent;
+            const { v4: uuidv4 } = require("uuid");
+
+            // Idempotency check: don't process the same payment twice
+            if (paymentIntentId) {
+              const existingSnap = await db.collection("attendees")
+                .where("paymentId", "==", paymentIntentId)
+                .limit(1)
+                .get();
+
+              if (!existingSnap.empty) {
+                console.log(`ℹ️ Ticket payment already processed for paymentIntent: ${paymentIntentId}, skipping.`);
+                res.json({ received: true });
+                return;
+              }
+            }
+
+            // ─── Group registration (from pending_registrations) ───
+            if (pendingRegId) {
+              const pendingDoc = await db.collection("pending_registrations").doc(pendingRegId).get();
+              if (pendingDoc.exists) {
+                const pending = pendingDoc.data();
+                const allAttendees = [pending.primaryAttendee, ...(pending.extraAttendees || [])];
+                const perPersonAmount = session.amount_total / allAttendees.length / 100;
+                const mConsent = Boolean(pending.marketingConsent);
+                const pConsent = pending.photoConsent !== undefined && pending.photoConsent !== null ? Boolean(pending.photoConsent) : null;
+                const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
+
+                for (const att of allAttendees) {
+                  if (!att.email) continue;
+                  const email = att.email.toLowerCase();
+                  const docId = db.collection("attendees").doc().id;
+                  const qrCode = uuidv4();
+
+                  await db.collection("attendees").doc(docId).set({
+                    eventId: eventId,
+                    orgId: orgId,
+                    firstName: att.firstName || "",
+                    lastName: att.lastName || "",
+                    email: email,
+                    phone: att.phone || null,
+                    category: "Standard",
+                    status: "confirmed",
+                    checkInStatus: "notCheckedIn",
+                    checkInTime: null,
+                    qrCode: qrCode,
+                    timeSlotId: pending.slotId || null,
+                    customData: pending.customData || {},
+                    privacyAccepted: true,
+                    privacyAcceptedAt: nowTimestamp,
+                    marketingConsent: mConsent,
+                    marketingConsentAt: mConsent ? nowTimestamp : null,
+                    photoConsent: pConsent,
+                    photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
+                    paymentStatus: "paid",
+                    paymentId: paymentIntentId,
+                    paymentAmount: perPersonAmount,
+                    stripeAccount: connectedAccountId,
+                    registeredAt: nowTimestamp,
+                  });
+                }
+
+                // Cleanup pending registration
+                await db.collection("pending_registrations").doc(pendingRegId).delete();
+                console.log(`🎫 Group ticket payment completed: event=${eventId} count=${allAttendees.length}`);
+              }
+              break;
+            }
+
+            // ─── Single registration (attendee_data in metadata) ───
+            const attendeeData = JSON.parse(session.metadata.attendee_data || "{}");
+
+            if (eventId && attendeeData.email) {
+              const email = attendeeData.email.toLowerCase();
+              const docId = db.collection("attendees").doc().id;
+              const qrCode = uuidv4();
+              const mConsent = session.metadata.marketing_consent === "true";
+              const pConsentRaw = session.metadata.photo_consent;
+              const pConsent = pConsentRaw === "true" ? true : (pConsentRaw === "false" ? false : null);
+              const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
+
+              await db.collection("attendees").doc(docId).set({
+                eventId: eventId,
+                orgId: orgId,
+                firstName: attendeeData.firstName || "",
+                lastName: attendeeData.lastName || "",
+                email: email,
+                phone: attendeeData.phone || null,
+                category: "Standard",
+                status: "confirmed",
+                checkInStatus: "notCheckedIn",
+                checkInTime: null,
+                qrCode: qrCode,
+                timeSlotId: slotId,
+                customData: attendeeData.customData || {},
+                privacyAccepted: true,
+                privacyAcceptedAt: nowTimestamp,
+                marketingConsent: mConsent,
+                marketingConsentAt: mConsent ? nowTimestamp : null,
+                photoConsent: pConsent,
+                photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
+                paymentStatus: "paid",
+                paymentId: paymentIntentId,
+                paymentAmount: session.amount_total / 100,
+                stripeAccount: connectedAccountId,
+                registeredAt: nowTimestamp,
+              });
+
+              console.log(`🎫 Ticket payment completed: event=${eventId} attendee=${email} account=${connectedAccountId}`);
+            }
+          }
+          break;
+        }
+
+        // ─── Charge refunded on connected account (e.g. from organizer Stripe dashboard) ───
+        case "charge.refunded": {
+          const charge = stripeEvent.data.object;
+          const paymentIntentId = charge.payment_intent;
+
+          if (paymentIntentId) {
+            const attendeesSnap = await db.collection("attendees")
+              .where("paymentId", "==", paymentIntentId)
+              .get();
+
+            for (const attendeeDoc of attendeesSnap.docs) {
+              const attendee = attendeeDoc.data();
+              if (attendee.status !== "refunded") {
+                await attendeeDoc.ref.update({
+                  status: "refunded",
+                  paymentStatus: "refunded",
+                  refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+                  refundSource: "stripe_dashboard",
+                });
+
+                // Decrement event attendees count & time slot
+                const eventUpdate = {
+                  attendeesCount: admin.firestore.FieldValue.increment(-1),
+                };
+                if (attendee.timeSlotId) {
+                  const eventDoc = await db.collection("events").doc(attendee.eventId).get();
+                  if (eventDoc.exists) {
+                    const eventData = eventDoc.data();
+                    if (eventData.timeSlots) {
+                      const slotIdx = eventData.timeSlots.findIndex((s) => s.id === attendee.timeSlotId);
+                      if (slotIdx >= 0) {
+                        const updatedSlots = [...eventData.timeSlots];
+                        updatedSlots[slotIdx] = {
+                          ...updatedSlots[slotIdx],
+                          bookedCount: Math.max(0, (updatedSlots[slotIdx].bookedCount || 1) - 1),
+                        };
+                        eventUpdate.timeSlots = updatedSlots;
+                      }
+                    }
+                  }
+                }
+                await db.collection("events").doc(attendee.eventId).update(eventUpdate);
+
+                // Send refund confirmation email
+                const eventDoc = await db.collection("events").doc(attendee.eventId).get();
+                const orgDoc = await db.collection("organizations").doc(attendee.orgId).get();
+                if (eventDoc.exists) {
+                  await sendRefundEmail({
+                    attendee,
+                    eventData: eventDoc.data(),
+                    orgData: orgDoc.exists ? orgDoc.data() : null,
+                    amount: attendee.paymentAmount,
+                  });
+                }
+
+                console.log(`↩️ Attendee marked as refunded from Stripe dashboard: ${attendee.email}`);
+              }
+            }
+          }
+          break;
+        }
+
+        // ─── Account updated (onboarding / capabilities change) ───
+        case "account.updated": {
+          const account = stripeEvent.data.object;
+          let orgRef = null;
+
+          if (account.metadata && account.metadata.orgId) {
+            orgRef = db.collection("organizations").doc(account.metadata.orgId);
+          } else {
+            const orgSnap = await db.collection("organizations")
+              .where("stripeConnectAccountId", "==", account.id)
+              .limit(1)
+              .get();
+            if (!orgSnap.empty) {
+              orgRef = orgSnap.docs[0].ref;
+            }
+          }
+
+          if (orgRef) {
+            const isChargesEnabled = Boolean(account.charges_enabled);
+            const isPayoutsEnabled = Boolean(account.payouts_enabled);
+            const status = isChargesEnabled ? "active" : (account.details_submitted ? "pending_verification" : "pending");
+
+            await orgRef.update({
+              stripeConnectStatus: status,
+              stripeChargesEnabled: isChargesEnabled,
+              stripePayoutsEnabled: isPayoutsEnabled,
+              paymentMode: "standard",
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            console.log(`🏢 Org Stripe Connect updated: account=${account.id} status=${status} charges_enabled=${isChargesEnabled}`);
+          }
+          break;
+        }
+
+        default:
+          console.log(`ℹ️ Unhandled Connect event type: ${stripeEvent.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (err) {
+      console.error("❌ Error processing Connect webhook event:", err);
+      res.status(500).send(`Webhook Handler Error: ${err.message}`);
+    }
+  }
+);
+
+// ─── Helper: Send Refund Confirmation Email ──────────────────
+async function sendRefundEmail({ attendee, eventData, orgData, amount }) {
+  try {
+    const lang = getEventLang(eventData);
+    const resend = new Resend(RESEND_API_KEY);
+    const organizerEmail = await getOrganizerEmail(attendee.orgId, orgData);
+
+    const isIt = lang === "it";
+    const subject = isIt
+      ? `↩️ Rimborso Confermato – ${eventData.title}`
+      : `↩️ Refund Confirmed – ${eventData.title}`;
+
+    const formattedAmount = amount ? `€ ${Number(amount).toFixed(2)}` : "";
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; color: #1A1A2E;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h1 style="color: #0E6B52; font-size: 24px; margin-bottom: 8px;">
+            ${isIt ? "Rimborso Confermato" : "Refund Confirmed"}
+          </h1>
+          <p style="color: #6B7280; font-size: 14px; margin: 0;">
+            ${eventData.title}
+          </p>
+        </div>
+        <div style="background-color: #F9FAFB; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #E5E7EB;">
+          <p style="font-size: 15px; margin-top: 0;">
+            ${isIt ? `Ciao <strong>${attendee.firstName || ""}</strong>,` : `Hello <strong>${attendee.firstName || ""}</strong>,`}
+          </p>
+          <p style="font-size: 14px; line-height: 1.6; color: #374151;">
+            ${isIt
+              ? `Ti confermiamo che il rimborso per il tuo biglietto per <strong>${eventData.title}</strong> è stato elaborato con successo${formattedAmount ? ` per un importo di <strong>${formattedAmount}</strong>` : ""}.`
+              : `We confirm that your refund for <strong>${eventData.title}</strong> has been successfully processed${formattedAmount ? ` for <strong>${formattedAmount}</strong>` : ""}.`}
+          </p>
+          <p style="font-size: 13px; color: #6B7280; line-height: 1.5;">
+            ${isIt
+              ? "L'accredito avverrà automaticamente sul metodo di pagamento originale entro 5-10 giorni lavorativi, in base ai tempi del tuo istituto bancario."
+              : "The credit will automatically appear on your original payment method within 5-10 business days, depending on your bank."}
+          </p>
+        </div>
+        <div style="text-align: center; font-size: 12px; color: #9CA3AF;">
+          <p style="margin: 0;">Ticketto – ${orgData?.name || "L'Organizzatore"}</p>
+        </div>
+      </div>
+    `;
+
+    const emailPayload = {
+      from: EMAIL_FROM,
+      to: [attendee.email],
+      subject,
+      html,
+    };
+    if (organizerEmail) {
+      emailPayload.reply_to = [organizerEmail];
+    }
+
+    await resend.emails.send(emailPayload);
+    console.log(`📧 Refund email sent to ${attendee.email}`);
+  } catch (err) {
+    console.warn("⚠️ Error sending refund email (non-blocking):", err.message);
+  }
+}
+
+// ─── Callable: Refund Ticket ─────────────────────────────────
+exports.refundTicket = onCall(
+  { cors: true },
+  async (request) => {
+    // 1. Verify authentication
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError("unauthenticated", "È necessario essere autenticati per emettere un rimborso.");
+    }
+    const uid = request.auth.uid;
+    const { eventId, attendeeId, paymentIntentId } = request.data || {};
+
+    if (!attendeeId && !paymentIntentId) {
+      throw new HttpsError("invalid-argument", "Specificare attendeeId o paymentIntentId.");
+    }
+
+    // 2. Fetch attendee
+    let attendeeDoc = null;
+    if (attendeeId) {
+      attendeeDoc = await db.collection("attendees").doc(attendeeId).get();
+    } else {
+      const snap = await db.collection("attendees")
+        .where("paymentId", "==", paymentIntentId)
+        .limit(1)
+        .get();
+      if (!snap.empty) attendeeDoc = snap.docs[0];
+    }
+
+    if (!attendeeDoc || !attendeeDoc.exists) {
+      throw new HttpsError("not-found", "Partecipante non trovato.");
+    }
+
+    const attendee = attendeeDoc.data();
+    const actualEventId = eventId || attendee.eventId;
+
+    // 3. Fetch event & org
+    const eventDoc = await db.collection("events").doc(actualEventId).get();
+    if (!eventDoc.exists) {
+      throw new HttpsError("not-found", "Evento non trovato.");
+    }
+    const eventData = eventDoc.data();
+    const orgId = attendee.orgId || eventData.orgId;
+
+    // 4. Verify permission (global admin OR org owner/admin)
+    const userDoc = await db.collection("users").doc(uid).get();
+    const isGlobalAdmin = userDoc.exists && userDoc.data().role === "admin";
+
+    const orgDoc = await db.collection("organizations").doc(orgId).get();
+    const orgData = orgDoc.exists ? orgDoc.data() : {};
+    const isOrgOwner = orgData.ownerId === uid;
+
+    let isOrgAdmin = false;
+    if (!isGlobalAdmin && !isOrgOwner) {
+      const memberDoc = await db.collection("organizations").doc(orgId).collection("members").doc(uid).get();
+      if (memberDoc.exists && ["owner", "admin"].includes(memberDoc.data().role)) {
+        isOrgAdmin = true;
+      }
+    }
+
+    if (!isGlobalAdmin && !isOrgOwner && !isOrgAdmin) {
+      throw new HttpsError("permission-denied", "Non hai i permessi per rimborsare i biglietti di questa organizzazione.");
+    }
+
+    // 5. Check if already refunded
+    if (attendee.status === "refunded") {
+      throw new HttpsError("already-exists", "Questo biglietto è già stato rimborsato.");
+    }
+
+    const connectedAccountId = orgData.stripeConnectAccountId;
+    if (!connectedAccountId) {
+      throw new HttpsError("failed-precondition", "L'organizzazione non ha un account Stripe Connect configurato.");
+    }
+
+    const actualPaymentIntentId = attendee.paymentId || paymentIntentId;
+    if (!actualPaymentIntentId) {
+      throw new HttpsError("failed-precondition", "Nessun pagamento associato a questo partecipante.");
+    }
+
+    // 6. Execute refund on connected account
+    const stripe = require("stripe")(STRIPE_SECRET_KEY);
+    let refund;
+    try {
+      refund = await stripe.refunds.create(
+        {
+          payment_intent: actualPaymentIntentId,
+        },
+        {
+          stripeAccount: connectedAccountId,
+        }
+      );
+    } catch (stripeErr) {
+      console.error("❌ Stripe refund error:", stripeErr);
+      throw new HttpsError("internal", `Errore Stripe durante il rimborso: ${stripeErr.message}`);
+    }
+
+    // 7. Update attendee record
+    await attendeeDoc.ref.update({
+      status: "refunded",
+      paymentStatus: "refunded",
+      refundedAt: admin.firestore.FieldValue.serverTimestamp(),
+      refundId: refund.id,
+      refundSource: "ticketto_dashboard",
+    });
+
+    // 8. Decrement event count & time slot
+    const eventUpdate = {
+      attendeesCount: admin.firestore.FieldValue.increment(-1),
+    };
+    if (attendee.timeSlotId && eventData.timeSlots) {
+      const slotIdx = eventData.timeSlots.findIndex((s) => s.id === attendee.timeSlotId);
+      if (slotIdx >= 0) {
+        const updatedSlots = [...eventData.timeSlots];
+        updatedSlots[slotIdx] = {
+          ...updatedSlots[slotIdx],
+          bookedCount: Math.max(0, (updatedSlots[slotIdx].bookedCount || 1) - 1),
+        };
+        eventUpdate.timeSlots = updatedSlots;
+      }
+    }
+    await db.collection("events").doc(actualEventId).update(eventUpdate);
+
+    // 9. Send refund confirmation email
+    await sendRefundEmail({
+      attendee,
+      eventData,
+      orgData,
+      amount: attendee.paymentAmount,
+    });
+
+    console.log(`✅ Refund successful: attendee=${attendee.email} event=${actualEventId} refundId=${refund.id}`);
+    return { success: true, refundId: refund.id };
+  }
+);
+
+// ─── Create Stripe Connect Standard Account ─────────────────
 exports.createConnectAccount = onRequest(
   { cors: true },
   async (req, res) => {
@@ -1587,25 +1945,27 @@ exports.createConnectAccount = onRequest(
         return;
       }
 
-      // Create Express account
+      // Create Standard account with controller properties
       const account = await stripe.accounts.create({
-        type: "express",
+        controller: {
+          stripe_dashboard: { type: "full" },
+          fees: { payer: "account" },
+          losses: { payments: "stripe" },
+          requirement_collection: "stripe",
+        },
         email: email || undefined,
         business_profile: {
           name: orgName || undefined,
           product_description: "Event ticket sales via Ticketto",
         },
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
         metadata: { orgId: orgId },
       });
 
-      // Save account ID to organization
+      // Save account ID and paymentMode to organization
       await db.collection("organizations").doc(orgId).update({
         stripeConnectAccountId: account.id,
         stripeConnectStatus: "pending",
+        paymentMode: "standard",
       });
 
       // Create onboarding link
@@ -1616,7 +1976,7 @@ exports.createConnectAccount = onRequest(
         type: "account_onboarding",
       });
 
-      console.log(`🔗 Connect account created: org=${orgId} account=${account.id}`);
+      console.log(`🔗 Standard Connect account created: org=${orgId} account=${account.id}`);
       res.json({ url: accountLink.url, accountId: account.id });
     } catch (error) {
       console.error("❌ Error creating Connect account:", error);
@@ -1648,8 +2008,9 @@ exports.createConnectAccountLink = onRequest(
       }
 
       if (type === "dashboard") {
-        const loginLink = await stripe.accounts.createLoginLink(accountId);
-        res.json({ url: loginLink.url });
+        // Standard accounts use the full Stripe Dashboard directly
+        res.json({ url: "https://dashboard.stripe.com" });
+        return;
       } else {
         const accountLink = await stripe.accountLinks.create({
           account: accountId,
@@ -1664,6 +2025,97 @@ exports.createConnectAccountLink = onRequest(
     }
   }
 );
+
+// ─── Stripe Connect OAuth Callback ──────────────────────────
+exports.stripeConnectOAuthCallback = onRequest(
+  { cors: true },
+  async (req, res) => {
+    const { code, state: orgId, error, error_description } = req.query;
+
+    if (error) {
+      console.error("❌ Stripe OAuth error:", error, error_description);
+      res.redirect(`https://ticketto.it/settings?stripe=error&message=${encodeURIComponent(error_description || error)}`);
+      return;
+    }
+
+    if (!code || !orgId) {
+      res.status(400).send("Missing code or state (orgId)");
+      return;
+    }
+
+    try {
+      const stripe = require("stripe")(STRIPE_SECRET_KEY);
+      const response = await stripe.oauth.token({
+        grant_type: "authorization_code",
+        code: code,
+      });
+
+      const connectedAccountId = response.stripe_user_id;
+
+      await db.collection("organizations").doc(orgId).update({
+        stripeConnectAccountId: connectedAccountId,
+        stripeConnectStatus: "active",
+        paymentMode: "standard",
+        stripeChargesEnabled: true,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(`🔗 Connect account connected via OAuth: org=${orgId} account=${connectedAccountId}`);
+      res.redirect("https://ticketto.it/settings?stripe=connected");
+    } catch (err) {
+      console.error("❌ Error exchanging OAuth code:", err);
+      res.redirect(`https://ticketto.it/settings?stripe=error&message=${encodeURIComponent(err.message)}`);
+    }
+  }
+);
+
+// ─── Helper: Create Ticket Checkout Session (Direct Charge) ──
+/**
+ * Creates a Stripe Checkout Session for ticket sales based on the organization's payment mode.
+ * Standard mode: Direct charge executed on the organizer's connected Stripe account.
+ * Extensible for future payment modes (e.g. Express managed mode with platform fee).
+ */
+async function createTicketCheckoutSession({
+  stripe,
+  orgData,
+  connectedAccountId,
+  ticketParams,
+  lang,
+}) {
+  const paymentMode = orgData?.paymentMode || "standard";
+
+  if (paymentMode === "standard") {
+    // Direct Charge executed directly on connected Standard account
+    return await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price_data: {
+              currency: "eur",
+              unit_amount: ticketParams.amountCents,
+              product_data: {
+                name: ticketParams.productName,
+                description: ticketParams.productDescription,
+              },
+            },
+            quantity: ticketParams.quantity,
+          },
+        ],
+        customer_email: ticketParams.email,
+        success_url: ticketParams.successUrl,
+        cancel_url: ticketParams.cancelUrl,
+        metadata: ticketParams.metadata,
+      },
+      {
+        stripeAccount: connectedAccountId,
+      }
+    );
+  }
+
+  throw new Error(`Unsupported payment mode: ${paymentMode}`);
+}
 
 // ─── Create Ticket Payment Checkout Session ─────────────────
 exports.createTicketCheckout = onRequest(
@@ -1702,24 +2154,24 @@ exports.createTicketCheckout = onRequest(
         return;
       }
 
-      // Check account status
+      // Check account status: charges_enabled must be true
       const account = await stripe.accounts.retrieve(connectedAccountId);
       if (!account.charges_enabled) {
-        res.status(400).json({ error: "Organizer Stripe account is not yet active" });
+        res.status(400).json({
+          error: "Completa la configurazione del tuo account Stripe per vendere biglietti",
+        });
         return;
       }
 
       // Get event language for Stripe descriptions
       const eventDoc = await db.collection("events").doc(eventId).get();
-      const lang = eventDoc.exists ? getEventLang(eventDoc.data()) : 'it';
+      const lang = eventDoc.exists ? getEventLang(eventDoc.data()) : "it";
 
       const ticketQuantity = Math.min(Math.max(parseInt(quantity) || 1, 1), 10);
       const amountCents = Math.round(price * 100);
       const totalAmountCents = amountCents * ticketQuantity;
-      const platformFee = Math.round(totalAmountCents * PLATFORM_FEE_PERCENT / 100);
 
       // For group registrations, save pending data to Firestore
-      // (Stripe metadata has 500 char limit per value)
       let pendingRegId = null;
       if (ticketQuantity > 1 && extraAttendees && extraAttendees.length > 0) {
         const pendingRef = db.collection("pending_registrations").doc();
@@ -1742,50 +2194,39 @@ exports.createTicketCheckout = onRequest(
         });
       }
 
-      const session = await stripe.checkout.sessions.create({
-        mode: "payment",
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price_data: {
-              currency: "eur",
-              unit_amount: amountCents,
-              product_data: {
-                name: t(lang, 'stripe', 'ticketProduct', { eventTitle: eventTitle || "Event Ticket" }),
-                description: ticketQuantity > 1
-                  ? t(lang, 'stripe', 'ticketDescriptionMultiple', { quantity: ticketQuantity, eventTitle })
-                  : t(lang, 'stripe', 'ticketDescriptionSingle', { eventTitle }),
-              },
-            },
-            quantity: ticketQuantity,
-          },
-        ],
-        payment_intent_data: {
-          ...(platformFee > 0 ? { application_fee_amount: platformFee } : {}),
-          transfer_data: {
-            destination: connectedAccountId,
+      const session = await createTicketCheckoutSession({
+        stripe,
+        orgData,
+        connectedAccountId,
+        ticketParams: {
+          amountCents,
+          quantity: ticketQuantity,
+          productName: t(lang, "stripe", "ticketProduct", { eventTitle: eventTitle || "Event Ticket" }),
+          productDescription: ticketQuantity > 1
+            ? t(lang, "stripe", "ticketDescriptionMultiple", { quantity: ticketQuantity, eventTitle })
+            : t(lang, "stripe", "ticketDescriptionSingle", { eventTitle }),
+          email,
+          successUrl: `https://ticketto.it/register/${eventId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `https://ticketto.it/register/${eventId}?payment=cancelled`,
+          metadata: {
+            payment_type: "ticket_payment",
+            event_id: eventId,
+            org_id: orgId,
+            slot_id: slotId || "",
+            quantity: String(ticketQuantity),
+            pending_registration_id: pendingRegId || "",
+            marketing_consent: marketingConsent ? "true" : "false",
+            photo_consent: photoConsent !== undefined && photoConsent !== null ? String(photoConsent) : "",
+            attendee_data: pendingRegId ? "{}" : JSON.stringify({
+              firstName, lastName, email, phone,
+              customData: customData || {},
+            }),
           },
         },
-        customer_email: email,
-        success_url: `https://ticketto.it/register/${eventId}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `https://ticketto.it/register/${eventId}?payment=cancelled`,
-        metadata: {
-          payment_type: "ticket_payment",
-          event_id: eventId,
-          org_id: orgId,
-          slot_id: slotId || "",
-          quantity: String(ticketQuantity),
-          pending_registration_id: pendingRegId || "",
-          marketing_consent: marketingConsent ? "true" : "false",
-          photo_consent: photoConsent !== undefined && photoConsent !== null ? String(photoConsent) : "",
-          attendee_data: pendingRegId ? "{}" : JSON.stringify({
-            firstName, lastName, email, phone,
-            customData: customData || {},
-          }),
-        },
+        lang,
       });
 
-      console.log(`💳 Ticket checkout: event=${eventId} qty=${ticketQuantity} amount=€${(totalAmountCents / 100).toFixed(2)} fee=€${(platformFee / 100).toFixed(2)}`);
+      console.log(`💳 Ticket checkout: event=${eventId} qty=${ticketQuantity} amount=€${(totalAmountCents / 100).toFixed(2)} (direct charge on ${connectedAccountId})`);
       res.json({ url: session.url, sessionId: session.id });
     } catch (error) {
       console.error("❌ Error creating ticket checkout:", error);

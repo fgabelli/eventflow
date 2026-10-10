@@ -121,7 +121,8 @@ enum RegistrationStatus {
   pending('Pending'),
   confirmed('Confirmed'),
   canceled('Canceled'),
-  waitlist('Waitlist');
+  waitlist('Waitlist'),
+  refunded('Refunded');
 
   final String label;
   const RegistrationStatus(this.label);
@@ -190,4 +191,30 @@ enum VoucherPaymentStatus {
   final String label;
   const VoucherPaymentStatus(this.label);
 }
+
+/// Helper for calculating estimated Stripe fees and net earnings for ticket organizers.
+/// Direct charges on Stripe Standard accounts apply Stripe gateway processing fees (EU cards: 1.5% + 0.25 €).
+class StripeFeeHelper {
+  static const double percent = 0.015;
+  static const int fixedCents = 25;
+
+  static int estimateStripeFeeCents(int amountCents) {
+    if (amountCents <= 0) return 0;
+    return (amountCents * percent).round() + fixedCents;
+  }
+
+  static double estimateStripeFeeEur(double priceEur) {
+    if (priceEur <= 0) return 0.0;
+    final cents = (priceEur * 100).round();
+    return estimateStripeFeeCents(cents) / 100.0;
+  }
+
+  static double estimateNetEur(double priceEur) {
+    if (priceEur <= 0) return 0.0;
+    final fee = estimateStripeFeeEur(priceEur);
+    final net = priceEur - fee;
+    return net > 0 ? net : 0.0;
+  }
+}
+
 

@@ -558,6 +558,9 @@ class Attendee {
   final DateTime? marketingConsentAt;
   final bool? photoConsent;
   final DateTime? photoConsentAt;
+  final String? paymentStatus;
+  final String? paymentId;
+  final double? paymentAmount;
 
   Attendee({
     required this.id,
@@ -581,6 +584,9 @@ class Attendee {
     this.marketingConsentAt,
     this.photoConsent,
     this.photoConsentAt,
+    this.paymentStatus,
+    this.paymentId,
+    this.paymentAmount,
   }) : registeredAt = registeredAt ?? DateTime.now();
 
   String get fullName => '$firstName $lastName';
@@ -615,6 +621,9 @@ class Attendee {
       marketingConsentAt: (data['marketingConsentAt'] as Timestamp?)?.toDate(),
       photoConsent: data['photoConsent'] as bool?,
       photoConsentAt: (data['photoConsentAt'] as Timestamp?)?.toDate(),
+      paymentStatus: data['paymentStatus'],
+      paymentId: data['paymentId'],
+      paymentAmount: (data['paymentAmount'] as num?)?.toDouble(),
     );
   }
 
@@ -645,6 +654,9 @@ class Attendee {
     'photoConsentAt': photoConsentAt != null
         ? Timestamp.fromDate(photoConsentAt!)
         : null,
+    if (paymentStatus != null) 'paymentStatus': paymentStatus,
+    if (paymentId != null) 'paymentId': paymentId,
+    if (paymentAmount != null) 'paymentAmount': paymentAmount,
   };
 
   Attendee copyWith({
@@ -659,6 +671,9 @@ class Attendee {
     DateTime? marketingConsentAt,
     bool? photoConsent,
     DateTime? photoConsentAt,
+    String? paymentStatus,
+    String? paymentId,
+    double? paymentAmount,
   }) {
     return Attendee(
       id: id,
@@ -682,6 +697,9 @@ class Attendee {
       marketingConsentAt: marketingConsentAt ?? this.marketingConsentAt,
       photoConsent: photoConsent ?? this.photoConsent,
       photoConsentAt: photoConsentAt ?? this.photoConsentAt,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentId: paymentId ?? this.paymentId,
+      paymentAmount: paymentAmount ?? this.paymentAmount,
     );
   }
 }
