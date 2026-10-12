@@ -94,6 +94,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
+        leading: MediaQuery.of(context).size.width <= 800
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: l['back'],
+                onPressed: () => Navigator.canPop(context) ? context.pop() : context.go('/'),
+              )
+            : null,
         title: Text(l['settings'], style: Theme.of(context).textTheme.headlineMedium),
         backgroundColor: AppColors.surface,
       ),

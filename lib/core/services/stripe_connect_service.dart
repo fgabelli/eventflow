@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 
+import 'package:eventflow/core/utils/url_navigation.dart';
+
 class StripeConnectService {
   static Future<void> connectStripe(
     BuildContext context, {
@@ -50,17 +52,29 @@ class StripeConnectService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['url'] != null) {
-        final stripeUrl = Uri.parse(data['url']);
-        final launched = await launchUrl(
-          stripeUrl,
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_self',
-        );
+        final urlString = data['url'] as String;
+        final stripeUrl = Uri.parse(urlString);
+        bool launched = false;
+        try {
+          launched = await launchUrl(
+            stripeUrl,
+            mode: LaunchMode.platformDefault,
+            webOnlyWindowName: '_self',
+          );
+        } catch (_) {}
+
+        if (!launched) {
+          try {
+            openUrlInCurrentTab(urlString);
+            launched = true;
+          } catch (_) {}
+        }
+
         if (!launched && context.mounted) {
           // Fallback: show the URL so the user can copy it
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Apri manualmente: ${data['url']}'),
+              content: Text('Apri manualmente: $urlString'),
               duration: const Duration(seconds: 15),
             ),
           );

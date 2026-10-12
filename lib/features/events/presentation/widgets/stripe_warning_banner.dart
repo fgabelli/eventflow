@@ -67,24 +67,38 @@ class StripeWarningBanner extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              onPressed: () => StripeConnectService.connectStripe(
-                context,
-                orgId: org.id,
-                orgName: org.name,
-                userEmail: userEmail,
-              ),
-              icon: const Icon(Icons.arrow_forward, size: 16),
-              label: Text(buttonLabel),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.warning,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 360;
+              final button = FilledButton.icon(
+                onPressed: () => StripeConnectService.connectStripe(
+                  context,
+                  orgId: org.id,
+                  orgName: org.name,
+                  userEmail: userEmail,
+                ),
+                icon: const Icon(Icons.arrow_forward, size: 16),
+                label: Text(buttonLabel),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.warning,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              );
+
+              if (isNarrow) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: button,
+                );
+              }
+
+              return Align(
+                alignment: Alignment.centerRight,
+                child: button,
+              );
+            },
           ),
         ],
       ),

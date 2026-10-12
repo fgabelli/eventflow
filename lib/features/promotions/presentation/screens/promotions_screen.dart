@@ -12,6 +12,7 @@ import 'package:eventflow/features/auth/presentation/providers/auth_providers.da
 import 'package:eventflow/features/promotions/presentation/dialogs/create_promotion_dialog.dart';
 import 'package:eventflow/features/promotions/presentation/dialogs/redeem_voucher_dialog.dart';
 import 'package:eventflow/features/promotions/presentation/dialogs/print_format_dialog.dart';
+import 'package:eventflow/core/widgets/mobile_settings_button.dart';
 
 class PromotionsScreen extends ConsumerStatefulWidget {
   const PromotionsScreen({super.key});
@@ -198,43 +199,71 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> with Single
         backgroundColor: AppColors.surface,
         elevation: 0,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: OutlinedButton.icon(
+          if (MediaQuery.of(context).size.width <= 800) ...[
+            IconButton(
               onPressed: () => _openRedeemDialog(org),
-              icon: const Icon(Icons.point_of_sale_rounded, size: 18),
-              label: Text(AppLocalizations.of(context)['redeem_voucher_btn']),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+              icon: const Icon(Icons.point_of_sale_rounded),
+              tooltip: AppLocalizations.of(context)['redeem_voucher_btn'],
             ),
-          ),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection(Collections.promotions)
-                .where('orgId', isEqualTo: org.id)
-                .snapshots(),
-            builder: (context, snapshot) {
-              final promos = snapshot.data?.docs.map((d) => PromotionModel.fromFirestore(d)).toList() ?? [];
-              return Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: ElevatedButton.icon(
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection(Collections.promotions)
+                  .where('orgId', isEqualTo: org.id)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                final promos = snapshot.data?.docs.map((d) => PromotionModel.fromFirestore(d)).toList() ?? [];
+                return IconButton.filled(
                   onPressed: () => _openCreateDialog(org, promos),
-                  icon: const Icon(Icons.add_rounded, size: 18),
-                  label: Text(AppLocalizations.of(context)['new_promotion_btn']),
-                  style: ElevatedButton.styleFrom(
+                  icon: const Icon(Icons.add_rounded),
+                  tooltip: AppLocalizations.of(context)['new_promotion_btn'],
+                  style: IconButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
+                );
+              },
+            ),
+            const MobileSettingsButton(),
+            const SizedBox(width: 8),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: OutlinedButton.icon(
+                onPressed: () => _openRedeemDialog(org),
+                icon: const Icon(Icons.point_of_sale_rounded, size: 18),
+                label: Text(AppLocalizations.of(context)['redeem_voucher_btn']),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-              );
-            },
-          ),
+              ),
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection(Collections.promotions)
+                  .where('orgId', isEqualTo: org.id)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                final promos = snapshot.data?.docs.map((d) => PromotionModel.fromFirestore(d)).toList() ?? [];
+                return Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: ElevatedButton.icon(
+                    onPressed: () => _openCreateDialog(org, promos),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: Text(AppLocalizations.of(context)['new_promotion_btn']),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ],
         bottom: TabBar(
           controller: _tabController,

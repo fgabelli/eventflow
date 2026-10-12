@@ -20,6 +20,7 @@ import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/core/services/badge_printing_service.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
+import 'package:eventflow/core/widgets/mobile_settings_button.dart';
 
 class AttendeesScreen extends ConsumerStatefulWidget {
   const AttendeesScreen({super.key});
@@ -56,32 +57,88 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
               ],
             ),
             actions: [
-              if (org != null && (org.plan == 'pro' || org.plan == 'business'))
-                IconButton(
-                  onPressed: () => _exportBadgesA4(context, org),
-                  icon: const Icon(Icons.picture_as_pdf_rounded),
-                  tooltip: 'Stampa Badge (A4)', 
+              if (MediaQuery.of(context).size.width <= 800) ...[
+                if (_selectedEventId != null)
+                  IconButton.filled(
+                    onPressed: () => _tryAddAttendee(context),
+                    icon: const Icon(Icons.person_add, size: 18),
+                    tooltip: AppLocalizations.of(context)['add'],
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  tooltip: 'Opzioni',
+                  onSelected: (val) {
+                    if (val == 'badges' && org != null) {
+                      _exportBadgesA4(context, org);
+                    } else if (val == 'export_csv') {
+                      _exportAllAttendeesCSV(context);
+                    } else if (val == 'import_csv') {
+                      _tryImportCSV(context);
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    if (org != null && (org.plan == 'pro' || org.plan == 'business'))
+                      const PopupMenuItem(
+                        value: 'badges',
+                        child: ListTile(
+                          dense: true,
+                          leading: Icon(Icons.picture_as_pdf_rounded),
+                          title: Text('Stampa Badge (A4)'),
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'export_csv',
+                      child: ListTile(
+                        dense: true,
+                        leading: Icon(Icons.download_rounded),
+                        title: Text('Esporta Tutto (CSV)'),
+                      ),
+                    ),
+                    if (_selectedEventId != null)
+                      PopupMenuItem(
+                        value: 'import_csv',
+                        child: ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.upload_file),
+                          title: Text(AppLocalizations.of(context)['import_csv_tooltip']),
+                        ),
+                      ),
+                  ],
                 ),
-              IconButton(
-                onPressed: () => _exportAllAttendeesCSV(context),
-                icon: const Icon(Icons.download_rounded),
-                tooltip: 'Esporta Tutto (CSV)', // Tooltip in IT/EN
-              ),
-              const SizedBox(width: 4),
-              if (_selectedEventId != null) ...[
+                const MobileSettingsButton(),
+                const SizedBox(width: 8),
+              ] else ...[
+                if (org != null && (org.plan == 'pro' || org.plan == 'business'))
+                  IconButton(
+                    onPressed: () => _exportBadgesA4(context, org),
+                    icon: const Icon(Icons.picture_as_pdf_rounded),
+                    tooltip: 'Stampa Badge (A4)', 
+                  ),
                 IconButton(
-                  onPressed: () => _tryImportCSV(context),
-                  icon: const Icon(Icons.upload_file),
-                  tooltip: AppLocalizations.of(context)['import_csv_tooltip'],
+                  onPressed: () => _exportAllAttendeesCSV(context),
+                  icon: const Icon(Icons.download_rounded),
+                  tooltip: 'Esporta Tutto (CSV)', // Tooltip in IT/EN
                 ),
                 const SizedBox(width: 4),
-                FilledButton.icon(
-                  onPressed: () => _tryAddAttendee(context),
-                  icon: const Icon(Icons.person_add, size: 18),
-                  label: Text(AppLocalizations.of(context)['add']),
-                ),
+                if (_selectedEventId != null) ...[
+                  IconButton(
+                    onPressed: () => _tryImportCSV(context),
+                    icon: const Icon(Icons.upload_file),
+                    tooltip: AppLocalizations.of(context)['import_csv_tooltip'],
+                  ),
+                  const SizedBox(width: 4),
+                  FilledButton.icon(
+                    onPressed: () => _tryAddAttendee(context),
+                    icon: const Icon(Icons.person_add, size: 18),
+                    label: Text(AppLocalizations.of(context)['add']),
+                  ),
+                ],
+                const SizedBox(width: 16),
               ],
-              const SizedBox(width: 16),
             ],
           ),
 

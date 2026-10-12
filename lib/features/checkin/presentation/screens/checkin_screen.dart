@@ -8,6 +8,7 @@ import 'package:eventflow/core/models.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
+import 'package:eventflow/core/widgets/mobile_settings_button.dart';
 
 enum CheckInResultType { success, warning, error }
 
@@ -95,6 +96,10 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           ],
         ),
         backgroundColor: AppColors.surface,
+        actions: const [
+          MobileSettingsButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [

@@ -13,6 +13,7 @@ import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
 import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
+import 'package:eventflow/core/widgets/mobile_settings_button.dart';
 
 // ─── Events Provider ───────────────────────────────────────────────
 
@@ -103,6 +104,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                 icon: const Icon(Icons.add, size: 18),
                 label: Text(AppLocalizations.of(context)['new_event']),
               ),
+              const MobileSettingsButton(),
               const SizedBox(width: 16),
             ],
           ),

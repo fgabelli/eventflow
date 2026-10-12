@@ -10,6 +10,8 @@ import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/features/onboarding/presentation/onboarding_tutorial.dart';
 
+import 'package:eventflow/core/widgets/mobile_settings_button.dart';
+
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
@@ -60,6 +62,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 icon: const Icon(Icons.notifications_outlined),
                 onPressed: () {},
               ),
+              const MobileSettingsButton(),
               const SizedBox(width: 8),
             ],
           ),

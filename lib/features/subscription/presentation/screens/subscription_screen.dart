@@ -7,6 +7,7 @@ import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SubscriptionScreen extends ConsumerStatefulWidget {
@@ -148,8 +149,19 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width <= 800;
     return Scaffold(
       backgroundColor: AppColors.surface,
+      appBar: isMobile
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.canPop(context) ? context.pop() : context.go('/settings'),
+              ),
+              backgroundColor: AppColors.surface,
+              elevation: 0,
+            )
+          : null,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
