@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
@@ -14,6 +13,7 @@ import 'package:eventflow/core/models.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
+import 'package:eventflow/core/services/stripe_connect_service.dart';
 import 'package:eventflow/features/onboarding/presentation/onboarding_tutorial.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -599,76 +599,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _connectStripe(BuildContext context, dynamic org, {String? userEmail}) async {
-    // Show loading
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-              const SizedBox(width: 12),
-              Text(AppLocalizations.of(context)['stripe_connecting']),
-            ],
-          ),
-          duration: const Duration(seconds: 10),
-        ),
-      );
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('https://us-central1-eventflow-3541b.cloudfunctions.net/createConnectAccount'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'orgId': org.id,
-          'email': userEmail ?? '',
-          'orgName': org.name,
-        }),
-      );
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      }
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200 && data['url'] != null) {
-        final stripeUrl = Uri.parse(data['url']);
-        final launched = await launchUrl(
-          stripeUrl,
-          mode: LaunchMode.platformDefault,
-          webOnlyWindowName: '_self',
-        );
-        if (!launched && context.mounted) {
-          // Fallback: show the URL so the user can copy it
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Apri manualmente: ${data['url']}'),
-              duration: const Duration(seconds: 15),
-            ),
-          );
-        }
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(data['error'] ?? 'Errore nella connessione a Stripe (${response.statusCode})'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Errore: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
+    await StripeConnectService.connectStripe(
+      context,
+      orgId: org.id,
+      orgName: org.name,
+      userEmail: userEmail,
+    );
   }
 
   Future<void> _openStripeDashboard(BuildContext context, String orgId) async {

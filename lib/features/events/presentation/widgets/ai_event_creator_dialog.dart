@@ -7,6 +7,7 @@ import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/services/ai_service.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/features/events/presentation/screens/events_screen.dart';
+import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
 
 class AiEventCreatorDialog extends ConsumerStatefulWidget {
   const AiEventCreatorDialog({super.key});
@@ -616,6 +617,16 @@ class _AiEventCreatorDialogState extends ConsumerState<AiEventCreatorDialog> {
                           ),
                         ),
                       );
+                    },
+                  ),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final org = ref.watch(currentOrgProvider).value;
+                      final appUser = ref.watch(appUserProvider).value;
+                      if (org != null && !org.hasActiveStripe) {
+                        return StripeWarningBanner(org: org, userEmail: appUser?.email);
+                      }
+                      return const SizedBox.shrink();
                     },
                   ),
                   const SizedBox(height: 16),

@@ -20,6 +20,7 @@ import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/utils/feature_gate.dart';
+import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -137,6 +138,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<void> _saveEvent(EventModel event) async {
+    if (event.status == EventStatus.published && _isPaid) {
+      final org = ref.read(currentOrgProvider).value;
+      if (org == null || !org.hasActiveStripe) {
+        if (org != null) {
+          final userEmail = ref.read(appUserProvider).value?.email;
+          showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+        }
+        return;
+      }
+    }
     setState(() => _isSaving = true);
     try {
       final newDate = DateTime(
@@ -229,7 +240,17 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     }
   }
 
-  Future<void> _changeStatus(EventStatus status) async {
+  Future<void> _changeStatus(EventStatus status, EventModel event) async {
+    if (status == EventStatus.published && event.isPaid) {
+      final org = ref.read(currentOrgProvider).value;
+      if (org == null || !org.hasActiveStripe) {
+        if (org != null) {
+          final userEmail = ref.read(appUserProvider).value?.email;
+          showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+        }
+        return;
+      }
+    }
     await FirebaseFirestore.instance
         .collection(Collections.events)
         .doc(widget.eventId)
@@ -799,8 +820,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                   ],
                   onSelected: (value) {
                     switch (value) {
-                      case 'publish': _changeStatus(EventStatus.published);
-                      case 'complete': _changeStatus(EventStatus.completed);
+                      case 'publish': _changeStatus(EventStatus.published, event);
+                      case 'complete': _changeStatus(EventStatus.completed, event);
                       case 'export': _exportCSV(event);
                       case 'duplicate': _duplicateEvent(event);
                       case 'delete': _deleteEvent();
@@ -1993,6 +2014,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                         ),
                       ),
                     );
+                  },
+                ),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final org = ref.watch(currentOrgProvider).value;
+                    final appUser = ref.watch(appUserProvider).value;
+                    if (org != null && !org.hasActiveStripe) {
+                      return StripeWarningBanner(org: org, userEmail: appUser?.email);
+                    }
+                    return const SizedBox.shrink();
                   },
                 ),
               ],

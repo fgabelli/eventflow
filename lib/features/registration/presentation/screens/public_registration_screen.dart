@@ -282,8 +282,20 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       if (response.statusCode == 200 && data['url'] != null) {
         await launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
       } else {
+        final err = (data['error'] as String?) ?? '';
+        final code = data['code'] as String?;
+        final isStripeNotActive = code == 'stripe_not_configured' ||
+            err.contains('Stripe') ||
+            err.contains('Ricollega') ||
+            err.contains('configurazione') ||
+            err.toLowerCase().contains('charges');
+
         setState(() {
-          _registrationError = data['error'] ?? AppLocalizations.of(_localizedCtx ?? context)['payment_init_failed'];
+          if (isStripeNotActive) {
+            _registrationError = AppLocalizations.of(_localizedCtx ?? context)['ticket_sales_not_active'];
+          } else {
+            _registrationError = data['error'] ?? AppLocalizations.of(_localizedCtx ?? context)['payment_init_failed'];
+          }
           _isSubmitting = false;
         });
       }

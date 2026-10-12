@@ -16,6 +16,10 @@ class Organization {
   final String? primaryColor;
   final SubscriptionPlan plan;
   final DateTime createdAt;
+  final String? stripeConnectAccountId;
+  final String? stripeConnectStatus;
+  final String? paymentMode;
+  final bool stripeChargesEnabled;
 
   Organization({
     required this.id,
@@ -30,7 +34,14 @@ class Organization {
     this.primaryColor,
     this.plan = SubscriptionPlan.free,
     DateTime? createdAt,
+    this.stripeConnectAccountId,
+    this.stripeConnectStatus,
+    this.paymentMode,
+    this.stripeChargesEnabled = false,
   }) : createdAt = createdAt ?? DateTime.now();
+
+  bool get hasActiveStripe => paymentMode == 'standard' && stripeChargesEnabled;
+  bool get isStripePending => stripeConnectStatus == 'pending' || stripeConnectStatus == 'pending_verification';
 
   factory Organization.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -50,6 +61,10 @@ class Organization {
         orElse: () => SubscriptionPlan.free,
       ),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      stripeConnectAccountId: data['stripeConnectAccountId'] as String?,
+      stripeConnectStatus: data['stripeConnectStatus'] as String?,
+      paymentMode: data['paymentMode'] as String?,
+      stripeChargesEnabled: data['stripeChargesEnabled'] == true,
     );
   }
 
@@ -65,6 +80,10 @@ class Organization {
     'primaryColor': primaryColor,
     'plan': plan.name,
     'createdAt': Timestamp.fromDate(createdAt),
+    if (stripeConnectAccountId != null) 'stripeConnectAccountId': stripeConnectAccountId,
+    if (stripeConnectStatus != null) 'stripeConnectStatus': stripeConnectStatus,
+    if (paymentMode != null) 'paymentMode': paymentMode,
+    'stripeChargesEnabled': stripeChargesEnabled,
   };
 }
 

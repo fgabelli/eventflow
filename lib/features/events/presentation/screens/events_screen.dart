@@ -12,6 +12,7 @@ import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
+import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
 
 // ─── Events Provider ───────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => _EventCard(
                       event: filtered[index],
-                      onStatusChange: (status) => _changeStatus(filtered[index].id, status),
+                      onStatusChange: (status) => _changeStatus(filtered[index], status),
                       onDelete: () => _deleteEvent(filtered[index].id),
                     ),
                     childCount: filtered.length,
@@ -202,8 +203,18 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     );
   }
 
-  void _changeStatus(String eventId, EventStatus status) {
-    ref.read(eventsServiceProvider).updateEventStatus(eventId, status);
+  void _changeStatus(EventModel event, EventStatus status) {
+    if (status == EventStatus.published && event.isPaid) {
+      final org = ref.read(currentOrgProvider).value;
+      if (org == null || !org.hasActiveStripe) {
+        if (org != null) {
+          final userEmail = ref.read(appUserProvider).value?.email;
+          showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+        }
+        return;
+      }
+    }
+    ref.read(eventsServiceProvider).updateEventStatus(event.id, status);
   }
 
   void _deleteEvent(String eventId) async {
@@ -1150,6 +1161,16 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                                   ),
                                 ),
                               );
+                            },
+                          ),
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final org = ref.watch(currentOrgProvider).value;
+                              final appUser = ref.watch(appUserProvider).value;
+                              if (org != null && !org.hasActiveStripe) {
+                                return StripeWarningBanner(org: org, userEmail: appUser?.email);
+                              }
+                              return const SizedBox.shrink();
                             },
                           ),
                         ],

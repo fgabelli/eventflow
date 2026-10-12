@@ -2197,7 +2197,7 @@ exports.createTicketCheckout = onRequest(
       const paymentMode = orgData?.paymentMode;
 
       if (!connectedAccountId || paymentMode !== "standard") {
-        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni" });
+        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni", code: "stripe_not_configured" });
         return;
       }
 
@@ -2217,13 +2217,14 @@ exports.createTicketCheckout = onRequest(
         }
       } catch (retrieveErr) {
         console.warn(`⚠️ Account ${connectedAccountId} not retrievable on current Stripe account (${retrieveErr.message}).`);
-        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni" });
+        res.status(400).json({ error: "Ricollega il tuo account Stripe dalle Impostazioni", code: "stripe_not_configured" });
         return;
       }
 
       if (!account.charges_enabled) {
         res.status(400).json({
           error: "Completa la configurazione del tuo account Stripe per vendere biglietti",
+          code: "stripe_not_configured",
         });
         return;
       }

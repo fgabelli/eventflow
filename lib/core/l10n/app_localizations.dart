@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
-import 'dart:html' as html;
+import 'package:eventflow/core/l10n/locale_storage_stub.dart'
+    if (dart.library.html) 'package:eventflow/core/l10n/locale_storage_web.dart' as storage;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ignore: depend_on_referenced_packages
 import 'package:flutter_riverpod/legacy.dart';
@@ -29,7 +30,7 @@ final localeProvider = StateProvider<Locale>((ref) {
 
   // Check LocalStorage ui_language
   try {
-    final localLang = html.window.localStorage['ui_language'];
+    final localLang = storage.getSavedUiLanguage();
     if (localLang != null && _supportedLanguageCodes.contains(localLang)) {
       return Locale(localLang);
     }
@@ -58,9 +59,7 @@ Future<void> initLocaleFromProfile(WidgetRef ref) async {
     if (uiLang != null && _supportedLanguageCodes.contains(uiLang)) {
       ref.read(localeProvider.notifier).state = Locale(uiLang);
       // Persist to LocalStorage
-      try {
-        html.window.localStorage['ui_language'] = uiLang;
-      } catch (_) {}
+      storage.saveUiLanguage(uiLang);
     }
   } catch (_) {
     // Silently ignore — keep current locale
@@ -71,9 +70,7 @@ Future<void> initLocaleFromProfile(WidgetRef ref) async {
 Future<void> setAndPersistLocale(WidgetRef ref, String languageCode) async {
   ref.read(localeProvider.notifier).state = Locale(languageCode);
   // Persist to LocalStorage
-  try {
-    html.window.localStorage['ui_language'] = languageCode;
-  } catch (_) {}
+  storage.saveUiLanguage(languageCode);
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
   try {
@@ -399,6 +396,10 @@ class AppLocalizations {
     'stripe_pending': 'Setup Stripe in corso',
     'stripe_pending_desc': 'Completa la configurazione del tuo account',
     'stripe_complete_btn': 'Completa',
+    'stripe_connect_prompt': 'Per vendere biglietti collega il tuo account Stripe',
+    'stripe_complete_prompt': 'Completa la configurazione di Stripe',
+    'stripe_required_title': 'Configurazione Stripe richiesta',
+    'ticket_sales_not_active': 'La vendita dei biglietti non è ancora attiva, riprova più tardi',
     'stripe_connected': 'Stripe Collegato',
     'stripe_connecting': 'Connessione a Stripe in corso...',
     'stripe_error': 'Errore nella connessione a Stripe',
@@ -1102,6 +1103,10 @@ class AppLocalizations {
     'stripe_pending': 'Stripe setup in progress',
     'stripe_pending_desc': 'Complete your account configuration',
     'stripe_complete_btn': 'Complete',
+    'stripe_connect_prompt': 'To sell tickets, connect your Stripe account',
+    'stripe_complete_prompt': 'Complete Stripe configuration',
+    'stripe_required_title': 'Stripe configuration required',
+    'ticket_sales_not_active': 'Ticket sales are not active yet, please try again later',
     'stripe_connected': 'Stripe Connected',
     'stripe_connecting': 'Connecting to Stripe...',
     'stripe_error': 'Error connecting to Stripe',
