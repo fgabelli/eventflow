@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,14 +67,20 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           if (data['url'] != null) {
-            final ok = await launchUrl(
-              Uri.parse(data['url']),
-              mode: LaunchMode.externalApplication,
-            );
-            if (ok) {
+            if (kIsWeb) {
+              await launchUrl(Uri.parse(data['url']), webOnlyWindowName: '_self');
               launched = true;
-              if (mounted) setState(() => _isLoading = false);
               return;
+            } else {
+              final ok = await launchUrl(
+                Uri.parse(data['url']),
+                mode: LaunchMode.externalApplication,
+              );
+              if (ok) {
+                launched = true;
+                if (mounted) setState(() => _isLoading = false);
+                return;
+              }
             }
           }
         }
@@ -102,7 +109,11 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
         docRef.snapshots().listen((snap) {
           final data = snap.data();
           if (data != null && data['url'] != null) {
-            launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
+            if (kIsWeb) {
+              launchUrl(Uri.parse(data['url']), webOnlyWindowName: '_self');
+            } else {
+              launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
+            }
             if (mounted) setState(() => _isLoading = false);
           }
           if (data != null && data['error'] != null) {

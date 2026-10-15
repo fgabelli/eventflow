@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -280,7 +281,11 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['url'] != null) {
-        await launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
+        if (kIsWeb) {
+          await launchUrl(Uri.parse(data['url']), webOnlyWindowName: '_self');
+        } else {
+          await launchUrl(Uri.parse(data['url']), mode: LaunchMode.externalApplication);
+        }
       } else {
         final err = (data['error'] as String?) ?? '';
         final code = data['code'] as String?;
@@ -1134,7 +1139,9 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
   void _openLegalUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
+    if (kIsWeb) {
+      await launchUrl(uri, webOnlyWindowName: '_blank');
+    } else if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }

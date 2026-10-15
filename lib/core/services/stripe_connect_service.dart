@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -56,11 +57,17 @@ class StripeConnectService {
         final stripeUrl = Uri.parse(urlString);
         bool launched = false;
         try {
-          launched = await launchUrl(
-            stripeUrl,
-            mode: LaunchMode.platformDefault,
-            webOnlyWindowName: '_self',
-          );
+          if (kIsWeb) {
+            launched = await launchUrl(
+              stripeUrl,
+              webOnlyWindowName: '_self',
+            );
+          } else {
+            launched = await launchUrl(
+              stripeUrl,
+              mode: LaunchMode.externalApplication,
+            );
+          }
         } catch (_) {}
 
         if (!launched) {
