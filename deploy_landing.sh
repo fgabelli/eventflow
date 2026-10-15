@@ -4,7 +4,7 @@
 set -e
 
 echo "🔨 Building Flutter web..."
-flutter build web --release
+flutter build web --release --pwa-strategy=none
 
 echo "📄 Moving Flutter shell to app.html (root '/' is served via firebase rewrite → /index_landing.html)..."
 # Flutter app shell -> app.html, and REMOVE build/web/index.html so that the
@@ -12,7 +12,8 @@ echo "📄 Moving Flutter shell to app.html (root '/' is served via firebase rew
 # index_landing.html is already copied into build/web/ by `flutter build web` (it lives in web/).
 mv build/web/index.html build/web/app.html
 
-echo "🧹 Patch service worker (toglie la home dal manifest: senza, i browser che hanno visitato l app servono la shell di login al posto della landing)..."
+echo "🧹 Pubblicazione service worker auto-disinstallante..."
+cp web/flutter_service_worker.js build/web/flutter_service_worker.js
 python3 fix_service_worker.py build/web/flutter_service_worker.js
 
 echo "✅ Flutter app at build/web/app.html · landing served at '/' via rewrite (build/web/index_landing.html)"

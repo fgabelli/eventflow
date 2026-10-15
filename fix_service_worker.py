@@ -37,6 +37,12 @@ if not sw.is_file():
 src = sw.read_text()
 orig = src
 
+# Se il service worker e' quello auto-disinstallante (pwa-strategy=none),
+# non ha manifest né cache e si disregistra da solo: la home e' garantita libera.
+if "unregister" in src:
+    print("✅ service worker auto-disinstallante rilevato (nessuna cache, home protetta)")
+    sys.exit(0)
+
 # --- RESOURCES: manifest delle risorse messe in cache ---------------------
 m = re.search(r"const RESOURCES = (\{.*?\});", src, re.S)
 if not m:
