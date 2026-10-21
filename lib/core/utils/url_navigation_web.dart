@@ -6,3 +6,13 @@ import 'dart:html' as html;
 void openUrlInCurrentTab(String url) {
   html.window.location.href = url;
 }
+
+/// Opens an external URL in a new tab with target="_blank" and rel="noopener".
+void openExternalUrl(String url) {
+  final anchor = html.AnchorElement(href: url)
+    ..target = '_blank'
+    ..rel = 'noopener';
+  html.document.body?.append(anchor);
+  anchor.click();
+  anchor.remove();
+}

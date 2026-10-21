@@ -33,6 +33,7 @@ const i18nStrings = {
       dateLabel: '📅 Data',
       timeLabel: '🕐 Ora',
       locationLabel: '📍 Luogo',
+      openInMapsLabel: 'Apri in Maps',
       onlineEventLabel: '🌐 Evento Online',
       joinStreamLabel: 'Partecipa allo Streaming',
       timeSlotLabel: '⏰ Fascia oraria',
@@ -100,6 +101,7 @@ const i18nStrings = {
       dateLabel: '📅 Date',
       timeLabel: '🕐 Time',
       locationLabel: '📍 Venue',
+      openInMapsLabel: 'Open in Maps',
       onlineEventLabel: '🌐 Online Event',
       joinStreamLabel: 'Join the Stream',
       timeSlotLabel: '⏰ Time slot',
@@ -192,6 +194,25 @@ function getEventLang(eventData) {
   return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'en';
 }
 
+/**
+ * Resolve Google Maps URL for an event with fallback to encoded address.
+ * @param {Object} eventData - Firestore event document data
+ * @returns {string|null} Resolved Google Maps URL or null
+ */
+function getEventMapUrl(eventData) {
+  if (!eventData || eventData.isOnline) return null;
+  if (typeof eventData.mapUrl === 'string' && eventData.mapUrl.trim() !== '') {
+    return eventData.mapUrl.trim();
+  }
+  if (typeof eventData.lat === 'number' && typeof eventData.lng === 'number' && !isNaN(eventData.lat) && !isNaN(eventData.lng)) {
+    return `https://www.google.com/maps/search/?api=1&query=${eventData.lat},${eventData.lng}`;
+  }
+  if (typeof eventData.location === 'string' && eventData.location.trim() !== '') {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(eventData.location.trim())}`;
+  }
+  return null;
+}
+
 // ─── Apple Wallet Pass Generator ─────────────────────────────
 const PASS_CERTS_DIR = path.join(__dirname, "certs");
 const PASS_MODEL_DIR = path.join(PASS_CERTS_DIR, "ticketto.pass");
@@ -264,6 +285,14 @@ async function generateApplePass(attendee, eventData, orgData, attendeeDocId, la
     });
 
     // Back fields
+    const passMapUrl = getEventMapUrl(eventData);
+    if (passMapUrl) {
+      pass.backFields.push({
+        key: "map",
+        label: t(lang, 'wallet', 'locationLabel'),
+        value: eventData.location ? `${eventData.location}\n${passMapUrl}` : passMapUrl,
+      });
+    }
     pass.backFields.push(
       { key: "email", label: t(lang, 'wallet', 'emailLabel'), value: attendee.email },
       { key: "org", label: t(lang, 'wallet', 'organizerLabel'), value: orgData?.name || "—" },
@@ -454,6 +483,7 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
     : "";
 
   let locationHtml = "";
+  const mapUrl = getEventMapUrl(event);
   if (event.isOnline && event.meetingUrl) {
     locationHtml = `<tr>
         <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">${t(lang, 'email', 'onlineEventLabel')}</td>
@@ -461,10 +491,13 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
           <a href="${event.meetingUrl}" style="color: #0E6B52; text-decoration: none;">${t(lang, 'email', 'joinStreamLabel')}</a>
         </td>
       </tr>`;
-  } else if (event.location) {
+  } else if (event.location || mapUrl) {
     locationHtml = `<tr>
-        <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">${t(lang, 'email', 'locationLabel')}</td>
-        <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #1A1A2E;">${event.location}</td>
+        <td style="padding: 8px 0; color: #6B7280; font-size: 14px; vertical-align: top;">${t(lang, 'email', 'locationLabel')}</td>
+        <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #1A1A2E;">
+          ${event.location ? `<div>${mapUrl ? `<a href="${mapUrl}" target="_blank" rel="noopener" style="color: #1A1A2E; text-decoration: none;">${event.location}</a>` : event.location}</div>` : ""}
+          ${mapUrl ? `<div style="margin-top: 4px;"><a href="${mapUrl}" target="_blank" rel="noopener" style="color: #0E6B52; text-decoration: underline; font-weight: 600; font-size: 13px;">📍 ${t(lang, 'email', 'openInMapsLabel')}</a></div>` : ""}
+        </td>
       </tr>`;
   }
 
@@ -3018,10 +3051,14 @@ function buildReminderEmail(attendee, event, org, lang = 'it') {
     hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome",
   });
 
-  const locationHtml = event.location
+  const reminderMapUrl = getEventMapUrl(event);
+  const locationHtml = (event.location || reminderMapUrl)
     ? `<tr>
-        <td style="padding: 8px 0; color: #6B7280; font-size: 14px;">${t(lang, 'email', 'locationLabel')}</td>
-        <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #1A1A2E;">${event.location}</td>
+        <td style="padding: 8px 0; color: #6B7280; font-size: 14px; vertical-align: top;">${t(lang, 'email', 'locationLabel')}</td>
+        <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #1A1A2E;">
+          ${event.location ? `<div>${reminderMapUrl ? `<a href="${reminderMapUrl}" target="_blank" rel="noopener" style="color: #1A1A2E; text-decoration: none;">${event.location}</a>` : event.location}</div>` : ""}
+          ${reminderMapUrl ? `<div style="margin-top: 4px;"><a href="${reminderMapUrl}" target="_blank" rel="noopener" style="color: #0E6B52; text-decoration: underline; font-weight: 600; font-size: 13px;">📍 ${t(lang, 'email', 'openInMapsLabel')}</a></div>` : ""}
+        </td>
       </tr>`
     : "";
 

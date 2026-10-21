@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
+import 'package:eventflow/core/utils/map_location_parser.dart';
 
 // ─── Organization Model ────────────────────────────────────────────
 
@@ -271,6 +272,9 @@ class EventModel {
   final DateTime date;
   final DateTime? endDate;
   final String? location;
+  final String? mapUrl;
+  final double? lat;
+  final double? lng;
   final EventStatus status;
   final int maxAttendees;
   final DateTime? registrationDeadline;
@@ -309,6 +313,9 @@ class EventModel {
     required this.date,
     this.endDate,
     this.location,
+    this.mapUrl,
+    this.lat,
+    this.lng,
     this.status = EventStatus.draft,
     this.maxAttendees = 50,
     this.registrationDeadline,
@@ -348,6 +355,9 @@ class EventModel {
       date: (data['date'] as Timestamp).toDate(),
       endDate: (data['endDate'] as Timestamp?)?.toDate(),
       location: data['location'],
+      mapUrl: data['mapUrl'],
+      lat: (data['lat'] as num?)?.toDouble(),
+      lng: (data['lng'] as num?)?.toDouble(),
       status: EventStatus.values.firstWhere(
         (s) => s.name == data['status'],
         orElse: () => EventStatus.draft,
@@ -392,6 +402,9 @@ class EventModel {
     'date': Timestamp.fromDate(date),
     'endDate': endDate != null ? Timestamp.fromDate(endDate!) : null,
     'location': location,
+    'mapUrl': mapUrl,
+    'lat': lat,
+    'lng': lng,
     'status': status.name,
     'maxAttendees': maxAttendees,
     'registrationDeadline': registrationDeadline != null
@@ -429,6 +442,9 @@ class EventModel {
     DateTime? date,
     DateTime? endDate,
     String? location,
+    String? mapUrl,
+    double? lat,
+    double? lng,
     EventStatus? status,
     int? maxAttendees,
     DateTime? registrationDeadline,
@@ -464,6 +480,9 @@ class EventModel {
       date: date ?? this.date,
       endDate: endDate ?? this.endDate,
       location: location ?? this.location,
+      mapUrl: mapUrl ?? this.mapUrl,
+      lat: lat ?? this.lat,
+      lng: lng ?? this.lng,
       status: status ?? this.status,
       maxAttendees: maxAttendees ?? this.maxAttendees,
       registrationDeadline: registrationDeadline ?? this.registrationDeadline,
@@ -493,6 +512,14 @@ class EventModel {
       createdAt: createdAt,
     );
   }
+
+  String? get resolvedMapUrl => MapLocationParser.resolveEventMapUrl(
+        isOnline: isOnline,
+        mapUrl: mapUrl,
+        lat: lat,
+        lng: lng,
+        location: location,
+      );
 
   bool get isFull => attendeesCount >= maxAttendees;
   bool get isRegistrationOpen =>

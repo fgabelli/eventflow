@@ -13,6 +13,7 @@ import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
+import 'package:eventflow/core/utils/url_navigation.dart';
 
 class PublicRegistrationScreen extends StatefulWidget {
   final String eventId;
@@ -511,12 +512,18 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
                       iconColor: infoIconColor,
                       textColor: infoTextColor,
                     ),
-                    if (event.location != null)
+                    if (event.location != null || event.resolvedMapUrl != null)
                       _EventInfoRow(
                         icon: Icons.location_on_outlined,
-                        text: event.location!,
+                        text: event.location ?? '',
                         iconColor: infoIconColor,
                         textColor: infoTextColor,
+                        actionLabel: event.resolvedMapUrl != null
+                            ? AppLocalizations.of(_localizedCtx ?? context)['open_in_maps']
+                            : null,
+                        onActionTap: event.resolvedMapUrl != null
+                            ? () => openExternalUrl(event.resolvedMapUrl!)
+                            : null,
                       ),
                     if (event.showAttendeesCount)
                       _EventInfoRow(
@@ -1608,9 +1615,18 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
                     _DetailRow(label: 'Email', value: _emailCtrl.text),
                     const Divider(height: 24),
                     _DetailRow(label: AppLocalizations.of(_localizedCtx ?? context)['date_label'], value: '${event.date.day}/${event.date.month}/${event.date.year}'),
-                    if (event.location != null) ...[
+                    if (event.location != null || event.resolvedMapUrl != null) ...[
                       const Divider(height: 24),
-                      _DetailRow(label: AppLocalizations.of(_localizedCtx ?? context)['location_label'], value: event.location!),
+                      _DetailRow(
+                        label: AppLocalizations.of(_localizedCtx ?? context)['location_label'],
+                        value: event.location ?? '',
+                        actionLabel: event.resolvedMapUrl != null
+                            ? AppLocalizations.of(_localizedCtx ?? context)['open_in_maps']
+                            : null,
+                        onActionTap: event.resolvedMapUrl != null
+                            ? () => openExternalUrl(event.resolvedMapUrl!)
+                            : null,
+                      ),
                     ],
                   ],
                 ),
@@ -1674,32 +1690,83 @@ class _EventInfoRow extends StatelessWidget {
   final String text;
   final Color? iconColor;
   final Color? textColor;
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
   const _EventInfoRow({
     required this.icon,
     required this.text,
     this.iconColor,
     this.textColor,
+    this.actionLabel,
+    this.onActionTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveTextColor = textColor ?? Colors.white.withValues(alpha: 0.9);
+    final effectiveIconColor = iconColor ?? Colors.white.withValues(alpha: 0.8);
+
+    final rowContent = Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, color: effectiveIconColor, size: 16),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (text.isNotEmpty)
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: effectiveTextColor,
+                    fontSize: 14,
+                  ),
+                ),
+              if (actionLabel != null && onActionTap != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: effectiveTextColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: effectiveTextColor.withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.open_in_new, size: 13, color: effectiveTextColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        actionLabel!,
+                        style: TextStyle(
+                          color: effectiveTextColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor ?? Colors.white.withValues(alpha: 0.8), size: 16),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: textColor ?? Colors.white.withValues(alpha: 0.9),
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: onActionTap != null
+          ? InkWell(
+              onTap: onActionTap,
+              borderRadius: BorderRadius.circular(8),
+              child: rowContent,
+            )
+          : rowContent,
     );
   }
 }
@@ -1707,7 +1774,14 @@ class _EventInfoRow extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  const _DetailRow({required this.label, required this.value});
+  final String? actionLabel;
+  final VoidCallback? onActionTap;
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.actionLabel,
+    this.onActionTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1719,7 +1793,38 @@ class _DetailRow extends StatelessWidget {
           child: Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
         ),
         Expanded(
-          child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+          child: onActionTap != null
+              ? InkWell(
+                  onTap: onActionTap,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (value.isNotEmpty)
+                        Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                      if (actionLabel != null) ...[
+                        if (value.isNotEmpty) const SizedBox(height: 4),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.open_in_new, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              actionLabel!,
+                              style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                )
+              : Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
         ),
       ],
     );

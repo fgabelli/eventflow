@@ -7,6 +7,7 @@ import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/utils/feature_gate.dart';
+import 'package:eventflow/core/utils/map_location_parser.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
@@ -565,7 +566,9 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _locationController = TextEditingController();
+  final _mapLocationController = TextEditingController();
   final _meetingUrlController = TextEditingController();
+  String? _mapLocationError;
   final _maxAttendeesController = TextEditingController(text: '50');
   final _priceController = TextEditingController();
   final _hexColorController = TextEditingController(text: '#0E6B52');
@@ -606,6 +609,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
     _titleController.dispose();
     _descController.dispose();
     _locationController.dispose();
+    _mapLocationController.dispose();
     _meetingUrlController.dispose();
     _maxAttendeesController.dispose();
     _priceController.dispose();
@@ -636,6 +640,26 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
   Future<void> _createEvent() async {
     if (_titleController.text.trim().isEmpty) return;
 
+    final locationText = _isOnline
+        ? null
+        : (_locationController.text.trim().isEmpty ? null : _locationController.text.trim());
+    final mapParsed = _isOnline
+        ? const MapLocationParseResult.empty()
+        : MapLocationParser.parse(_mapLocationController.text);
+    if (!mapParsed.isValid) {
+      final errMsg = AppLocalizations.of(context)[mapParsed.errorKey ?? 'map_location_error'];
+      setState(() => _mapLocationError = errMsg);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errMsg), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+
+    final resolvedMapUrl = _isOnline
+        ? null
+        : (mapParsed.mapUrl ??
+            (locationText != null ? MapLocationParser.buildAddressMapsUrl(locationText) : null));
+
     final org = ref.read(currentOrgProvider).value;
     if (org == null) return;
 
@@ -655,7 +679,10 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
         date: eventDate,
         isOnline: _isOnline,
         meetingUrl: _isOnline ? _meetingUrlController.text.trim() : null,
-        location: _isOnline ? null : (_locationController.text.trim().isEmpty ? null : _locationController.text.trim()),
+        location: locationText,
+        mapUrl: resolvedMapUrl,
+        lat: _isOnline ? null : mapParsed.lat,
+        lng: _isOnline ? null : mapParsed.lng,
         status: EventStatus.draft,
         maxAttendees: () {
           final plan = org.plan;
@@ -1043,7 +1070,7 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                       ),
                     ],
                   ),
-                  if (!_isOnline)
+                  if (!_isOnline) ...[
                     TextField(
                       controller: _locationController,
                       decoration: InputDecoration(
@@ -1051,7 +1078,28 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                         prefixIcon: const Icon(Icons.location_on_outlined),
                       ),
                       textInputAction: TextInputAction.next,
-                    )
+                    ),
+                    const SizedBox(height: 12),
+                    _buildLabel(AppLocalizations.of(context)['map_location_label']),
+                    TextField(
+                      controller: _mapLocationController,
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.of(context)['map_location_hint'],
+                        prefixIcon: const Icon(Icons.map_outlined),
+                        errorText: _mapLocationError,
+                        errorMaxLines: 3,
+                      ),
+                      onChanged: (val) {
+                        if (_mapLocationError != null) {
+                          final res = MapLocationParser.parse(val);
+                          if (res.isValid) {
+                            setState(() => _mapLocationError = null);
+                          }
+                        }
+                      },
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ]
                   else
                     TextField(
                       controller: _meetingUrlController,

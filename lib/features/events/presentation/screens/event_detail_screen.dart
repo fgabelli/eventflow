@@ -20,6 +20,8 @@ import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/utils/feature_gate.dart';
+import 'package:eventflow/core/utils/map_location_parser.dart';
+import 'package:eventflow/core/utils/url_navigation.dart';
 import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
@@ -35,7 +37,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   late TextEditingController _titleCtrl;
   late TextEditingController _descCtrl;
   late TextEditingController _locationCtrl;
+  late TextEditingController _mapLocationCtrl;
   late TextEditingController _maxAttendeesCtrl;
+  String? _mapLocationError;
   late TextEditingController _priceCtrl;
   late TextEditingController _printerIpCtrl;
   late TextEditingController _meetingUrlCtrl;
@@ -70,6 +74,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _titleCtrl = TextEditingController();
     _descCtrl = TextEditingController();
     _locationCtrl = TextEditingController();
+    _mapLocationCtrl = TextEditingController();
     _maxAttendeesCtrl = TextEditingController();
     _priceCtrl = TextEditingController();
     _printerIpCtrl = TextEditingController();
@@ -84,6 +89,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _locationCtrl.dispose();
+    _mapLocationCtrl.dispose();
     _maxAttendeesCtrl.dispose();
     _priceCtrl.dispose();
     _printerIpCtrl.dispose();
@@ -116,6 +122,13 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _titleCtrl.text = event.title;
     _descCtrl.text = event.description ?? '';
     _locationCtrl.text = event.location ?? '';
+    _mapLocationCtrl.text = MapLocationParser.initialInputForEdit(
+      mapUrl: event.mapUrl,
+      lat: event.lat,
+      lng: event.lng,
+      location: event.location,
+    );
+    _mapLocationError = null;
     _maxAttendeesCtrl.text = event.maxAttendees.toString();
     _priceCtrl.text = event.price?.toStringAsFixed(2) ?? '';
     _isPaid = event.isPaid;
@@ -138,6 +151,26 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<void> _saveEvent(EventModel event) async {
+    final locationText = _isOnline
+        ? null
+        : (_locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim());
+    final mapParsed = _isOnline
+        ? const MapLocationParseResult.empty()
+        : MapLocationParser.parse(_mapLocationCtrl.text);
+    if (!mapParsed.isValid) {
+      final errMsg = AppLocalizations.of(context)[mapParsed.errorKey ?? 'map_location_error'];
+      setState(() => _mapLocationError = errMsg);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errMsg), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+
+    final resolvedMapUrl = _isOnline
+        ? null
+        : (mapParsed.mapUrl ??
+            (locationText != null ? MapLocationParser.buildAddressMapsUrl(locationText) : null));
+
     if (event.status == EventStatus.published && _isPaid) {
       final org = ref.read(currentOrgProvider).value;
       if (org == null || !org.hasActiveStripe) {
@@ -162,7 +195,10 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'description': _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
         'isOnline': _isOnline,
         'meetingUrl': _isOnline ? _meetingUrlCtrl.text.trim() : null,
-        'location': _isOnline ? null : (_locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim()),
+        'location': locationText,
+        'mapUrl': resolvedMapUrl,
+        'lat': _isOnline ? null : mapParsed.lat,
+        'lng': _isOnline ? null : mapParsed.lng,
         'maxAttendees': () {
           final org = ref.read(currentOrgProvider).value;
           final plan = org?.plan ?? SubscriptionPlan.free;
@@ -543,6 +579,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         date: event.date,
         endDate: event.endDate,
         location: event.location,
+        mapUrl: event.mapUrl,
+        lat: event.lat,
+        lng: event.lng,
         status: EventStatus.draft,
         maxAttendees: event.maxAttendees,
         registrationDeadline: event.registrationDeadline,
@@ -965,9 +1004,37 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     Icon(Icons.location_on_outlined, color: headerSubTextColor, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        event.location!,
-                        style: TextStyle(color: headerTextColor, fontSize: 14),
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            event.location!,
+                            style: TextStyle(color: headerTextColor, fontSize: 14),
+                          ),
+                          if (event.resolvedMapUrl != null)
+                            InkWell(
+                              onTap: () => openExternalUrl(event.resolvedMapUrl!),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.open_in_new, size: 13, color: headerTextColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    AppLocalizations.of(context)['open_in_maps'],
+                                    style: TextStyle(
+                                      color: headerTextColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: headerTextColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
@@ -1707,8 +1774,28 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
             ),
           ],
         ),
-        if (!_isOnline)
-          TextField(controller: _locationCtrl, decoration: InputDecoration(hintText: AppLocalizations.of(context)['venue_hint'], prefixIcon: const Icon(Icons.location_on_outlined)))
+        if (!_isOnline) ...[
+          TextField(controller: _locationCtrl, decoration: InputDecoration(hintText: AppLocalizations.of(context)['venue_hint'], prefixIcon: const Icon(Icons.location_on_outlined))),
+          const SizedBox(height: 12),
+          _buildLabel(AppLocalizations.of(context)['map_location_label']),
+          TextField(
+            controller: _mapLocationCtrl,
+            decoration: InputDecoration(
+              hintText: AppLocalizations.of(context)['map_location_hint'],
+              prefixIcon: const Icon(Icons.map_outlined),
+              errorText: _mapLocationError,
+              errorMaxLines: 3,
+            ),
+            onChanged: (val) {
+              if (_mapLocationError != null) {
+                final res = MapLocationParser.parse(val);
+                if (res.isValid) {
+                  setState(() => _mapLocationError = null);
+                }
+              }
+            },
+          ),
+        ]
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
