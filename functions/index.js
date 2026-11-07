@@ -4090,6 +4090,7 @@ exports.sendInviteOutreach = onRequest({ cors: true }, async (req, res) => {
 exports.onAdminTaskCreated = onDocumentCreated(
   {
     document: "admin_tasks/{taskId}",
+    serviceAccount: "eventflow-3541b@appspot.gserviceaccount.com",
   },
   async (event) => {
     const snap = event.data;
