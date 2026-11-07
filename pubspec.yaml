@@ -63,6 +63,7 @@ dependencies:
   printing: ^5.14.3
   flutter_svg: ^2.0.17
   http: ^1.2.0
+  firebase_app_check: ^0.4.9
 
 dev_dependencies:
   flutter_test:

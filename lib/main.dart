@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:eventflow/firebase_options.dart';
+import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
@@ -14,6 +16,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (AppConfig.recaptchaV3SiteKey.isNotEmpty) {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        providerWeb: ReCaptchaV3Provider(AppConfig.recaptchaV3SiteKey),
+      );
+    } catch (_) {
+      // App Check unavailable or not yet configured — continue without blocking startup.
+    }
+  }
   // Analytics must never block app startup: telemetry is non-critical and can
   // throw on some web environments. Guard it so runApp always runs.
   try {

@@ -3,6 +3,10 @@ class AppConfig {
   static const appName = 'Ticketto';
   static const officialDomain = 'ticketto.it';
   static const baseUrl = 'https://ticketto.it';
+  static const recaptchaV3SiteKey = String.fromEnvironment(
+    'RECAPTCHA_V3_SITE_KEY',
+    defaultValue: '',
+  );
 }
 
 // Firestore collection names
