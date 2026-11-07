@@ -1,4 +1,4 @@
-const { onDocumentCreated, onDocumentDeleted } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 
@@ -7,6 +7,7 @@ const { Resend } = require("resend");
 const { PKPass } = require("passkit-generator");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -333,7 +334,7 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
     const eventIdSafe = (eventData.id || attendee.eventId || "event").replace(/[^a-zA-Z0-9_.-]/g, "_");
     const attendeeIdSafe = (attendeeDocId || attendee.id || attendee.qrCode || "ticket").replace(/[^a-zA-Z0-9_.-]/g, "_");
 
-    const classId = `${GOOGLE_WALLET_ISSUER_ID}.ticketto_demo`;
+    const classId = `${GOOGLE_WALLET_ISSUER_ID}.ticketto`;
     const objectId = `${GOOGLE_WALLET_ISSUER_ID}.ticket_${attendeeIdSafe}`;
 
     const eventTitle = eventData.title || "Evento Ticketto";
@@ -664,6 +665,174 @@ async function getOrganizerEmail(orgId, orgData) {
   }
 }
 
+// ─── Anti-Phishing & Rate Limit Helpers ──────────────────────
+const ADMIN_ALERT_EMAIL = "f.gabelli@gmail.com";
+const ADMIN_ALLOWED_EMAILS = new Set([
+  "f.gabelli@gmail.com",
+  "fabio.gabelli@bitle.it",
+  "sviluppo@revan.it",
+]);
+
+const SCAM_KEYWORDS_REGEX = /\b(invoice|refund|purchase|paypal|amazon|apple|usd|cancellation|call|support|helpdesk|mcafee|norton|geek\s*squad)\b|\$/i;
+const SCAM_PHONE_REGEX = /\+?\d[\d\s().-]{8,}\d/;
+const EMAIL_OR_URL_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|https?:\/\/\S+|www\.\S+)/i;
+
+const EMAIL_RATE_LIMITS = {
+  free: { maxPerHour: 60, maxPerDay: 200 },
+  paid: { maxPerHour: 600, maxPerDay: 3000 },
+};
+
+function looksLikeScam(text, title = "", orgName = "") {
+  const combined = String(text || "");
+  if (SCAM_PHONE_REGEX.test(combined) && SCAM_KEYWORDS_REGEX.test(combined)) {
+    return true;
+  }
+  if (EMAIL_OR_URL_REGEX.test(String(title || "")) || EMAIL_OR_URL_REGEX.test(String(orgName || ""))) {
+    return true;
+  }
+  return false;
+}
+
+async function notifyAdmin(subjectPrefix, details) {
+  try {
+    if (!RESEND_API_KEY) return;
+    const resend = new Resend(RESEND_API_KEY);
+    const rows = Object.entries(details || {})
+      .map(([k, v]) => `<tr><td style="padding:6px 12px;font-weight:bold;border-bottom:1px solid #eee;">${k}</td><td style="padding:6px 12px;border-bottom:1px solid #eee;">${String(v ?? "")}</td></tr>`)
+      .join("");
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [ADMIN_ALERT_EMAIL],
+      subject: `🚨 [Ticketto Security] ${subjectPrefix}`,
+      html: `<div style="font-family:sans-serif;max-width:600px;margin:20px auto;padding:20px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin-top:0;color:#b91c1c;">🚨 ${subjectPrefix}</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">${rows}</table>
+      </div>`,
+    });
+  } catch (err) {
+    console.error("⚠️ notifyAdmin failed:", err.message);
+  }
+}
+
+/**
+ * Rate limit check & counter increment for confirmation emails per organization.
+ * Uses `organizations/{orgId}/counters/emails` with hourly and daily windows.
+ */
+async function checkAndIncrementEmailRateLimit(orgId, isPaidPlan) {
+  if (!orgId) return { allowed: true };
+  const limits = isPaidPlan ? EMAIL_RATE_LIMITS.paid : EMAIL_RATE_LIMITS.free;
+  const now = new Date();
+  const iso = now.toISOString();
+  const hourKey = iso.slice(0, 13); // YYYY-MM-DDTHH
+  const dayKey = iso.slice(0, 10);  // YYYY-MM-DD
+
+  const counterRef = db.collection("organizations").doc(orgId).collection("counters").doc("emails");
+
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    const data = snap.exists ? snap.data() : {};
+
+    const hourCount = data.hourKey === hourKey ? (data.hourCount || 0) : 0;
+    const hourAlerted = data.hourKey === hourKey ? Boolean(data.hourAlerted) : false;
+    const dayCount = data.dayKey === dayKey ? (data.dayCount || 0) : 0;
+    const dayAlerted = data.dayKey === dayKey ? Boolean(data.dayAlerted) : false;
+
+    if (hourCount >= limits.maxPerHour) {
+      if (!hourAlerted) {
+        tx.set(counterRef, {
+          hourKey, hourCount, hourAlerted: true,
+          dayKey, dayCount, dayAlerted,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+      return {
+        allowed: false,
+        shouldAlert: !hourAlerted,
+        reason: `Hourly limit exceeded (${hourCount}/${limits.maxPerHour})`,
+      };
+    }
+
+    if (dayCount >= limits.maxPerDay) {
+      if (!dayAlerted) {
+        tx.set(counterRef, {
+          hourKey, hourCount, hourAlerted,
+          dayKey, dayCount, dayAlerted: true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+      return {
+        allowed: false,
+        shouldAlert: !dayAlerted,
+        reason: `Daily limit exceeded (${dayCount}/${limits.maxPerDay})`,
+      };
+    }
+
+    tx.set(counterRef, {
+      hourKey,
+      hourCount: hourCount + 1,
+      hourAlerted,
+      dayKey,
+      dayCount: dayCount + 1,
+      dayAlerted,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    return { allowed: true };
+  });
+}
+
+function signModerationAction(orgId, action) {
+  const secret = RESEND_API_KEY || "ticketto-moderation-secret-2026";
+  return crypto.createHmac("sha256", secret).update(`${orgId}:${action}`).digest("hex");
+}
+
+async function performBlockOrganization(orgId, reason = "admin:manual") {
+  if (!orgId) throw new Error("Missing orgId");
+
+  await db.collection("organizations").doc(orgId).set({
+    blocked: true,
+    blockedReason: reason,
+    blockedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+
+  // Move all published events of this org to draft
+  const eventsSnap = await db.collection("events").where("orgId", "==", orgId).get();
+  let draftedEvents = 0;
+  for (const evDoc of eventsSnap.docs) {
+    if (evDoc.data().status === "published") {
+      await evDoc.ref.update({ status: "draft" });
+      draftedEvents++;
+    }
+  }
+
+  // Find and disable associated users in Firebase Auth
+  const uids = new Set();
+  const membersSnap = await db.collection("organizations").doc(orgId).collection("members").get();
+  membersSnap.docs.forEach((d) => {
+    uids.add(d.id);
+    if (d.data().userId) uids.add(d.data().userId);
+  });
+  const usersSnap = await db.collection("users").where("organizationIds", "array-contains", orgId).get();
+  usersSnap.docs.forEach((d) => uids.add(d.id));
+
+  let disabledUsers = 0;
+  for (const uid of uids) {
+    try {
+      const userRecord = await admin.auth().getUser(uid);
+      if (userRecord.email && ADMIN_ALLOWED_EMAILS.has(userRecord.email.toLowerCase())) {
+        continue;
+      }
+      await admin.auth().updateUser(uid, { disabled: true });
+      disabledUsers++;
+    } catch (uErr) {
+      console.warn(`⚠️ Could not disable user ${uid}:`, uErr.message);
+    }
+  }
+
+  console.log(`🛑 Blocked org=${orgId} reason=${reason} draftedEvents=${draftedEvents} disabledUsers=${disabledUsers}`);
+  return { orgId, draftedEvents, disabledUsers };
+}
+
 // ─── Trigger: New Attendee Created ───────────────────────────
 exports.onAttendeeCreated = onDocumentCreated(
   {
@@ -682,6 +851,48 @@ exports.onAttendeeCreated = onDocumentCreated(
       }
       const eventData = eventDoc.data();
       const lang = getEventLang(eventData);
+
+      // Fetch org data
+      let orgData = null;
+      if (attendee.orgId) {
+        const orgDoc = await db.collection("organizations").doc(attendee.orgId).get();
+        if (orgDoc.exists) orgData = orgDoc.data();
+      }
+
+      // ─── Anti-Phishing 1.1a: Event must be published and org not blocked ───
+      if (eventData.status !== "published" || orgData?.blocked === true) {
+        console.warn(`🛑 Blocked confirmation email: event=${attendee.eventId} status=${eventData.status} orgBlocked=${orgData?.blocked}`);
+        await event.data.ref.update({
+          emailSent: false,
+          emailError: "blocked: event not published or org blocked",
+        });
+        return;
+      }
+
+      // ─── Anti-Phishing 1.1b: Content scam filter on event + org text ───
+      const combinedText = [eventData.title, eventData.description, eventData.location, orgData?.name].join(" ");
+      if (looksLikeScam(combinedText, eventData.title, orgData?.name)) {
+        console.warn(`🚨 SCAM FILTER triggered for org=${attendee.orgId} event=${attendee.eventId} title="${eventData.title}"`);
+        if (attendee.orgId) {
+          await db.collection("organizations").doc(attendee.orgId).set({
+            blocked: true,
+            blockedReason: "auto:scam-filter",
+            blockedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+        }
+        await event.data.ref.update({
+          emailSent: false,
+          emailError: "blocked: scam filter",
+        });
+        await notifyAdmin("SCAM FILTER", {
+          orgId: attendee.orgId,
+          orgName: orgData?.name || "",
+          eventId: attendee.eventId,
+          title: eventData.title || "",
+          attendeeEmail: attendee.email || "",
+        });
+        return;
+      }
 
       // ─── Server-side: Increment attendeesCount & update timeSlot booking ───
       const eventUpdateData = {
@@ -708,13 +919,6 @@ exports.onAttendeeCreated = onDocumentCreated(
       const currentCount = (eventData.attendeesCount || 0) + 1;
       const PLAN_ATTENDEE_LIMITS = { free: 50, pro: 500, business: -1 };
 
-      // Fetch org data
-      let orgData = null;
-      if (attendee.orgId) {
-        const orgDoc = await db.collection("organizations").doc(attendee.orgId).get();
-        if (orgDoc.exists) orgData = orgDoc.data();
-      }
-
       // Wallet passes are only generated for Pro/Business plans
       const orgPlan = orgData?.plan || "free";
       const isPaidPlan = orgPlan !== "free";
@@ -723,6 +927,27 @@ exports.onAttendeeCreated = onDocumentCreated(
       const planLimit = PLAN_ATTENDEE_LIMITS[orgPlan] || 50;
       if (planLimit > 0 && currentCount > planLimit) {
         console.warn(`⚠️ PLAN LIMIT EXCEEDED: org=${attendee.orgId} plan=${orgPlan} limit=${planLimit} current=${currentCount} event=${attendee.eventId}`);
+      }
+
+      // ─── Anti-Phishing 1.2: Per-org email rate limit ───
+      const emailRate = await checkAndIncrementEmailRateLimit(attendee.orgId, isPaidPlan);
+      if (!emailRate.allowed) {
+        console.warn(`⚠️ Email rate-limited: org=${attendee.orgId} plan=${orgPlan} reason=${emailRate.reason}`);
+        await event.data.ref.update({
+          emailSent: false,
+          emailError: "rate-limited",
+        });
+        if (emailRate.shouldAlert) {
+          await notifyAdmin("EMAIL RATE LIMIT", {
+            orgId: attendee.orgId,
+            orgName: orgData?.name || "",
+            plan: orgPlan,
+            eventId: attendee.eventId,
+            title: eventData.title || "",
+            reason: emailRate.reason,
+          });
+        }
+        return;
       }
 
       // Find time slot if applicable
@@ -937,6 +1162,18 @@ exports.testEmail = onRequest(
     cors: true,
   },
   async (req, res) => {
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      res.status(401).json({ error: "Unauthorized: missing Bearer token" });
+      return;
+    }
+    try {
+      await admin.auth().verifyIdToken(authHeader.slice("Bearer ".length).trim());
+    } catch (_) {
+      res.status(401).json({ error: "Unauthorized: invalid token" });
+      return;
+    }
+
     const { to } = req.query;
     if (!to) {
       res.status(400).json({ error: "Missing 'to' query parameter" });
@@ -978,9 +1215,25 @@ exports.resendAttendeeConfirmation = onRequest(
     cors: true,
   },
   async (req, res) => {
-    const { attendeeId } = req.query;
+    // 1. Require Authorization: Bearer <idToken>
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      res.status(401).json({ error: "Unauthorized: missing Bearer token" });
+      return;
+    }
+
+    let decodedToken;
+    try {
+      const idToken = authHeader.slice("Bearer ".length).trim();
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (authErr) {
+      res.status(401).json({ error: "Unauthorized: invalid token" });
+      return;
+    }
+
+    const attendeeId = req.query.attendeeId || req.body?.attendeeId;
     if (!attendeeId) {
-      res.status(400).json({ error: "Missing attendeeId query parameter" });
+      res.status(400).json({ error: "Missing attendeeId parameter" });
       return;
     }
 
@@ -1002,14 +1255,49 @@ exports.resendAttendeeConfirmation = onRequest(
       const lang = getEventLang(eventData);
 
       // Fetch org data
+      const orgId = attendee.orgId || eventData.orgId;
       let orgData = null;
-      if (attendee.orgId) {
-        const orgDoc = await db.collection("organizations").doc(attendee.orgId).get();
+      if (orgId) {
+        const orgDoc = await db.collection("organizations").doc(orgId).get();
         if (orgDoc.exists) orgData = orgDoc.data();
+      }
+
+      // 2. Verify user is staff of the attendee's organization (or global admin)
+      const uid = decodedToken.uid;
+      const isGlobalAdmin = decodedToken.email && ADMIN_ALLOWED_EMAILS.has(decodedToken.email.toLowerCase());
+      let isOrgStaffMember = false;
+      if (orgId && !isGlobalAdmin) {
+        const memberDoc = await db.collection("organizations").doc(orgId).collection("members").doc(uid).get();
+        if (memberDoc.exists && ["owner", "admin", "staff"].includes(memberDoc.data()?.role)) {
+          isOrgStaffMember = true;
+        } else if (orgData?.ownerId === uid) {
+          isOrgStaffMember = true;
+        }
+      }
+      if (!isGlobalAdmin && !isOrgStaffMember) {
+        res.status(403).json({ error: "Forbidden: user is not staff of this organization" });
+        return;
+      }
+
+      // 3. Anti-phishing & rate limit checks
+      if (eventData.status !== "published" || orgData?.blocked === true) {
+        res.status(403).json({ error: "Blocked: event not published or organization is blocked" });
+        return;
+      }
+      const combinedText = [eventData.title, eventData.description, eventData.location, orgData?.name].join(" ");
+      if (looksLikeScam(combinedText, eventData.title, orgData?.name)) {
+        res.status(403).json({ error: "Blocked by scam filter" });
+        return;
       }
 
       const orgPlan = orgData?.plan || "free";
       const isPaidPlan = orgPlan !== "free";
+
+      const emailRate = await checkAndIncrementEmailRateLimit(orgId, isPaidPlan);
+      if (!emailRate.allowed) {
+        res.status(429).json({ error: "rate-limited", reason: emailRate.reason });
+        return;
+      }
 
       // Find time slot if applicable
       let timeSlot = null;
@@ -1038,7 +1326,7 @@ exports.resendAttendeeConfirmation = onRequest(
         html: html,
       };
 
-      const organizerEmail = await getOrganizerEmail(attendee.orgId, orgData);
+      const organizerEmail = await getOrganizerEmail(orgId, orgData);
       if (organizerEmail) {
         emailPayload.reply_to = [organizerEmail];
       }
@@ -1070,6 +1358,157 @@ exports.resendAttendeeConfirmation = onRequest(
     } catch (error) {
       console.error("Error resending confirmation:", error);
       res.status(500).json({ success: false, error: error.message });
+    }
+  }
+);
+
+// ─── Admin Moderation & Kill Switch (Livello 4) ──────────────
+exports.blockOrganization = onCall(
+  { cors: true },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError("unauthenticated", "Authentication required");
+    }
+    const callerEmail = (request.auth.token.email || "").toLowerCase();
+    let isAllowed = ADMIN_ALLOWED_EMAILS.has(callerEmail);
+    if (!isAllowed) {
+      const userDoc = await db.collection("users").doc(request.auth.uid).get();
+      if (userDoc.exists && userDoc.data()?.role === "admin") {
+        isAllowed = true;
+      }
+    }
+    if (!isAllowed) {
+      throw new HttpsError("permission-denied", "Admin privileges required");
+    }
+
+    const { orgId, reason } = request.data || {};
+    if (!orgId) {
+      throw new HttpsError("invalid-argument", "orgId is required");
+    }
+
+    const result = await performBlockOrganization(orgId, reason || `admin:${callerEmail || request.auth.uid}`);
+    return { success: true, ...result };
+  }
+);
+
+exports.adminModerateOrg = onRequest(
+  { cors: true },
+  async (req, res) => {
+    const { orgId, action, sig } = req.query;
+    if (!orgId || !action || !sig || !["block", "trust"].includes(action)) {
+      res.status(400).send("Invalid moderation parameters");
+      return;
+    }
+    const expectedSig = signModerationAction(orgId, action);
+    if (sig !== expectedSig) {
+      res.status(403).send("Invalid signature");
+      return;
+    }
+
+    try {
+      if (action === "block") {
+        const result = await performBlockOrganization(orgId, "admin:email-kill-switch");
+        res.status(200).send(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;text-align:center;">
+          <h1 style="color:#b91c1c;">🛑 Organizzazione Bloccata</h1>
+          <p>Org ID: <code>${orgId}</code></p>
+          <p>Eventi riportati in bozza: <strong>${result.draftedEvents}</strong> | Utenti disabilitati: <strong>${result.disabledUsers}</strong></p>
+        </body></html>`);
+      } else {
+        await db.collection("organizations").doc(orgId).set({
+          trusted: true,
+          blocked: false,
+          moderatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        res.status(200).send(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;text-align:center;">
+          <h1 style="color:#0E6B52;">✅ Organizzazione Approvata (Trusted)</h1>
+          <p>Org ID: <code>${orgId}</code> è ora contrassegnata come <code>trusted: true</code>.</p>
+        </body></html>`);
+      }
+    } catch (err) {
+      console.error("❌ adminModerateOrg error:", err);
+      res.status(500).send(`Error: ${err.message}`);
+    }
+  }
+);
+
+async function checkFirstPublishedEventAlert(eventId, eventData) {
+  try {
+    if (!eventData || eventData.status !== "published" || !eventData.orgId) return;
+    const orgId = eventData.orgId;
+    const orgRef = db.collection("organizations").doc(orgId);
+    const orgDoc = await orgRef.get();
+    if (!orgDoc.exists) return;
+    const orgData = orgDoc.data() || {};
+
+    const plan = orgData.plan || "free";
+    if (plan !== "free" || orgData.trusted === true || orgData.firstPublishNotified === true) {
+      return;
+    }
+
+    let orgCreatedMs = 0;
+    if (orgData.createdAt?.toMillis) {
+      orgCreatedMs = orgData.createdAt.toMillis();
+    } else if (orgData.createdAt) {
+      orgCreatedMs = new Date(orgData.createdAt).getTime() || 0;
+    }
+    const nowMs = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    if (orgCreatedMs > 0 && (nowMs - orgCreatedMs) > sevenDaysMs) {
+      return;
+    }
+
+    await orgRef.set({ firstPublishNotified: true }, { merge: true });
+
+    const organizerEmail = await getOrganizerEmail(orgId, orgData);
+    const minutesSinceSignup = orgCreatedMs > 0 ? Math.max(0, Math.round((nowMs - orgCreatedMs) / 60000)) : "N/A";
+    const baseFuncUrl = "https://us-central1-eventflow-3541b.cloudfunctions.net/adminModerateOrg";
+    const okUrl = `${baseFuncUrl}?orgId=${encodeURIComponent(orgId)}&action=trust&sig=${signModerationAction(orgId, "trust")}`;
+    const blockUrl = `${baseFuncUrl}?orgId=${encodeURIComponent(orgId)}&action=block&sig=${signModerationAction(orgId, "block")}`;
+
+    if (!RESEND_API_KEY) return;
+    const resend = new Resend(RESEND_API_KEY);
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: [ADMIN_ALERT_EMAIL],
+      subject: `👀 [Ticketto] Primo evento pubblicato (Free <7gg): "${eventData.title}"`,
+      html: `<div style="font-family:sans-serif;max-width:600px;margin:20px auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin-top:0;color:#0E6B52;">Nuovo evento pubblicato da org Free recente</h2>
+        <p><strong>Titolo evento:</strong> ${eventData.title || "—"}</p>
+        <p><strong>Descrizione:</strong> ${eventData.description || "—"}</p>
+        <p><strong>Luogo:</strong> ${eventData.location || "—"}</p>
+        <p><strong>Organizzazione:</strong> ${orgData.name || "—"} (<code>${orgId}</code>)</p>
+        <p><strong>Email utente:</strong> ${organizerEmail || "—"}</p>
+        <p><strong>Minuti dalla creazione org:</strong> ${minutesSinceSignup}</p>
+        <p><strong>Pagina pubblica:</strong> <a href="https://ticketto.it/register/${eventId}">https://ticketto.it/register/${eventId}</a></p>
+        <div style="margin-top:24px;">
+          <a href="${okUrl}" style="display:inline-block;background:#0E6B52;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin-right:12px;">✅ OK (Approva Org)</a>
+          <a href="${blockUrl}" style="display:inline-block;background:#b91c1c;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">🛑 BLOCCA ORG</a>
+        </div>
+      </div>`,
+    });
+    console.log(`📧 Sent first-published alert for org=${orgId} event=${eventId}`);
+  } catch (err) {
+    console.warn("⚠️ checkFirstPublishedEventAlert failed:", err.message);
+  }
+}
+
+exports.onEventCreatedModeration = onDocumentCreated(
+  { document: "events/{eventId}" },
+  async (event) => {
+    const data = event.data?.data();
+    if (data?.status === "published") {
+      await checkFirstPublishedEventAlert(event.params.eventId, data);
+    }
+  }
+);
+
+exports.onEventUpdatedModeration = onDocumentUpdated(
+  { document: "events/{eventId}" },
+  async (event) => {
+    const before = event.data?.before?.data();
+    const after = event.data?.after?.data();
+    if (before?.status !== "published" && after?.status === "published") {
+      await checkFirstPublishedEventAlert(event.params.eventId, after);
     }
   }
 );

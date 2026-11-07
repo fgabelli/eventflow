@@ -29,6 +29,25 @@ service cloud.firestore {
       return isOrgMember(orgId) && getOrgMemberRole(orgId) in ['owner', 'admin', 'staff'];
     }
 
+    function isOrgBlocked(orgId) {
+      return exists(/databases/$(database)/documents/organizations/$(orgId))
+        && get(/databases/$(database)/documents/organizations/$(orgId)).data.get('blocked', false) == true;
+    }
+
+    // helper: si può pubblicare solo con email verificata (o org con grandfathering) e org non bloccata
+    function canPublish(data) {
+      return data.status != 'published'
+        || (
+          (request.auth.token.email_verified == true
+            || get(/databases/$(database)/documents/organizations/$(data.orgId)).data.get('trusted', false) == true)
+          && get(/databases/$(database)/documents/organizations/$(data.orgId)).data.get('blocked', false) != true
+        );
+    }
+
+    function isDisposable(email) {
+      return email != null && email.lower().matches('.*@(litedl\\.com|aiqseo\\.com|mailinator\\.com|guerrillamail\\.com|10minutemail\\.com|tempmail\\.com|yopmail\\.com|sharklasers\\.com|trashmail\\.com|temp-mail\\.org|dispostable\\.com|getnada\\.com|mohmal\\.com|emailondeck\\.com|throwawaymail\\.com|fakeinbox\\.com|maildrop\\.cc|mailnesia\\.com|mintemail\\.com|mytemp\\.email|nada\\.email|burnermail\\.io|tempail\\.com|tempmailaddress\\.com|tmpmail\\.net|tmpmail\\.org|wegwerfmail\\.de)$');
+    }
+
     // ─── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isAuth();
@@ -39,8 +58,9 @@ service cloud.firestore {
 
     // ─── Organizations ─────────────────────────────────────────
     match /organizations/{orgId} {
-      allow read: if isAuth();
-      allow create: if isAuth();
+      allow get: if true;
+      allow list: if isAuth();
+      allow create: if isAuth() && request.auth.token.email_verified == true && !isDisposable(request.auth.token.email);
       allow update: if isOrgAdmin(orgId);
       allow delete: if isAuth() && getOrgMemberRole(orgId) == 'owner';
 
@@ -60,10 +80,10 @@ service cloud.firestore {
     match /events/{eventId} {
       // Public read: anyone can view event details (for registration page)
       allow read: if true;
-      allow create: if isAuth() && isOrgAdmin(request.resource.data.orgId);
+      allow create: if isAuth() && isOrgAdmin(request.resource.data.orgId) && !isOrgBlocked(request.resource.data.orgId) && canPublish(request.resource.data);
       // Only authenticated staff can update events
       // (attendeesCount & timeSlots are updated server-side by Cloud Functions)
-      allow update: if isAuth() && isOrgStaff(resource.data.orgId);
+      allow update: if isAuth() && isOrgStaff(resource.data.orgId) && !isOrgBlocked(resource.data.orgId) && canPublish(request.resource.data);
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
     }
 
@@ -71,12 +91,20 @@ service cloud.firestore {
     match /attendees/{attendeeId} {
       allow read: if isAuth() && isOrgMember(resource.data.orgId);
       // Allow org staff OR public self-registration (must have required fields)
-      allow create: if (isAuth() && isOrgStaff(request.resource.data.orgId))
-        || (request.resource.data.keys().hasAll(['eventId', 'orgId', 'firstName', 'lastName', 'email', 'qrCode', 'status'])
-            && request.resource.data.firstName is string
-            && request.resource.data.lastName is string
-            && request.resource.data.email is string);
-      allow update: if isAuth() && isOrgStaff(resource.data.orgId);
+      allow create: if !isOrgBlocked(request.resource.data.orgId) && (
+        (isAuth() && isOrgStaff(request.resource.data.orgId))
+        || (
+          request.resource.data.keys().hasAll(['eventId', 'orgId', 'firstName', 'lastName', 'email', 'qrCode', 'status'])
+          && request.resource.data.firstName is string && request.resource.data.firstName.size() <= 80
+          && request.resource.data.lastName is string && request.resource.data.lastName.size() <= 80
+          && request.resource.data.email is string && request.resource.data.email.size() <= 254
+          && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+          && exists(/databases/$(database)/documents/events/$(request.resource.data.eventId))
+          && get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.status == 'published'
+          && get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.orgId == request.resource.data.orgId
+        )
+      );
+      allow update: if isAuth() && isOrgStaff(resource.data.orgId) && !isOrgBlocked(resource.data.orgId);
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
     }
 
