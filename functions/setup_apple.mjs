@@ -15,7 +15,11 @@ const db = getFirestore(app);
 async function run() {
   try {
     console.log('Creating user apple@ticketto.it...');
-    const userCred = await createUserWithEmailAndPassword(auth, 'apple@ticketto.it', 'Ticketto2026!');
+    const appleReviewPassword = process.env.APPLE_REVIEW_PASSWORD;
+    if (!appleReviewPassword) {
+      throw new Error('Missing APPLE_REVIEW_PASSWORD environment variable.');
+    }
+    const userCred = await createUserWithEmailAndPassword(auth, 'apple@ticketto.it', appleReviewPassword);
     const uid = userCred.user.uid;
     console.log('Created user UID:', uid);
 
