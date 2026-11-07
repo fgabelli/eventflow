@@ -881,14 +881,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                         setDialogState(() => isSaving = true);
                         try {
-                          await FirebaseFirestore.instance
+                          final orgRef = FirebaseFirestore.instance
                               .collection(Collections.organizations)
-                              .doc(org.id)
-                              .update({
+                              .doc(org.id);
+                          await orgRef.update({
                             'name': newName,
                             'logo': newLogo.isNotEmpty ? newLogo : null,
                             'primaryColor': selectedColor,
                           });
+                          await orgRef.collection('public').doc('profile').set({
+                            'name': newName,
+                            'logo': newLogo.isNotEmpty ? newLogo : null,
+                            'primaryColor': selectedColor,
+                          }, SetOptions(merge: true));
                           if (context.mounted) {
                             Navigator.pop(ctx);
                             ScaffoldMessenger.of(context).showSnackBar(

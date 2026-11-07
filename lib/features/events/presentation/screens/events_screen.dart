@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
@@ -90,6 +91,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     final eventsAsync = ref.watch(eventsProvider);
+    final org = ref.watch(currentOrgProvider).value;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -145,6 +147,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => _EventCard(
                       event: filtered[index],
+                      canPublish: (FirebaseAuth.instance.currentUser?.emailVerified ?? false) || (org?.trusted ?? false),
                       onStatusChange: (status) => _changeStatus(filtered[index], status),
                       onDelete: () => _deleteEvent(filtered[index].id),
                     ),
@@ -206,18 +209,35 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     );
   }
 
-  void _changeStatus(EventModel event, EventStatus status) {
-    if (status == EventStatus.published && event.isPaid) {
+  Future<void> _changeStatus(EventModel event, EventStatus status) async {
+    if (status == EventStatus.published) {
       final org = ref.read(currentOrgProvider).value;
-      if (org == null || !org.hasActiveStripe) {
-        if (org != null) {
-          final userEmail = ref.read(appUserProvider).value?.email;
-          showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+      bool canPub = (FirebaseAuth.instance.currentUser?.emailVerified ?? false) || (org?.trusted ?? false);
+      if (!canPub) {
+        canPub = await ref.read(authServiceProvider).reloadAndCheckEmailVerified();
+      }
+      if (!canPub) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Verifica la tua email prima di pubblicare eventi.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
         }
         return;
       }
+      if (event.isPaid) {
+        if (org == null || !org.hasActiveStripe) {
+          if (org != null && mounted) {
+            final userEmail = ref.read(appUserProvider).value?.email;
+            showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+          }
+          return;
+        }
+      }
     }
-    ref.read(eventsServiceProvider).updateEventStatus(event.id, status);
+    await ref.read(eventsServiceProvider).updateEventStatus(event.id, status);
   }
 
   void _deleteEvent(String eventId) async {
@@ -314,11 +334,13 @@ class _FilterChip extends StatelessWidget {
 
 class _EventCard extends StatelessWidget {
   final EventModel event;
+  final bool canPublish;
   final ValueChanged<EventStatus> onStatusChange;
   final VoidCallback onDelete;
 
   const _EventCard({
     required this.event,
+    this.canPublish = true,
     required this.onStatusChange,
     required this.onDelete,
   });
@@ -430,7 +452,15 @@ class _EventCard extends StatelessWidget {
                           icon: const Icon(Icons.more_vert, size: 20, color: AppColors.textTertiary),
                           itemBuilder: (context) => [
                             if (event.status == EventStatus.draft)
-                              PopupMenuItem(value: 'publish', child: Text(AppLocalizations.of(context)['publish'])),
+                              PopupMenuItem(
+                                value: 'publish',
+                                enabled: canPublish,
+                                child: Text(
+                                  canPublish
+                                      ? AppLocalizations.of(context)['publish']
+                                      : '${AppLocalizations.of(context)['publish']} (verifica email)',
+                                ),
+                              ),
                             if (event.status == EventStatus.published)
                               PopupMenuItem(value: 'complete', child: Text(AppLocalizations.of(context)['mark_complete'])),
                             PopupMenuItem(value: 'delete', child: Text(AppLocalizations.of(context)['delete'], style: const TextStyle(color: AppColors.error))),

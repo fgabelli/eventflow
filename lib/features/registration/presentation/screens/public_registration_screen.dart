@@ -1,4 +1,6 @@
 import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -383,6 +385,24 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
     return color.computeLuminance() > 0.65;
   }
 
+  void _updateRobotsNoIndex(Organization? org) {
+    if (!kIsWeb || org == null) return;
+    try {
+      final shouldNoIndex = org.plan == SubscriptionPlan.free && !org.trusted;
+      final existing = html.document.querySelector('meta[name="robots"]');
+      if (shouldNoIndex) {
+        if (existing != null) {
+          existing.setAttribute('content', 'noindex, nofollow');
+        } else {
+          final meta = html.MetaElement()
+            ..name = 'robots'
+            ..content = 'noindex, nofollow';
+          html.document.head?.append(meta);
+        }
+      }
+    } catch (_) {}
+  }
+
   /// Routing method that uses [ctx] from the Builder below Localizations.override.
   /// All helper methods called from here receive the correctly-localized context.
   Widget _buildBodyContent(BuildContext ctx, EventModel event) {
@@ -394,12 +414,23 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       stream: FirebaseFirestore.instance
           .collection(Collections.organizations)
           .doc(event.orgId)
+          .collection('public')
+          .doc('profile')
           .snapshots(),
       builder: (context, orgSnap) {
         Organization? org;
         if (orgSnap.hasData && orgSnap.data!.exists) {
           org = Organization.fromFirestore(orgSnap.data!);
         }
+
+        if (org != null && org.blocked) {
+          return _buildErrorState(
+            'Evento non disponibile',
+            AppLocalizations.of(ctx)['registration_closed_desc'],
+          );
+        }
+
+        _updateRobotsNoIndex(org);
 
         if (_isPaymentSuccess) {
           return _buildPaymentSuccessState(event, org);

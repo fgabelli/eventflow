@@ -58,11 +58,16 @@ service cloud.firestore {
 
     // ─── Organizations ─────────────────────────────────────────
     match /organizations/{orgId} {
-      allow get: if true;
-      allow list: if isAuth();
+      allow read: if isAuth();
       allow create: if isAuth() && request.auth.token.email_verified == true && !isDisposable(request.auth.token.email);
       allow update: if isOrgAdmin(orgId);
       allow delete: if isAuth() && getOrgMemberRole(orgId) == 'owner';
+
+      // Public organization profile (only safe fields: name, logo, primaryColor, blocked, trusted, plan)
+      match /public/{docId} {
+        allow read: if true;
+        allow write: if isOrgAdmin(orgId);
+      }
 
       // Organization members subcollection (auth required)
       match /members/{memberId} {

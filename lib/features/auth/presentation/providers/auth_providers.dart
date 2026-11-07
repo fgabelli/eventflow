@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
+import 'package:eventflow/core/utils/disposable_email_domains.dart';
 
 // ─── Firebase Auth State Provider ──────────────────────────────────
 
@@ -145,17 +146,47 @@ class AuthService {
 
   // Sign up with email/password
   Future<User?> signUpWithEmail(String email, String password, String displayName) async {
+    if (isDisposableEmail(email)) {
+      throw FirebaseAuthException(
+        code: 'disposable-email',
+        message: "Usa un'email aziendale o personale reale",
+      );
+    }
     final userCredential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
     if (userCredential.user != null) {
       await userCredential.user!.updateDisplayName(displayName);
+      try {
+        await userCredential.user!.sendEmailVerification();
+      } catch (_) {}
       await _ensureUserDocument(userCredential.user!);
       await AnalyticsService.instance.setUserId(userCredential.user!.uid);
       await AnalyticsService.instance.logEvent('sign_up', params: {'method': 'email'});
     }
     return userCredential.user;
+  }
+
+  // Resend verification email to current user
+  Future<void> resendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
+  }
+
+  // Reload Firebase Auth user and refresh ID token so Firestore rules see email_verified=true
+  Future<bool> reloadAndCheckEmailVerified() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    final refreshed = _auth.currentUser;
+    if (refreshed != null && refreshed.emailVerified) {
+      await refreshed.getIdToken(true);
+      return true;
+    }
+    return false;
   }
 
   // Sign out
@@ -196,6 +227,14 @@ class AuthService {
     final orgRef = _db.collection(Collections.organizations).doc();
     final org = Organization(id: orgRef.id, name: name);
     await orgRef.set(org.toFirestore());
+    await orgRef.collection('public').doc('profile').set({
+      'name': name,
+      'logo': null,
+      'primaryColor': null,
+      'blocked': false,
+      'trusted': false,
+      'plan': SubscriptionPlan.free.name,
+    });
 
     // Add user as owner
     final memberRef = orgRef.collection('members').doc(userId);

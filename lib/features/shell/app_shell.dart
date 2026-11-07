@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -57,21 +58,118 @@ class _AppShellState extends ConsumerState<AppShell> {
     final isWide = MediaQuery.of(context).size.width > 800;
     final appUser = ref.watch(appUserProvider).value;
     final org = ref.watch(currentOrgProvider).value;
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final showVerifyBanner = firebaseUser != null &&
+        !firebaseUser.emailVerified &&
+        !(org?.trusted ?? false);
+
+    final mainContent = showVerifyBanner
+        ? Column(
+            children: [
+              _buildEmailVerificationBanner(context, firebaseUser.email ?? ''),
+              Expanded(child: widget.child),
+            ],
+          )
+        : widget.child;
 
     if (isWide) {
       return Scaffold(
         body: Row(
           children: [
             _buildSideNav(context, appUser, org),
-            Expanded(child: widget.child),
+            Expanded(child: mainContent),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: widget.child,
+      body: mainContent,
       bottomNavigationBar: _buildBottomNav(context),
+    );
+  }
+
+  Widget _buildEmailVerificationBanner(BuildContext context, String email) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFFBEB),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 12,
+        runSpacing: 8,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.mark_email_unread_rounded, color: Color(0xFFD97706), size: 18),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Verifica l\'email ($email) per pubblicare eventi, poi clicca su Ricarica.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton(
+                onPressed: () async {
+                  try {
+                    await ref.read(authServiceProvider).resendVerificationEmail();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Email di verifica reinviata!'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Errore invio email: $e'), backgroundColor: AppColors.error),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Reinvia', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 4),
+              FilledButton.tonal(
+                onPressed: () async {
+                  final verified = await ref.read(authServiceProvider).reloadAndCheckEmailVerified();
+                  if (!mounted) return;
+                  setState(() {});
+                  if (verified) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Email verificata! Ora puoi pubblicare i tuoi eventi.'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Email non ancora verificata. Clicca sul link ricevuto via email.'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Ricarica'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

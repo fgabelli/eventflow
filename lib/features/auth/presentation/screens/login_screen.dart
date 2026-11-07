@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:html' as html;
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
+import 'package:eventflow/core/utils/disposable_email_domains.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -74,6 +75,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           setState(() { _error = l['enter_name']; _isLoading = false; });
           return;
         }
+        if (isDisposableEmail(_emailController.text.trim())) {
+          setState(() {
+            _error = "Usa un'email aziendale o personale reale";
+            _isLoading = false;
+          });
+          return;
+        }
         await authService.signUpWithEmail(
           _emailController.text.trim(),
           _passwordController.text,
@@ -88,6 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   }
 
   String _parseError(String error, AppLocalizations l) {
+    if (error.contains('disposable-email')) return "Usa un'email aziendale o personale reale";
     if (error.contains('user-not-found')) return l['error_user_not_found'];
     if (error.contains('wrong-password')) return l['error_wrong_password'];
     if (error.contains('email-already-in-use')) return l['error_email_in_use'];

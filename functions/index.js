@@ -794,6 +794,9 @@ async function performBlockOrganization(orgId, reason = "admin:manual") {
     blockedReason: reason,
     blockedAt: admin.firestore.FieldValue.serverTimestamp(),
   }, { merge: true });
+  await db.collection("organizations").doc(orgId).collection("public").doc("profile").set({
+    blocked: true,
+  }, { merge: true });
 
   // Move all published events of this org to draft
   const eventsSnap = await db.collection("events").where("orgId", "==", orgId).get();
@@ -878,6 +881,9 @@ exports.onAttendeeCreated = onDocumentCreated(
             blocked: true,
             blockedReason: "auto:scam-filter",
             blockedAt: admin.firestore.FieldValue.serverTimestamp(),
+          }, { merge: true });
+          await db.collection("organizations").doc(attendee.orgId).collection("public").doc("profile").set({
+            blocked: true,
           }, { merge: true });
         }
         await event.data.ref.update({
@@ -1418,6 +1424,10 @@ exports.adminModerateOrg = onRequest(
           trusted: true,
           blocked: false,
           moderatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        await db.collection("organizations").doc(orgId).collection("public").doc("profile").set({
+          trusted: true,
+          blocked: false,
         }, { merge: true });
         res.status(200).send(`<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;text-align:center;">
           <h1 style="color:#0E6B52;">✅ Organizzazione Approvata (Trusted)</h1>

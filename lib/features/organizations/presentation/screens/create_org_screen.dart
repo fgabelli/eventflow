@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -16,11 +17,61 @@ class CreateOrgScreen extends ConsumerStatefulWidget {
 class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
   final _nameController = TextEditingController();
   bool _isLoading = false;
+  bool _isResending = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _resendVerification() async {
+    setState(() => _isResending = true);
+    try {
+      await ref.read(authServiceProvider).resendVerificationEmail();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email di verifica inviata! Controlla la tua casella di posta (anche nello spam).'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossibile reinviare email: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isResending = false);
+    }
+  }
+
+  Future<void> _checkVerificationAndReload() async {
+    setState(() => _isLoading = true);
+    try {
+      final verified = await ref.read(authServiceProvider).reloadAndCheckEmailVerified();
+      if (!mounted) return;
+      setState(() {});
+      if (verified) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email verificata con successo! Ora puoi creare il tuo workspace.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Email non ancora verificata. Clicca sul link ricevuto via email e riprova.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _createOrganization() async {
@@ -29,6 +80,24 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
     try {
       final appUser = ref.read(appUserProvider).value;
       if (appUser == null) return;
+
+      // Ensure email is verified before attempting org creation (enforced by Firestore rules)
+      bool isVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+      if (!isVerified) {
+        isVerified = await ref.read(authServiceProvider).reloadAndCheckEmailVerified();
+      }
+      if (!isVerified && appUser.organizationIds.isEmpty) {
+        if (mounted) {
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Verifica la tua email prima di continuare: controlla la posta e premi "Ho verificato, ricarica".'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
 
       // If user already has an organization, inform and redirect
       if (appUser.organizationIds.isNotEmpty) {
@@ -92,6 +161,7 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
   Widget build(BuildContext context) {
     final appUser = ref.watch(appUserProvider).value;
     final userName = appUser?.displayName ?? appUser?.email.split('@').first ?? '';
+    final isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? true;
 
     return Scaffold(
       body: Container(
@@ -135,6 +205,65 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 36),
+
+                    if (!isEmailVerified) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.mark_email_unread_rounded, color: Color(0xFFD97706), size: 22),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Verifica la tua email, poi ricarica',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF92400E),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Abbiamo inviato un link di conferma a ${appUser?.email ?? FirebaseAuth.instance.currentUser?.email ?? "la tua email"}. Clicca sul link nella mail e poi premi "Ho verificato, ricarica".',
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF78350F), height: 1.4),
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isResending ? null : _resendVerification,
+                                    icon: const Icon(Icons.send_rounded, size: 16),
+                                    label: Text(_isResending ? 'Invio...' : 'Reinvia'),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: _isLoading ? null : _checkVerificationAndReload,
+                                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                                    label: const Text('Ho verificato, ricarica'),
+                                    style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
 
                     // Card
                     Container(

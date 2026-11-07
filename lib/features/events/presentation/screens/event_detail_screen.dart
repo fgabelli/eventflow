@@ -6,6 +6,7 @@ import 'dart:html' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
@@ -277,14 +278,31 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Future<void> _changeStatus(EventStatus status, EventModel event) async {
-    if (status == EventStatus.published && event.isPaid) {
+    if (status == EventStatus.published) {
       final org = ref.read(currentOrgProvider).value;
-      if (org == null || !org.hasActiveStripe) {
-        if (org != null) {
-          final userEmail = ref.read(appUserProvider).value?.email;
-          showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+      bool canPub = (FirebaseAuth.instance.currentUser?.emailVerified ?? false) || (org?.trusted ?? false);
+      if (!canPub) {
+        canPub = await ref.read(authServiceProvider).reloadAndCheckEmailVerified();
+      }
+      if (!canPub) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Verifica la tua email prima di pubblicare eventi.'),
+              backgroundColor: AppColors.error,
+            ),
+          );
         }
         return;
+      }
+      if (event.isPaid) {
+        if (org == null || !org.hasActiveStripe) {
+          if (org != null && mounted) {
+            final userEmail = ref.read(appUserProvider).value?.email;
+            showStripeRequiredDialog(context, org: org, userEmail: userEmail);
+          }
+          return;
+        }
       }
     }
     await FirebaseFirestore.instance
@@ -826,10 +844,21 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ),
                 const SizedBox(width: 4),
                 PopupMenuButton<String>(
-                  itemBuilder: (_) => [
-                    if (event.status == EventStatus.draft)
-                      PopupMenuItem(value: 'publish', child: Text(AppLocalizations.of(context)['publish'])),
-                    if (event.status == EventStatus.published)
+                  itemBuilder: (_) {
+                    final canPub = (FirebaseAuth.instance.currentUser?.emailVerified ?? false) ||
+                        (ref.read(currentOrgProvider).value?.trusted ?? false);
+                    return [
+                      if (event.status == EventStatus.draft)
+                        PopupMenuItem(
+                          value: 'publish',
+                          enabled: canPub,
+                          child: Text(
+                            canPub
+                                ? AppLocalizations.of(context)['publish']
+                                : '${AppLocalizations.of(context)['publish']} (verifica email)',
+                          ),
+                        ),
+                      if (event.status == EventStatus.published)
                       PopupMenuItem(value: 'complete', child: Text(AppLocalizations.of(context)['mark_complete'])),
                     PopupMenuItem(
                       value: 'export',
@@ -856,7 +885,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       value: 'delete',
                       child: Text(AppLocalizations.of(context)['delete'], style: const TextStyle(color: AppColors.error)),
                     ),
-                  ],
+                    ];
+                  },
                   onSelected: (value) {
                     switch (value) {
                       case 'publish': _changeStatus(EventStatus.published, event);

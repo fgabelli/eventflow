@@ -21,6 +21,8 @@ class Organization {
   final String? stripeConnectStatus;
   final String? paymentMode;
   final bool stripeChargesEnabled;
+  final bool trusted;
+  final bool blocked;
 
   Organization({
     required this.id,
@@ -39,6 +41,8 @@ class Organization {
     this.stripeConnectStatus,
     this.paymentMode,
     this.stripeChargesEnabled = false,
+    this.trusted = false,
+    this.blocked = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   bool get hasActiveStripe => paymentMode == 'standard' && stripeChargesEnabled;
@@ -66,6 +70,8 @@ class Organization {
       stripeConnectStatus: data['stripeConnectStatus'] as String?,
       paymentMode: data['paymentMode'] as String?,
       stripeChargesEnabled: data['stripeChargesEnabled'] == true,
+      trusted: data['trusted'] == true,
+      blocked: data['blocked'] == true,
     );
   }
 

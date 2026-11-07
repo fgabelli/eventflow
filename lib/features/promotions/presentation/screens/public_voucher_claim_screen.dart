@@ -323,7 +323,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
           final promo = PromotionModel.fromFirestore(promoSnap.data!);
 
           return FutureBuilder<DocumentSnapshot>(
-            future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).get(),
+            future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).collection('public').doc('profile').get(),
             builder: (context, orgSnap) {
               Organization? org;
               if (orgSnap.hasData && orgSnap.data!.exists) {
@@ -365,7 +365,7 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
         final promo = PromotionModel.fromFirestore(promoSnap.data!);
 
         return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).get(),
+          future: FirebaseFirestore.instance.collection(Collections.organizations).doc(promo.orgId).collection('public').doc('profile').get(),
           builder: (context, orgSnap) {
             Organization? org;
             if (orgSnap.hasData && orgSnap.data!.exists) {
