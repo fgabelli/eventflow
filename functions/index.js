@@ -3776,6 +3776,7 @@ exports.sendReactivationCampaign = onRequest({ cors: true }, async (req, res) =>
     res.status(500).json({ error: e.message });
   }
 });
+
 // ===== OUTREACH "EVENTI SU INVITO" (B2B) — aggiunto 2026-07-25 =====
 const OUTREACH_TOKEN = "iz8Wp4inviteTicketto2026";
 const OUTREACH_SUBJECT = "Chi è venuto davvero al vostro ultimo evento su invito?";
@@ -4084,3 +4085,134 @@ exports.sendInviteOutreach = onRequest({ cors: true }, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ─── Temporary Admin Task Trigger: Google Wallet Review Setup ───────────────
+exports.onAdminTaskCreated = onDocumentCreated(
+  {
+    document: "admin_tasks/{taskId}",
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const data = snap.data() || {};
+    if (data.task !== "setupGoogleWalletReview") return;
+
+    const ISSUER_ID = "3388000000023089767";
+    const CLASS_ID = `${ISSUER_ID}.ticketto`;
+    const SAMPLE_OBJECT_ID = `${ISSUER_ID}.review_sample_001`;
+    const WALLET_SCOPE = "https://www.googleapis.com/auth/wallet_object.issuer";
+    const BASE_URL = "https://walletobjects.googleapis.com/walletobjects/v1";
+
+    try {
+      const { GoogleAuth } = require("google-auth-library");
+      const auth = new GoogleAuth({ scopes: [WALLET_SCOPE] });
+      const client = await auth.getClient();
+      const tokenRes = await client.getAccessToken();
+      const token = tokenRes?.token || tokenRes;
+      if (!token) {
+        throw new Error("Unable to acquire access token from GoogleAuth");
+      }
+
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      const upsertWalletResource = async (collectionPath, resourceId, payload) => {
+        const getRes = await fetch(`${BASE_URL}/${collectionPath}/${encodeURIComponent(resourceId)}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (getRes.status === 404) {
+          const postRes = await fetch(`${BASE_URL}/${collectionPath}`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+          });
+          if (!postRes.ok) {
+            throw new Error(`POST ${collectionPath} failed (${postRes.status}): ${await postRes.text()}`);
+          }
+          return await postRes.json();
+        } else if (getRes.ok) {
+          const patchRes = await fetch(`${BASE_URL}/${collectionPath}/${encodeURIComponent(resourceId)}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify(payload),
+          });
+          if (!patchRes.ok) {
+            throw new Error(`PATCH ${collectionPath}/${resourceId} failed (${patchRes.status}): ${await patchRes.text()}`);
+          }
+          return await patchRes.json();
+        } else {
+          throw new Error(`GET ${collectionPath}/${resourceId} failed (${getRes.status}): ${await getRes.text()}`);
+        }
+      };
+
+      // 1. Generic Class
+      const classPayload = {
+        id: CLASS_ID,
+        reviewStatus: "UNDER_REVIEW",
+        multipleDevicesAndHoldersAllowedStatus: "MULTIPLE_HOLDERS",
+      };
+      const classResult = await upsertWalletResource("genericClass", CLASS_ID, classPayload);
+
+      // 2. Sample Generic Object
+      const objectPayload = {
+        id: SAMPLE_OBJECT_ID,
+        classId: CLASS_ID,
+        state: "ACTIVE",
+        cardTitle: {
+          defaultValue: { language: "it", value: "AREL & Friends | Aperitivo a Milano" },
+        },
+        subheader: {
+          defaultValue: { language: "it", value: "AREL" },
+        },
+        header: {
+          defaultValue: { language: "it", value: "Mario Rossi" },
+        },
+        logo: {
+          sourceUri: { uri: "https://ticketto.it/icons/Icon-512.png" },
+          contentDescription: { defaultValue: { language: "it", value: "Ticketto" } },
+        },
+        barcode: {
+          type: "QR_CODE",
+          value: "TKT-REVIEW-SAMPLE-001",
+          alternateText: "TKT-REVIEW-SAMPLE-001",
+        },
+        hexBackgroundColor: "#0E6B52",
+        textModulesData: [
+          { header: "DATA", body: "mar 10 nov 2026 18:30", id: "date" },
+          { header: "LUOGO", body: "Piccolo Café, Via Rovello 2, Milano", id: "loc" },
+        ],
+      };
+      await upsertWalletResource("genericObject", SAMPLE_OBJECT_ID, objectPayload);
+
+      // 3. Verify GET genericObject?classId=...
+      const listRes = await fetch(`${BASE_URL}/genericObject?classId=${encodeURIComponent(CLASS_ID)}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!listRes.ok) {
+        throw new Error(`GET genericObject?classId failed (${listRes.status}): ${await listRes.text()}`);
+      }
+      const listData = await listRes.json();
+      const objectIds = (listData.resources || []).map((o) => o.id);
+
+      await snap.ref.update({
+        status: "done",
+        classStatus: classResult.reviewStatus || "UNDER_REVIEW",
+        objectIds,
+        error: null,
+        finishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } catch (err) {
+      console.error("❌ Error in setupGoogleWalletReview:", err);
+      await snap.ref.update({
+        status: "error",
+        error: err.message || String(err),
+        finishedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+  }
+);
+
