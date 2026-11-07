@@ -4090,7 +4090,6 @@ exports.sendInviteOutreach = onRequest({ cors: true }, async (req, res) => {
 exports.onAdminTaskCreated = onDocumentCreated(
   {
     document: "admin_tasks/{taskId}",
-    serviceAccount: "eventflow-3541b@appspot.gserviceaccount.com",
   },
   async (event) => {
     const snap = event.data;
@@ -4106,23 +4105,33 @@ exports.onAdminTaskCreated = onDocumentCreated(
 
     try {
       const { GoogleAuth } = require("google-auth-library");
-      const auth = new GoogleAuth({ scopes: [WALLET_SCOPE] });
+      const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
       const client = await auth.getClient();
-      const tokenRes = await client.getAccessToken();
-      const token = tokenRes?.token || tokenRes;
-      if (!token) {
-        throw new Error("Unable to acquire access token from GoogleAuth");
+      const r = await client.request({
+        url: "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/eventflow-3541b@appspot.gserviceaccount.com:generateAccessToken",
+        method: "POST",
+        data: { scope: [WALLET_SCOPE], lifetime: "600s" },
+      });
+      const walletToken = r.data?.accessToken;
+      if (!walletToken) {
+        throw new Error("Unable to acquire accessToken from iamcredentials generateAccessToken");
       }
 
+      const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(walletToken)}`);
+      const tokenInfo = await tokenInfoRes.json();
+      const tokenScope = tokenInfo.scope || JSON.stringify(tokenInfo);
+      console.log(`🔑 Wallet tokeninfo scope: ${tokenScope}`);
+      await snap.ref.update({ tokenScope });
+
       const headers = {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${walletToken}`,
         "Content-Type": "application/json",
       };
 
       const upsertWalletResource = async (collectionPath, resourceId, payload) => {
         const getRes = await fetch(`${BASE_URL}/${collectionPath}/${encodeURIComponent(resourceId)}`, {
           method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${walletToken}` },
         });
         if (getRes.status === 404) {
           const postRes = await fetch(`${BASE_URL}/${collectionPath}`, {
@@ -4191,7 +4200,7 @@ exports.onAdminTaskCreated = onDocumentCreated(
       // 3. Verify GET genericObject?classId=...
       const listRes = await fetch(`${BASE_URL}/genericObject?classId=${encodeURIComponent(CLASS_ID)}`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${walletToken}` },
       });
       if (!listRes.ok) {
         throw new Error(`GET genericObject?classId failed (${listRes.status}): ${await listRes.text()}`);
