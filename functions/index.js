@@ -848,11 +848,16 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
             </td>
           </tr>
 
-          <!-- Wallet Hints -->
-          ${walletPassUrl ? `
+          <!-- Wallet Buttons & Hints -->
+          ${(walletPassUrl || googleWalletUrl) ? `
           <tr>
             <td style="padding: 0 32px 24px 32px; text-align: center;">
-              <p style="margin: 0; font-size: 13px; color: #6B7280;">${t(lang, 'email', 'appleWalletHint')}</p>
+              ${googleWalletUrl ? `<div style="margin: 0 0 ${walletPassUrl ? '12px' : '0'} 0;">
+                <a href="${googleWalletUrl}" target="_blank" rel="noopener" style="display: inline-block; background-color: #101410; color: #FFFFFF; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; border: 1px solid #2D332D; letter-spacing: -0.1px;">
+                  ${t(lang, 'email', 'googleWalletButton')}
+                </a>
+              </div>` : ""}
+              ${walletPassUrl ? `<p style="margin: 0; font-size: 13px; color: #6B7280; line-height: 1.5;">${t(lang, 'email', 'appleWalletHint')}</p>` : ""}
             </td>
           </tr>
           ` : ""}
@@ -1230,9 +1235,8 @@ exports.onAttendeeCreated = onDocumentCreated(
         }
       }
 
-      // Generate Google Wallet link (Pro/Business only - Temporarily disabled pending Google Wallet publishing approval)
+      // Generate Google Wallet link (Pro/Business only - enabled after Google approval 2026-11-10)
       let googleWalletUrl = null;
-      /*
       if (isPaidPlan) {
         try {
           googleWalletUrl = await generateGoogleWalletLink(attendee, eventData, orgData, event.data.id, lang);
@@ -1240,7 +1244,6 @@ exports.onAttendeeCreated = onDocumentCreated(
           console.warn("⚠️ Google Wallet link generation failed (non-blocking):", walletErr.message);
         }
       }
-      */
 
       // Build email (with wallet info only for paid plans)
       const hasApplePass = applePassBuffer !== null;
@@ -1595,8 +1598,18 @@ exports.resendAttendeeConfirmation = onRequest(
         }
       }
 
+      // Generate Google Wallet link (Pro/Business only - enabled after Google approval 2026-11-10)
+      let googleWalletUrl = null;
+      if (isPaidPlan) {
+        try {
+          googleWalletUrl = await generateGoogleWalletLink(attendee, eventData, orgData, attendeeId, lang);
+        } catch (walletErr) {
+          console.warn("⚠️ Google Wallet link generation failed (non-blocking):", walletErr.message);
+        }
+      }
+
       const hasApplePass = applePassBuffer !== null;
-      const html = buildConfirmationEmail(attendee, eventData, orgData, timeSlot, hasApplePass, null, lang);
+      const html = buildConfirmationEmail(attendee, eventData, orgData, timeSlot, hasApplePass, googleWalletUrl, lang);
 
       const resend = new Resend(RESEND_API_KEY);
       const emailPayload = {
@@ -1647,6 +1660,7 @@ exports.resendAttendeeConfirmation = onRequest(
         emailError: admin.firestore.FieldValue.delete(),
       };
       if (applePassBuffer) updateData.hasApplePass = true;
+      if (googleWalletUrl) updateData.googleWalletUrl = googleWalletUrl;
       await db.collection("attendees").doc(attendeeId).update(updateData);
 
       console.log(`✅ Confirmation email resent to ${attendee.email} for "${eventData.title}" | Resend ID: ${data.id}`);
