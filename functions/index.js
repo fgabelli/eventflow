@@ -45,8 +45,9 @@ const i18nStrings = {
       priceLabel: '💰 Prezzo',
       qrTitle: 'Il tuo QR Code per l\'ingresso',
       qrHint: 'Mostra questo QR code all\'ingresso per il check-in',
-      appleWalletHint: '🍎 Il file <strong>biglietto.pkpass</strong> è allegato a questa email — aprilo per aggiungerlo a Apple Wallet',
-      googleWalletButton: '🤖 Aggiungi a Google Wallet',
+      walletSectionTitle: 'Salva il biglietto nel tuo Wallet',
+      appleWalletHint: 'Su iPhone apri l\'allegato <strong>biglietto.pkpass</strong> per aggiungerlo ad Apple Wallet',
+      googleWalletButton: 'Aggiungi a Google Wallet',
       sentBy: 'Inviato da <strong>{{orgName}}</strong>',
       // Reminder email
       reminderSubject: '📅 Promemoria: {{eventTitle}} si avvicina!',
@@ -125,8 +126,9 @@ const i18nStrings = {
       priceLabel: '💰 Price',
       qrTitle: 'Your QR Code for entry',
       qrHint: 'Show this QR code at the entrance for check-in',
-      appleWalletHint: '🍎 The <strong>ticket.pkpass</strong> file is attached to this email — open it to add it to Apple Wallet',
-      googleWalletButton: '🤖 Add to Google Wallet',
+      walletSectionTitle: 'Save your ticket to your Wallet',
+      appleWalletHint: 'On iPhone, open the attached <strong>ticket.pkpass</strong> to add it to Apple Wallet',
+      googleWalletButton: 'Add to Google Wallet',
       sentBy: 'Sent by <strong>{{orgName}}</strong>',
       // Reminder email
       reminderSubject: '📅 Reminder: {{eventTitle}} is coming up!',
@@ -848,16 +850,19 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
             </td>
           </tr>
 
-          <!-- Wallet Buttons & Hints -->
+          <!-- Wallet Section -->
           ${(walletPassUrl || googleWalletUrl) ? `
           <tr>
             <td style="padding: 0 32px 24px 32px; text-align: center;">
-              ${googleWalletUrl ? `<div style="margin: 0 0 ${walletPassUrl ? '12px' : '0'} 0;">
-                <a href="${googleWalletUrl}" target="_blank" rel="noopener" style="display: inline-block; background-color: #101410; color: #FFFFFF; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; border: 1px solid #2D332D; letter-spacing: -0.1px;">
-                  ${t(lang, 'email', 'googleWalletButton')}
-                </a>
-              </div>` : ""}
-              ${walletPassUrl ? `<p style="margin: 0; font-size: 13px; color: #6B7280; line-height: 1.5;">${t(lang, 'email', 'appleWalletHint')}</p>` : ""}
+              <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px;">
+                <p style="margin: 0 0 14px 0; font-size: 14px; font-weight: 600; color: #101410;">${t(lang, 'email', 'walletSectionTitle')}</p>
+                ${googleWalletUrl ? `<div style="margin: 0 0 ${walletPassUrl ? '14px' : '0'} 0;">
+                  <a href="${googleWalletUrl}" target="_blank" rel="noopener" style="display: inline-block; background-color: #1F1F1F; color: #FFFFFF; text-decoration: none; padding: 11px 24px; border-radius: 24px; font-size: 14px; font-weight: 600; border: 1px solid #3C4043; letter-spacing: 0.1px;">
+                    ${t(lang, 'email', 'googleWalletButton')}
+                  </a>
+                </div>` : ""}
+                ${walletPassUrl ? `<p style="margin: 0; font-size: 13px; color: #4B5563; line-height: 1.5;">${t(lang, 'email', 'appleWalletHint')}</p>` : ""}
+              </div>
             </td>
           </tr>
           ` : ""}
