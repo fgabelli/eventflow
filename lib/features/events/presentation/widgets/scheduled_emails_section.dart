@@ -244,14 +244,15 @@ class _ScheduledEmailsSectionState extends State<ScheduledEmailsSection> {
               Switch(
                 value: _isPremium && widget.reminderEnabled,
                 onChanged: _isPremium ? widget.onReminderEnabledChanged : null,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
             ],
           ),
           if (_isPremium && widget.reminderEnabled) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<int>(
-              value: widget.reminderDaysBefore,
+              key: ValueKey(widget.reminderDaysBefore),
+              initialValue: widget.reminderDaysBefore,
               decoration: InputDecoration(
                 labelText: l['reminder_when_label'],
                 prefixIcon: const Icon(Icons.schedule),
@@ -263,6 +264,8 @@ class _ScheduledEmailsSectionState extends State<ScheduledEmailsSection> {
               ],
               onChanged: (v) => widget.onReminderDaysBeforeChanged(v ?? 1),
             ),
+          ],
+          if (_isPremium) ...[
             const SizedBox(height: 12),
             TextField(
               controller: widget.reminderCustomMessageController,
@@ -319,11 +322,11 @@ class _ScheduledEmailsSectionState extends State<ScheduledEmailsSection> {
               Switch(
                 value: _isPremium && widget.postEventEmailEnabled,
                 onChanged: _isPremium ? widget.onPostEventEmailEnabledChanged : null,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
             ],
           ),
-          if (_isPremium && widget.postEventEmailEnabled) ...[
+          if (_isPremium) ...[
             const SizedBox(height: 12),
             TextField(
               controller: widget.thankYouCustomMessageController,
@@ -375,7 +378,7 @@ class _ScheduledEmailsSectionState extends State<ScheduledEmailsSection> {
               Switch(
                 value: _isPremium && widget.notifyOrganizer,
                 onChanged: _isPremium ? widget.onNotifyOrganizerChanged : null,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
             ],
           ),

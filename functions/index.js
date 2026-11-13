@@ -3690,13 +3690,12 @@ async function verifyOrgOwnerOrAdmin(orgId, uid) {
     const role = directDoc.data()?.role;
     return role === "owner" || role === "admin";
   }
-  const snap = await db.collection("organizations").doc(orgId).collection("members")
-    .where("userId", "==", uid)
-    .limit(1)
-    .get();
-  if (!snap.empty) {
-    const role = snap.docs[0].data()?.role;
-    return role === "owner" || role === "admin";
+  const membersSnap = await db.collection("organizations").doc(orgId).collection("members").get();
+  for (const doc of membersSnap.docs) {
+    const data = doc.data();
+    if (data?.userId === uid) {
+      return data.role === "owner" || data.role === "admin";
+    }
   }
   return false;
 }

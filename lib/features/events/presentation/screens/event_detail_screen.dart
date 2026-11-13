@@ -26,6 +26,7 @@ import 'package:eventflow/core/utils/url_navigation.dart';
 import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
 import 'package:eventflow/features/events/presentation/widgets/custom_fields_section.dart';
 import 'package:eventflow/features/events/presentation/widgets/consent_settings_section.dart';
+import 'package:eventflow/features/events/presentation/widgets/scheduled_emails_section.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -61,7 +62,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   // Automated emails
   bool _reminderEnabled = false;
   int _reminderDaysBefore = 1;
+  late TextEditingController _reminderCustomMsgCtrl;
   bool _postEventEmailEnabled = false;
+  late TextEditingController _thankYouCustomMsgCtrl;
   bool _notifyOrganizer = false;
   
   // Printing settings
@@ -86,6 +89,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _printerIpCtrl = TextEditingController();
     _meetingUrlCtrl = TextEditingController();
     _hexColorCtrl = TextEditingController(text: '#0E6B52');
+    _reminderCustomMsgCtrl = TextEditingController();
+    _thankYouCustomMsgCtrl = TextEditingController();
     _editDate = DateTime.now();
     _editTime = TimeOfDay.now();
   }
@@ -101,6 +106,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _printerIpCtrl.dispose();
     _meetingUrlCtrl.dispose();
     _hexColorCtrl.dispose();
+    _reminderCustomMsgCtrl.dispose();
+    _thankYouCustomMsgCtrl.dispose();
     super.dispose();
   }
 
@@ -149,7 +156,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _showAttendeesCount = event.showAttendeesCount;
     _reminderEnabled = event.reminderEnabled;
     _reminderDaysBefore = event.reminderDaysBefore;
+    _reminderCustomMsgCtrl.text = event.reminderCustomMessage ?? '';
     _postEventEmailEnabled = event.postEventEmailEnabled;
+    _thankYouCustomMsgCtrl.text = event.thankYouCustomMessage ?? '';
     _notifyOrganizer = event.notifyOrganizerOnNewRegistration;
     _printerIpCtrl.text = event.printerIpAddress ?? '';
     _autoPrintOnCheckIn = event.autoPrintOnCheckIn;
@@ -196,6 +205,15 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         _editDate.year, _editDate.month, _editDate.day,
         _editTime.hour, _editTime.minute,
       );
+      final org = ref.read(currentOrgProvider).value;
+      final plan = org?.plan ?? SubscriptionPlan.free;
+      final isPremiumPlan = plan == SubscriptionPlan.pro || plan == SubscriptionPlan.business;
+      String? normalizeCustomMsg(String raw) {
+        final trimmed = raw.trim();
+        if (trimmed.isEmpty) return null;
+        return trimmed.length > 1000 ? trimmed.substring(0, 1000) : trimmed;
+      }
+
       await FirebaseFirestore.instance
           .collection(Collections.events)
           .doc(event.id)
@@ -209,8 +227,6 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'lat': _isOnline ? null : mapParsed.lat,
         'lng': _isOnline ? null : mapParsed.lng,
         'maxAttendees': () {
-          final org = ref.read(currentOrgProvider).value;
-          final plan = org?.plan ?? SubscriptionPlan.free;
           final parsedMax = int.tryParse(_maxAttendeesCtrl.text) ?? 50;
           return plan.isUnlimitedAttendees
               ? parsedMax
@@ -224,10 +240,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'primaryColor': _selectedColor,
         'showAttendeesCount': _showAttendeesCount,
         'date': Timestamp.fromDate(newDate),
-        'reminderEnabled': _reminderEnabled,
+        'reminderEnabled': isPremiumPlan ? _reminderEnabled : false,
         'reminderDaysBefore': _reminderDaysBefore,
-        'postEventEmailEnabled': _postEventEmailEnabled,
-        'notifyOrganizerOnNewRegistration': _notifyOrganizer,
+        'reminderCustomMessage': normalizeCustomMsg(_reminderCustomMsgCtrl.text),
+        'postEventEmailEnabled': isPremiumPlan ? _postEventEmailEnabled : false,
+        'thankYouCustomMessage': normalizeCustomMsg(_thankYouCustomMsgCtrl.text),
+        'notifyOrganizerOnNewRegistration': isPremiumPlan ? _notifyOrganizer : false,
         'printerIpAddress': _printerIpCtrl.text.trim().isEmpty ? null : _printerIpCtrl.text.trim(),
         'autoPrintOnCheckIn': _autoPrintOnCheckIn,
         'allowGroupRegistration': _allowGroupRegistration,
@@ -1891,7 +1909,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
   Widget _buildEditForm(EventModel event) {
     final org = ref.watch(currentOrgProvider).value;
-    final isPremium = org != null && (org.plan.name == 'pro' || org.plan.name == 'business');
+    final role = ref.watch(currentRoleProvider).value;
+    final canManageEmails = role == null || role.canSendEmails;
 
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -2399,110 +2418,20 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         const SizedBox(height: 16),
 
         // ─── Automated Emails Section ────────────────────────
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.email_outlined, size: 20, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Text('Email automatiche', style: Theme.of(context).textTheme.titleMedium),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // Reminder
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('📅 Promemoria pre-evento', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        Text('Invia un reminder ai partecipanti', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                  Switch(value: _reminderEnabled, onChanged: (v) => setState(() => _reminderEnabled = v), activeColor: AppColors.primary),
-                ],
-              ),
-              if (_reminderEnabled) ...[
-                const SizedBox(height: 12),
-                DropdownButtonFormField<int>(
-                  value: _reminderDaysBefore,
-                  decoration: const InputDecoration(
-                    labelText: 'Quando inviare',
-                    prefixIcon: Icon(Icons.schedule),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text('1 giorno prima')),
-                    DropdownMenuItem(value: 3, child: Text('3 giorni prima')),
-                    DropdownMenuItem(value: 7, child: Text('1 settimana prima')),
-                  ],
-                  onChanged: (v) => setState(() => _reminderDaysBefore = v ?? 1),
-                ),
-              ],
-              const Divider(height: 24),
-              // Post-event thank you
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('🙏 Ringraziamento post-evento', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        Text('Email con link per lasciare feedback', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                  Switch(value: _postEventEmailEnabled, onChanged: (v) => setState(() => _postEventEmailEnabled = v), activeColor: AppColors.primary),
-                ],
-              ),
-              const Divider(height: 24),
-              // Notification for new registrations
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Text('🔔 Notifiche real-time', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                            const SizedBox(width: 6),
-                            const TicketBadge(label: 'PRO'),
-                          ],
-                        ),
-                        Text('Ricevi un\'email per ogni iscrizione', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        if (!isPremium)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              'Disponibile nei piani Pro e Business',
-                              style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: _notifyOrganizer, 
-                    onChanged: isPremium ? (v) => setState(() => _notifyOrganizer = v) : null, 
-                    activeColor: AppColors.primary,
-                  ),
-                ],
-              ),
-            ],
-          ),
+        ScheduledEmailsSection(
+          eventId: event.id,
+          plan: org?.plan ?? SubscriptionPlan.free,
+          canManageEmails: canManageEmails,
+          reminderEnabled: _reminderEnabled,
+          onReminderEnabledChanged: (v) => setState(() => _reminderEnabled = v),
+          reminderDaysBefore: _reminderDaysBefore,
+          onReminderDaysBeforeChanged: (v) => setState(() => _reminderDaysBefore = v),
+          reminderCustomMessageController: _reminderCustomMsgCtrl,
+          postEventEmailEnabled: _postEventEmailEnabled,
+          onPostEventEmailEnabledChanged: (v) => setState(() => _postEventEmailEnabled = v),
+          thankYouCustomMessageController: _thankYouCustomMsgCtrl,
+          notifyOrganizer: _notifyOrganizer,
+          onNotifyOrganizerChanged: (v) => setState(() => _notifyOrganizer = v),
         ),
         const SizedBox(height: 16),
 
