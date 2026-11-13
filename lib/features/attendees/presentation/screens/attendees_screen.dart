@@ -640,14 +640,16 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                       ),
                       _DetailRow(
                         label: AppLocalizations.of(context)['marketing_consent_status'],
-                        value: attendee.marketingConsent
-                            ? AppLocalizations.of(context)['consent_given']
-                            : AppLocalizations.of(context)['consent_not_given'],
+                        value: !attendee.marketingConsentShown
+                            ? AppLocalizations.of(context)['consent_not_requested']
+                            : (attendee.marketingConsent
+                                ? AppLocalizations.of(context)['consent_given']
+                                : AppLocalizations.of(context)['consent_not_given']),
                       ),
                       _DetailRow(
                         label: AppLocalizations.of(context)['photo_consent_status'],
                         value: attendee.photoConsent == null
-                            ? AppLocalizations.of(context)['consent_not_applicable']
+                            ? AppLocalizations.of(context)['consent_not_requested']
                             : (attendee.photoConsent!
                                 ? AppLocalizations.of(context)['consent_given']
                                 : AppLocalizations.of(context)['consent_not_given']),
@@ -1018,8 +1020,8 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
           slotLabel,
           '${a.registeredAt.day}/${a.registeredAt.month}/${a.registeredAt.year} ${a.registeredAt.hour.toString().padLeft(2, '0')}:${a.registeredAt.minute.toString().padLeft(2, '0')}',
           a.privacyAccepted ? 'Sì' : 'No',
-          a.marketingConsent ? 'Sì' : 'No',
-          a.photoConsent == null ? 'N/A' : (a.photoConsent! ? 'Sì' : 'No'),
+          !a.marketingConsentShown ? '' : (a.marketingConsent ? 'Sì' : 'No'),
+          a.photoConsent == null ? '' : (a.photoConsent! ? 'Sì' : 'No'),
           ...sortedCustomKeys.map((k) {
             final v = a.customData[k];
             if (v is bool) return v ? 'Sì' : 'No';
@@ -1608,6 +1610,9 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
             'qrCode': qrCode,
             'timeSlotId': attendeeSlotId,
             'customData': {},
+            'marketingConsent': false,
+            'marketingConsentShown': false,
+            'photoConsent': null,
             'registeredAt': Timestamp.now(),
           }, SetOptions(merge: false));
           imported++;
@@ -1747,6 +1752,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                             phone: phoneCtrl.text.isNotEmpty ? phoneCtrl.text.trim() : null,
                             qrCode: const Uuid().v4(),
                             status: RegistrationStatus.confirmed,
+                            marketingConsentShown: false,
                           );
 
                           final docRef = FirebaseFirestore.instance.collection(Collections.attendees).doc();

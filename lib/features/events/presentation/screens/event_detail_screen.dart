@@ -532,6 +532,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'First Name', 'Last Name', 'Email', 'Phone',
         'Category', 'Status', 'Check-in Status', 'Check-in Time',
         'Time Slot', 'Registered At',
+        'Privacy Policy Accepted', 'Marketing Consent', 'Photo/Video Release',
         ...sortedCustomKeys.map((k) => fieldLabelMap[k] ?? k),
       ];
 
@@ -556,6 +557,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           a.checkInTime != null ? '${a.checkInTime!.day}/${a.checkInTime!.month}/${a.checkInTime!.year} ${a.checkInTime!.hour.toString().padLeft(2, '0')}:${a.checkInTime!.minute.toString().padLeft(2, '0')}' : '',
           slotLabel,
           '${a.registeredAt.day}/${a.registeredAt.month}/${a.registeredAt.year} ${a.registeredAt.hour.toString().padLeft(2, '0')}:${a.registeredAt.minute.toString().padLeft(2, '0')}',
+          a.privacyAccepted ? 'Sì' : 'No',
+          !a.marketingConsentShown ? '' : (a.marketingConsent ? 'Sì' : 'No'),
+          a.photoConsent == null ? '' : (a.photoConsent! ? 'Sì' : 'No'),
           ...sortedCustomKeys.map((k) {
             final v = a.customData[k];
             if (v is bool) return v ? 'Sì' : 'No';
@@ -626,6 +630,20 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         isPaid: event.isPaid,
         price: event.price,
         hasTimeSlots: event.hasTimeSlots,
+        isOnline: event.isOnline,
+        meetingUrl: event.meetingUrl,
+        primaryColor: event.primaryColor,
+        showAttendeesCount: event.showAttendeesCount,
+        allowGroupRegistration: event.allowGroupRegistration,
+        showMarketingConsent: event.showMarketingConsent,
+        showPhotoConsent: event.showPhotoConsent,
+        reminderEnabled: event.reminderEnabled,
+        reminderDaysBefore: event.reminderDaysBefore,
+        reminderCustomMessage: event.reminderCustomMessage,
+        postEventEmailEnabled: event.postEventEmailEnabled,
+        thankYouCustomMessage: event.thankYouCustomMessage,
+        notifyOrganizerOnNewRegistration: event.notifyOrganizerOnNewRegistration,
+        language: event.language,
         timeSlots: event.timeSlots.map((s) => TimeSlot(
           id: DateTime.now().millisecondsSinceEpoch.toString() + s.id,
           label: s.label,
@@ -2365,6 +2383,17 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           onChanged: (updated) => setState(() => _editCustomFields = updated),
           hasAttendees: event.attendeesCount > 0,
           plan: org?.plan ?? SubscriptionPlan.free,
+          backgroundColor: AppColors.card,
+        ),
+        const SizedBox(height: 16),
+
+        // Optional Consent Checkboxes
+        ConsentSettingsSection(
+          isOnline: _isOnline,
+          showMarketingConsent: _showMarketingConsent,
+          showPhotoConsent: _showPhotoConsent,
+          onMarketingConsentChanged: (v) => setState(() => _showMarketingConsent = v),
+          onPhotoConsentChanged: (v) => setState(() => _showPhotoConsent = v),
           backgroundColor: AppColors.card,
         ),
         const SizedBox(height: 16),

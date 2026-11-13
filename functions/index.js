@@ -2296,7 +2296,8 @@ exports.stripeConnectWebhook = onRequest(
                 const pending = pendingDoc.data();
                 const allAttendees = [pending.primaryAttendee, ...(pending.extraAttendees || [])];
                 const perPersonAmount = session.amount_total / allAttendees.length / 100;
-                const mConsent = Boolean(pending.marketingConsent);
+                const mConsentShown = pending.marketingConsentShown !== undefined ? Boolean(pending.marketingConsentShown) : true;
+                const mConsent = mConsentShown ? Boolean(pending.marketingConsent) : false;
                 const pConsent = pending.photoConsent !== undefined && pending.photoConsent !== null ? Boolean(pending.photoConsent) : null;
                 const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
 
@@ -2323,6 +2324,7 @@ exports.stripeConnectWebhook = onRequest(
                     privacyAccepted: true,
                     privacyAcceptedAt: nowTimestamp,
                     marketingConsent: mConsent,
+                    marketingConsentShown: mConsentShown,
                     marketingConsentAt: mConsent ? nowTimestamp : null,
                     photoConsent: pConsent,
                     photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
@@ -2348,7 +2350,9 @@ exports.stripeConnectWebhook = onRequest(
               const email = attendeeData.email.toLowerCase();
               const docId = db.collection("attendees").doc().id;
               const qrCode = uuidv4();
-              const mConsent = session.metadata.marketing_consent === "true";
+              const mConsentShownRaw = session.metadata.marketing_consent_shown;
+              const mConsentShown = mConsentShownRaw !== undefined ? mConsentShownRaw === "true" : true;
+              const mConsent = mConsentShown && session.metadata.marketing_consent === "true";
               const pConsentRaw = session.metadata.photo_consent;
               const pConsent = pConsentRaw === "true" ? true : (pConsentRaw === "false" ? false : null);
               const nowTimestamp = admin.firestore.FieldValue.serverTimestamp();
@@ -2370,6 +2374,7 @@ exports.stripeConnectWebhook = onRequest(
                 privacyAccepted: true,
                 privacyAcceptedAt: nowTimestamp,
                 marketingConsent: mConsent,
+                marketingConsentShown: mConsentShown,
                 marketingConsentAt: mConsent ? nowTimestamp : null,
                 photoConsent: pConsent,
                 photoConsentAt: pConsent !== null && pConsent ? nowTimestamp : null,
@@ -2951,7 +2956,7 @@ exports.createTicketCheckout = onRequest(
       firstName, lastName, email, phone,
       slotId, customData,
       quantity, extraAttendees,
-      marketingConsent, photoConsent,
+      marketingConsent, marketingConsentShown, photoConsent,
     } = req.body || {};
 
     if (!eventId || !orgId || !email || !price) {
@@ -3001,9 +3006,15 @@ exports.createTicketCheckout = onRequest(
         return;
       }
 
-      // Get event language for Stripe descriptions
+      // Get event language & consent settings
       const eventDoc = await db.collection("events").doc(eventId).get();
-      const lang = eventDoc.exists ? getEventLang(eventDoc.data()) : "it";
+      const eventData = eventDoc.exists ? eventDoc.data() : {};
+      const lang = eventDoc.exists ? getEventLang(eventData) : "it";
+      const eventShowMarketing = eventData.showMarketingConsent !== false;
+      const eventShowPhoto = !eventData.isOnline && eventData.showPhotoConsent !== false;
+      const mConsentShown = eventShowMarketing && (marketingConsentShown !== undefined ? Boolean(marketingConsentShown) : true);
+      const mConsent = mConsentShown ? Boolean(marketingConsent) : false;
+      const pConsent = eventShowPhoto && photoConsent !== undefined && photoConsent !== null ? Boolean(photoConsent) : null;
 
       const ticketQuantity = Math.min(Math.max(parseInt(quantity) || 1, 1), 10);
       const amountCents = Math.round(price * 100);
@@ -3019,8 +3030,9 @@ exports.createTicketCheckout = onRequest(
           orgId,
           slotId: slotId || null,
           customData: customData || {},
-          marketingConsent: Boolean(marketingConsent),
-          photoConsent: photoConsent !== undefined && photoConsent !== null ? Boolean(photoConsent) : null,
+          marketingConsent: mConsent,
+          marketingConsentShown: mConsentShown,
+          photoConsent: pConsent,
           primaryAttendee: { firstName, lastName, email: email.toLowerCase(), phone: phone || null },
           extraAttendees: extraAttendees.map((a) => ({
             firstName: a.firstName || "",
@@ -3053,8 +3065,9 @@ exports.createTicketCheckout = onRequest(
             slot_id: slotId || "",
             quantity: String(ticketQuantity),
             pending_registration_id: pendingRegId || "",
-            marketing_consent: marketingConsent ? "true" : "false",
-            photo_consent: photoConsent !== undefined && photoConsent !== null ? String(photoConsent) : "",
+            marketing_consent: mConsent ? "true" : "false",
+            marketing_consent_shown: mConsentShown ? "true" : "false",
+            photo_consent: pConsent !== null ? String(pConsent) : "",
             attendee_data: pendingRegId ? "{}" : JSON.stringify({
               firstName, lastName, email, phone,
               customData: customData || {},

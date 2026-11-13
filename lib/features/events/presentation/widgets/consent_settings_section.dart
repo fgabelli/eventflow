@@ -74,7 +74,7 @@ class ConsentSettingsSection extends StatelessWidget {
               Switch(
                 value: showMarketingConsent,
                 onChanged: onMarketingConsentChanged,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
             ],
           ),
@@ -103,7 +103,7 @@ class ConsentSettingsSection extends StatelessWidget {
                 Switch(
                   value: showPhotoConsent,
                   onChanged: onPhotoConsentChanged,
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                 ),
               ],
             ),

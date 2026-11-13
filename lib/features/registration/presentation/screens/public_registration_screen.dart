@@ -140,8 +140,11 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       final db = FirebaseFirestore.instance;
       final batch = db.batch();
       final nowTimestamp = Timestamp.now();
-      final marketingConsent = _marketingConsent;
-      final photoConsent = event.isOnline ? null : _photoConsent;
+      final showMarketing = event.showMarketingConsent;
+      final showPhoto = !event.isOnline && event.showPhotoConsent;
+      final marketingConsent = showMarketing ? _marketingConsent : false;
+      final marketingConsentShown = showMarketing;
+      final photoConsent = showPhoto ? _photoConsent : null;
 
       // Register primary attendee with auto-generated ID (guaranteed unique)
       final email = _emailCtrl.text.trim().toLowerCase();
@@ -166,6 +169,7 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
         'privacyAccepted': true,
         'privacyAcceptedAt': nowTimestamp,
         'marketingConsent': marketingConsent,
+        'marketingConsentShown': marketingConsentShown,
         'marketingConsentAt': marketingConsent ? nowTimestamp : null,
         'photoConsent': photoConsent,
         'photoConsentAt': (photoConsent == true) ? nowTimestamp : null,
@@ -197,6 +201,7 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
           'privacyAccepted': true,
           'privacyAcceptedAt': nowTimestamp,
           'marketingConsent': marketingConsent,
+          'marketingConsentShown': marketingConsentShown,
           'marketingConsentAt': marketingConsent ? nowTimestamp : null,
           'photoConsent': photoConsent,
           'photoConsentAt': (photoConsent == true) ? nowTimestamp : null,
@@ -260,6 +265,9 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
         }),
       ];
 
+      final showMarketing = event.showMarketingConsent;
+      final showPhoto = !event.isOnline && event.showPhotoConsent;
+
       final response = await http.post(
         Uri.parse('https://us-central1-eventflow-3541b.cloudfunctions.net/createTicketCheckout'),
         headers: {'Content-Type': 'application/json'},
@@ -276,8 +284,9 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
           'slotId': _selectedSlotId,
           'customData': _customFieldValues,
           'extraAttendees': _extraAttendees.isEmpty ? null : allAttendees.sublist(1),
-          'marketingConsent': _marketingConsent,
-          'photoConsent': event.isOnline ? null : _photoConsent,
+          'marketingConsent': showMarketing ? _marketingConsent : false,
+          'marketingConsentShown': showMarketing,
+          'photoConsent': showPhoto ? _photoConsent : null,
         }),
       );
 
@@ -1080,53 +1089,54 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
             ),
           ],
 
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1),
-          ),
-
-          // 2. Optional Marketing Consent
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: 24,
-                width: 24,
-                child: Checkbox(
-                  value: _marketingConsent,
-                  onChanged: (val) {
-                    setState(() => _marketingConsent = val ?? false);
-                  },
-                  activeColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          // 2. Optional Marketing Consent (when enabled on event)
+          if (event.showMarketingConsent) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(height: 1),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: Checkbox(
+                    value: _marketingConsent,
+                    onChanged: (val) {
+                      setState(() => _marketingConsent = val ?? false);
+                    },
+                    activeColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _marketingConsent = !_marketingConsent);
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
-                      children: [
-                        TextSpan(text: localizations['marketing_consent_label']),
-                        const TextSpan(text: ' '),
-                        TextSpan(
-                          text: localizations['optional_badge'],
-                          style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
-                        ),
-                      ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _marketingConsent = !_marketingConsent);
+                    },
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary, height: 1.4),
+                        children: [
+                          TextSpan(text: localizations['marketing_consent_label']),
+                          const TextSpan(text: ' '),
+                          TextSpan(
+                            text: localizations['optional_badge'],
+                            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
 
-          // 3. Conditional Photo & Video Release (In-presence events only: !event.isOnline)
-          if (!event.isOnline) ...[
+          // 3. Conditional Photo & Video Release (In-presence events only & enabled on event)
+          if (!event.isOnline && event.showPhotoConsent) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Divider(height: 1),
