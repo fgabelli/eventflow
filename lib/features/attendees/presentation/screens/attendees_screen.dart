@@ -659,67 +659,77 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                 // Custom Data
                 if (attendee.customData.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.dynamic_form_rounded, size: 16, color: AppColors.primary),
-                            const SizedBox(width: 6),
-                            Text(
-                              AppLocalizations.of(context)['additional_data'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
+                  FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection(Collections.events)
+                        .doc(attendee.eventId)
+                        .get(),
+                    builder: (context, snap) {
+                      final event = snap.hasData ? EventModel.fromFirestore(snap.data!) : null;
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
                         ),
-                        const SizedBox(height: 12),
-                        ...attendee.customData.entries.map((entry) {
-                          String displayValue;
-                          if (entry.value is bool) {
-                            displayValue = entry.value ? 'Sì' : 'No';
-                          } else {
-                            displayValue = entry.value?.toString() ?? '-';
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                SizedBox(
-                                  width: 120,
-                                  child: Text(
-                                    entry.key,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    displayValue,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                const Icon(Icons.dynamic_form_rounded, size: 16, color: AppColors.primary),
+                                const SizedBox(width: 6),
+                                Text(
+                                  AppLocalizations.of(context)['additional_data'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        }),
-                      ],
-                    ),
+                            const SizedBox(height: 12),
+                            ...attendee.customData.entries.map((entry) {
+                              String displayValue;
+                              if (entry.value is bool) {
+                                displayValue = entry.value ? 'Sì' : 'No';
+                              } else {
+                                displayValue = entry.value?.toString() ?? '-';
+                              }
+                              final fieldLabel = event?.customFields.where((f) => f.id == entry.key).firstOrNull?.label ?? entry.key;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 120,
+                                      child: Text(
+                                        fieldLabel,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        displayValue,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ],
 

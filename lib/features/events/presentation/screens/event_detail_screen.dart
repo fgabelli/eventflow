@@ -24,6 +24,8 @@ import 'package:eventflow/core/utils/feature_gate.dart';
 import 'package:eventflow/core/utils/map_location_parser.dart';
 import 'package:eventflow/core/utils/url_navigation.dart';
 import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
+import 'package:eventflow/features/events/presentation/widgets/custom_fields_section.dart';
+import 'package:eventflow/features/events/presentation/widgets/consent_settings_section.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -49,9 +51,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   bool _showAttendeesCount = false;
   bool _isPaid = false;
   bool _allowGroupRegistration = false;
+  bool _showMarketingConsent = true;
+  bool _showPhotoConsent = true;
   bool _isSaving = false;
   bool _hasTimeSlots = false;
   List<TimeSlot> _editTimeSlots = [];
+  List<CustomField> _editCustomFields = [];
   bool _showQrCode = false;
   // Automated emails
   bool _reminderEnabled = false;
@@ -134,8 +139,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _priceCtrl.text = event.price?.toStringAsFixed(2) ?? '';
     _isPaid = event.isPaid;
     _allowGroupRegistration = event.allowGroupRegistration;
+    _showMarketingConsent = event.showMarketingConsent;
+    _showPhotoConsent = event.showPhotoConsent;
     _hasTimeSlots = event.hasTimeSlots;
     _editTimeSlots = List.from(event.timeSlots);
+    _editCustomFields = List.from(event.customFields);
     _selectedColor = event.primaryColor ?? '#0E6B52';
     _hexColorCtrl.text = _selectedColor ?? '#0E6B52';
     _showAttendeesCount = event.showAttendeesCount;
@@ -212,6 +220,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'price': _isPaid ? double.tryParse(_priceCtrl.text) : null,
         'hasTimeSlots': _hasTimeSlots,
         'timeSlots': _hasTimeSlots ? _editTimeSlots.map((s) => s.toMap()).toList() : [],
+        'customFields': _editCustomFields.map((f) => f.toMap()).toList(),
         'primaryColor': _selectedColor,
         'showAttendeesCount': _showAttendeesCount,
         'date': Timestamp.fromDate(newDate),
@@ -222,6 +231,8 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'printerIpAddress': _printerIpCtrl.text.trim().isEmpty ? null : _printerIpCtrl.text.trim(),
         'autoPrintOnCheckIn': _autoPrintOnCheckIn,
         'allowGroupRegistration': _allowGroupRegistration,
+        'showMarketingConsent': _showMarketingConsent,
+        'showPhotoConsent': _showPhotoConsent,
       });
       setState(() => _isEditing = false);
       if (mounted) {
@@ -310,7 +321,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         .doc(widget.eventId)
         .update({'status': status.name});
   }
-  void _showAttendeeQuickView(BuildContext context, Attendee attendee) {
+  void _showAttendeeQuickView(BuildContext context, Attendee attendee, EventModel event) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -446,7 +457,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                       _quickDetailRow(AppLocalizations.of(context)['category_label'], attendee.category),
                       _quickDetailRow(AppLocalizations.of(context)['registered_at_label'], '${attendee.registeredAt.day}/${attendee.registeredAt.month}/${attendee.registeredAt.year} ${attendee.registeredAt.hour.toString().padLeft(2, '0')}:${attendee.registeredAt.minute.toString().padLeft(2, '0')}'),
                       if (attendee.customData.isNotEmpty)
-                        ...attendee.customData.entries.map((e) => _quickDetailRow(e.key, e.value.toString())),
+                        ...attendee.customData.entries.map((e) {
+                          final field = event.customFields.where((f) => f.id == e.key).firstOrNull;
+                          final label = field?.label ?? e.key;
+                          final displayVal = (e.value is bool)
+                              ? (e.value == true ? 'Sì' : 'No')
+                              : (e.value?.toString() ?? '-');
+                          return _quickDetailRow(label, displayVal);
+                        }),
                     ],
                   ),
                 ),
@@ -1458,6 +1476,88 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
           const SizedBox(height: 20),
         ],
 
+        // Custom Fields Section
+        if (event.customFields.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.dynamic_form_rounded, size: 20, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Text(AppLocalizations.of(context)['custom_fields_label'], style: Theme.of(context).textTheme.titleMedium),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${event.customFields.length}',
+                        style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ...event.customFields.map((field) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(CustomFieldsSection.fieldTypeIcon(field.type), size: 18, color: AppColors.primary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      field.label,
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (field.required) ...[
+                                    const SizedBox(width: 4),
+                                    const Text('*', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${CustomFieldsSection.localizedTypeLabel(context, field.type)}${field.required ? ' • ${AppLocalizations.of(context)['field_required_label']}' : ''}${field.type == 'select' && field.options != null ? ' (${AppLocalizations.of(context)['options_count'].replaceAll('{count}', field.options!.length.toString())})' : ''}',
+                                style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+
         const SizedBox(height: 4),
 
         // Attendees section
@@ -1507,7 +1607,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
 
             return Column(
               children: attendees.map((a) => InkWell(
-                onTap: () => _showAttendeeQuickView(context, a),
+                onTap: () => _showAttendeeQuickView(context, a, event),
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                 margin: const EdgeInsets.only(bottom: 8),
@@ -2256,6 +2356,16 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               ],
             ],
           ),
+        ),
+        const SizedBox(height: 16),
+
+        // Custom Fields Edit
+        CustomFieldsSection(
+          fields: _editCustomFields,
+          onChanged: (updated) => setState(() => _editCustomFields = updated),
+          hasAttendees: event.attendeesCount > 0,
+          plan: org?.plan ?? SubscriptionPlan.free,
+          backgroundColor: AppColors.card,
         ),
         const SizedBox(height: 16),
 

@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
+import 'package:eventflow/core/models.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 
 class CreateOrgScreen extends ConsumerStatefulWidget {
@@ -18,6 +19,24 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
   final _nameController = TextEditingController();
   bool _isLoading = false;
   bool _isResending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndClaimInvites();
+    });
+  }
+
+  Future<void> _checkAndClaimInvites() async {
+    try {
+      await ref.read(authServiceProvider).claimPendingInvites();
+      final user = ref.read(appUserProvider).value;
+      if (user != null && user.organizationIds.isNotEmpty && mounted) {
+        context.go('/');
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -159,6 +178,12 @@ class _CreateOrgScreenState extends ConsumerState<CreateOrgScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<AppUser?>>(appUserProvider, (prev, next) {
+      if (next.value != null && next.value!.organizationIds.isNotEmpty && mounted) {
+        context.go('/');
+      }
+    });
+
     final appUser = ref.watch(appUserProvider).value;
     final userName = appUser?.displayName ?? appUser?.email.split('@').first ?? '';
     final isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? true;

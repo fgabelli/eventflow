@@ -119,19 +119,20 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
   }
 
   Future<void> _removeMember(String orgId, OrgMember member) async {
+    final isPending = member.isPending;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) {
         final l = AppLocalizations.of(ctx);
         return AlertDialog(
-          title: Text(l['remove_member']),
-          content: Text('${l['remove_confirm']}'),
+          title: Text(isPending ? l['cancel_invite'] : l['remove_member']),
+          content: Text(isPending ? l['cancel_invite_confirm'] : l['remove_confirm']),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l['cancel'])),
             FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
               style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-              child: Text(l['remove']),
+              child: Text(isPending ? l['cancel_invite'] : l['remove']),
             ),
           ],
         );
@@ -144,6 +145,15 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           .collection('members')
           .doc(member.id)
           .delete();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isPending ? AppLocalizations.of(context)['invite_cancelled'] : 'Membro rimosso'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
     }
   }
 
@@ -301,11 +311,31 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () async {
-                        final email = emailCtrl.text.trim();
+                        final email = emailCtrl.text.trim().toLowerCase();
                         if (email.isEmpty || !email.contains('@')) return;
 
+                        // Prevent duplicate invite or existing member with same email
+                        final existingSnap = await FirebaseFirestore.instance
+                            .collection('organizations')
+                            .doc(org.id)
+                            .collection('members')
+                            .where('email', isEqualTo: email)
+                            .limit(1)
+                            .get();
+
+                        if (existingSnap.docs.isNotEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)['duplicate_invite_error']),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                          return;
+                        }
+
                         // Create member doc directly with email
-                        // In a production app you'd send an invite email
                         final memberRef = FirebaseFirestore.instance
                             .collection('organizations')
                             .doc(org.id)
@@ -448,6 +478,32 @@ class _MemberCard extends StatelessWidget {
               style: TextStyle(color: _roleColor(member.role), fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ),
+          if (member.isPending) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.schedule, size: 12, color: AppColors.warning),
+                  const SizedBox(width: 4),
+                  Text(
+                    AppLocalizations.of(context)['invite_pending'],
+                    style: const TextStyle(
+                      color: AppColors.warning,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (!isCurrentUser && member.role != OrgRole.owner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, size: 20, color: AppColors.textTertiary),
@@ -457,7 +513,12 @@ class _MemberCard extends StatelessWidget {
                     .map((r) => PopupMenuItem(value: 'role_${r.name}', child: Text('${AppLocalizations.of(context)['make_role']} ${r.label}'))),
                 PopupMenuItem(
                   value: 'remove',
-                  child: Text(AppLocalizations.of(context)['remove'], style: const TextStyle(color: AppColors.error)),
+                  child: Text(
+                    member.isPending
+                        ? AppLocalizations.of(context)['cancel_invite']
+                        : AppLocalizations.of(context)['remove'],
+                    style: const TextStyle(color: AppColors.error),
+                  ),
                 ),
               ],
               onSelected: (value) {

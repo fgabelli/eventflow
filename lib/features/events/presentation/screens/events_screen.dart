@@ -15,6 +15,8 @@ import 'package:eventflow/core/widgets/help_tip.dart';
 import 'package:eventflow/core/widgets/ticket_badge.dart';
 import 'package:eventflow/core/analytics/analytics_service.dart';
 import 'package:eventflow/features/events/presentation/widgets/stripe_warning_banner.dart';
+import 'package:eventflow/features/events/presentation/widgets/custom_fields_section.dart';
+import 'package:eventflow/features/events/presentation/widgets/consent_settings_section.dart';
 import 'package:eventflow/core/widgets/mobile_settings_button.dart';
 
 // ─── Events Provider ───────────────────────────────────────────────
@@ -37,25 +39,7 @@ class EventsService {
 
   Future<String> createEvent(EventModel event) async {
     final ref = _db.collection(Collections.events).doc();
-    final newEvent = EventModel(
-      id: ref.id,
-      orgId: event.orgId,
-      title: event.title,
-      description: event.description,
-      date: event.date,
-      endDate: event.endDate,
-      location: event.location,
-      status: event.status,
-      maxAttendees: event.maxAttendees,
-      registrationDeadline: event.registrationDeadline,
-      categories: event.categories,
-      customFields: event.customFields,
-      isPaid: event.isPaid,
-      price: event.price,
-      hasTimeSlots: event.hasTimeSlots,
-      timeSlots: event.timeSlots,
-    );
-    await ref.set(newEvent.toFirestore());
+    await ref.set(event.toFirestore());
     return ref.id;
   }
 
@@ -614,6 +598,8 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
   List<CustomField> _customFields = [];
   bool _notifyOrganizer = false;
   bool _allowGroupRegistration = false;
+  bool _showMarketingConsent = true;
+  bool _showPhotoConsent = true;
   late String _eventLanguage;
   bool _eventLanguageInitialized = false;
 
@@ -728,6 +714,8 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
         showAttendeesCount: _showAttendeesCount,
         notifyOrganizerOnNewRegistration: _notifyOrganizer,
         allowGroupRegistration: _allowGroupRegistration && !org.plan.isFree,
+        showMarketingConsent: _showMarketingConsent,
+        showPhotoConsent: _showPhotoConsent,
         language: _eventLanguage,
       ));
 
@@ -1421,127 +1409,24 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                   const SizedBox(height: 16),
 
                   // Custom Fields
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.dynamic_form_rounded, size: 20, color: AppColors.primary),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                Text(AppLocalizations.of(context)['custom_fields_label'], style: Theme.of(context).textTheme.titleMedium),
-                                  const SizedBox(width: 6),
-                                  const TicketBadge(label: 'PRO'),
-                                  HelpTip(text: AppLocalizations.of(context)['help_custom_fields']),
-                                  Text(
-                                    AppLocalizations.of(context)['custom_fields_desc'],
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_customFields.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          ..._customFields.asMap().entries.map((entry) {
-                            final i = entry.key;
-                            final field = entry.value;
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.card,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(_fieldTypeIcon(field.type), size: 18, color: AppColors.primary),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                field.label,
-                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            if (field.required) ...[
-                                              const SizedBox(width: 4),
-                                              const Text('*', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
-                                            ],
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary.withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                field.typeLabel,
-                                                style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500),
-                                              ),
-                                            ),
-                                            if (field.type == 'select' && field.options != null) ...[
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                AppLocalizations.of(context)['options_count'].replaceAll('{count}', field.options!.length.toString()),
-                                                style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  InkWell(
-                                    onTap: () => setState(() => _customFields.removeAt(i)),
-                                    child: const Icon(Icons.close, size: 18, color: AppColors.error),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ],
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            final plan = ref.read(currentOrgProvider).value?.plan ?? SubscriptionPlan.free;
-                            if (plan.isFree) {
-                              checkFeatureAccess(
-                                context: context,
-                                currentPlan: plan,
-                                requiredPlan: SubscriptionPlan.pro,
-                                featureName: AppLocalizations.of(context)['custom_fields_label'],
-                              );
-                              return;
-                            }
-                            _showAddCustomFieldDialog();
-                          },
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text(AppLocalizations.of(context)['add_field']),
-                        ),
-                      ],
-                    ),
+                  CustomFieldsSection(
+                    fields: _customFields,
+                    onChanged: (updated) => setState(() => _customFields = updated),
+                    hasAttendees: false,
+                    plan: ref.read(currentOrgProvider).value?.plan ?? SubscriptionPlan.free,
+                    backgroundColor: AppColors.surface,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Optional Consent Checkboxes
+                  ConsentSettingsSection(
+                    isOnline: _isOnline,
+                    showMarketingConsent: _showMarketingConsent,
+                    showPhotoConsent: _showPhotoConsent,
+                    onMarketingConsentChanged: (v) => setState(() => _showMarketingConsent = v),
+                    onPhotoConsentChanged: (v) => setState(() => _showPhotoConsent = v),
+                    backgroundColor: AppColors.surface,
                   ),
 
                   const SizedBox(height: 16),
@@ -1746,207 +1631,6 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  IconData _fieldTypeIcon(String type) {
-    switch (type) {
-      case 'text': return Icons.short_text_rounded;
-      case 'select': return Icons.list_rounded;
-      case 'number': return Icons.tag_rounded;
-      case 'checkbox': return Icons.check_box_rounded;
-      case 'email': return Icons.email_rounded;
-      case 'phone': return Icons.phone_rounded;
-      default: return Icons.text_fields_rounded;
-    }
-  }
-
-  void _showAddCustomFieldDialog() {
-    final labelCtrl = TextEditingController();
-    final placeholderCtrl = TextEditingController();
-    String selectedType = 'text';
-    bool isRequired = false;
-    final List<String> options = [];
-    final optionCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          return AlertDialog(
-            title: Text(AppLocalizations.of(context)['add_field']),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Field label
-                  TextField(
-                    controller: labelCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome del campo *',
-                      hintText: 'es. Azienda, Ruolo, Allergie...',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Field type
-                  const Text('Tipo', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _typeChip('text', 'Testo', Icons.short_text_rounded, selectedType, (v) => setDialogState(() => selectedType = v)),
-                      _typeChip('select', 'Selezione', Icons.list_rounded, selectedType, (v) => setDialogState(() => selectedType = v)),
-                      _typeChip('number', 'Numero', Icons.tag_rounded, selectedType, (v) => setDialogState(() => selectedType = v)),
-                      _typeChip('checkbox', 'Checkbox', Icons.check_box_rounded, selectedType, (v) => setDialogState(() => selectedType = v)),
-                      _typeChip('email', 'Email', Icons.email_rounded, selectedType, (v) => setDialogState(() => selectedType = v)),
-                      _typeChip('phone', 'Telefono', Icons.phone_rounded, selectedType, (v) => setDialogState(() => selectedType = v)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Placeholder
-                  TextField(
-                    controller: placeholderCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Placeholder (opzionale)',
-                      hintText: 'es. Inserisci il nome...',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Required toggle
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Obbligatorio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                      Switch(
-                        value: isRequired,
-                        onChanged: (v) => setDialogState(() => isRequired = v),
-                        activeColor: AppColors.primary,
-                      ),
-                    ],
-                  ),
-
-                  // Options (for select type)
-                  if (selectedType == 'select') ...[
-                    const Divider(),
-                    const SizedBox(height: 8),
-                    Text(AppLocalizations.of(context)['options_label'], style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    ...options.asMap().entries.map((e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.circle, size: 6, color: AppColors.primary),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(e.value, style: const TextStyle(fontSize: 14))),
-                          InkWell(
-                            onTap: () => setDialogState(() => options.removeAt(e.key)),
-                            child: const Icon(Icons.close, size: 16, color: AppColors.error),
-                          ),
-                        ],
-                      ),
-                    )),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: optionCtrl,
-                            decoration: const InputDecoration(
-                              hintText: 'Nuova opzione...',
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            ),
-                            onSubmitted: (v) {
-                              if (v.trim().isNotEmpty) {
-                                setDialogState(() {
-                                  options.add(v.trim());
-                                  optionCtrl.clear();
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: () {
-                            if (optionCtrl.text.trim().isNotEmpty) {
-                              setDialogState(() {
-                                options.add(optionCtrl.text.trim());
-                                optionCtrl.clear();
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.add_circle, color: AppColors.primary),
-                          iconSize: 22,
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text(AppLocalizations.of(context)['cancel']),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (labelCtrl.text.trim().isEmpty) return;
-                  if (selectedType == 'select' && options.isEmpty) return;
-
-                  final field = CustomField(
-                    label: labelCtrl.text.trim(),
-                    type: selectedType,
-                    required: isRequired,
-                    options: selectedType == 'select' ? List.from(options) : null,
-                    placeholder: placeholderCtrl.text.trim().isEmpty ? null : placeholderCtrl.text.trim(),
-                  );
-                  setState(() => _customFields.add(field));
-                  Navigator.pop(ctx);
-                },
-                child: Text(AppLocalizations.of(context)['add']),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _typeChip(String value, String label, IconData icon, String selected, ValueChanged<String> onTap) {
-    final isActive = value == selected;
-    return InkWell(
-      onTap: () => onTap(value),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surface,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isActive ? AppColors.primary : AppColors.border),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: isActive ? AppColors.primary : AppColors.textTertiary),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive ? AppColors.primary : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

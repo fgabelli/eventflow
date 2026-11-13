@@ -10,7 +10,9 @@ echo "📄 Moving Flutter shell to app.html (root '/' is served via firebase rew
 # Flutter app shell -> app.html, and REMOVE build/web/index.html so that the
 # firebase rewrite "/" -> "/index_landing.html" takes effect (no index.html to shadow it).
 # index_landing.html is already copied into build/web/ by `flutter build web` (it lives in web/).
-mv build/web/index.html build/web/app.html
+if [ -f build/web/index.html ]; then
+  mv build/web/index.html build/web/app.html
+fi
 
 echo "🧹 Pubblicazione service worker auto-disinstallante..."
 cp web/flutter_service_worker.js build/web/flutter_service_worker.js

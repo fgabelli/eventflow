@@ -105,6 +105,8 @@ class OrgMember {
   final OrgRole role;
   final DateTime joinedAt;
 
+  bool get isPending => userId.isEmpty;
+
   OrgMember({
     required this.id,
     required this.orgId,
@@ -300,14 +302,18 @@ class EventModel {
   final bool reminderEnabled;
   final int reminderDaysBefore; // 1, 3, 7
   final DateTime? reminderSentAt;
+  final String? reminderCustomMessage;
   final bool postEventEmailEnabled;
   final DateTime? postEventSentAt;
+  final String? thankYouCustomMessage;
   final bool notifyOrganizerOnNewRegistration;
   final String? printerIpAddress;
   final bool autoPrintOnCheckIn;
   final bool isOnline;
   final String? meetingUrl;
   final bool allowGroupRegistration;
+  final bool showMarketingConsent;
+  final bool showPhotoConsent;
   final String language; // Event language for attendee-facing content ('it' | 'en')
   final DateTime createdAt;
 
@@ -339,26 +345,31 @@ class EventModel {
     this.reminderEnabled = false,
     this.reminderDaysBefore = 1,
     this.reminderSentAt,
+    this.reminderCustomMessage,
     this.postEventEmailEnabled = false,
     this.postEventSentAt,
+    this.thankYouCustomMessage,
     this.notifyOrganizerOnNewRegistration = false,
     this.printerIpAddress,
     this.autoPrintOnCheckIn = false,
     this.isOnline = false,
     this.meetingUrl,
     this.allowGroupRegistration = false,
+    this.showMarketingConsent = true,
+    this.showPhotoConsent = true,
     this.language = 'it',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  factory EventModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  factory EventModel.fromMap(Map<String, dynamic> data, {String id = ''}) {
     return EventModel(
-      id: doc.id,
+      id: id,
       orgId: data['orgId'] ?? '',
       title: data['title'] ?? '',
       description: data['description'],
-      date: (data['date'] as Timestamp).toDate(),
+      date: data['date'] is Timestamp
+          ? (data['date'] as Timestamp).toDate()
+          : (data['date'] as DateTime? ?? DateTime.now()),
       endDate: (data['endDate'] as Timestamp?)?.toDate(),
       location: data['location'],
       mapUrl: data['mapUrl'],
@@ -388,18 +399,29 @@ class EventModel {
       reminderEnabled: data['reminderEnabled'] ?? false,
       reminderDaysBefore: data['reminderDaysBefore'] ?? 1,
       reminderSentAt: (data['reminderSentAt'] as Timestamp?)?.toDate(),
+      reminderCustomMessage: data['reminderCustomMessage'] as String?,
       postEventEmailEnabled: data['postEventEmailEnabled'] ?? false,
       postEventSentAt: (data['postEventSentAt'] as Timestamp?)?.toDate(),
+      thankYouCustomMessage: data['thankYouCustomMessage'] as String?,
       notifyOrganizerOnNewRegistration: data['notifyOrganizerOnNewRegistration'] ?? false,
       printerIpAddress: data['printerIpAddress'],
       autoPrintOnCheckIn: data['autoPrintOnCheckIn'] ?? false,
       isOnline: data['isOnline'] ?? false,
       meetingUrl: data['meetingUrl'],
       allowGroupRegistration: data['allowGroupRegistration'] ?? false,
+      showMarketingConsent: data['showMarketingConsent'] ?? true,
+      showPhotoConsent: data['showPhotoConsent'] ?? true,
       language: data['language'] ?? 'it',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
+
+  factory EventModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return EventModel.fromMap(data, id: doc.id);
+  }
+
+  Map<String, dynamic> toMap() => toFirestore();
 
   Map<String, dynamic> toFirestore() => {
     'orgId': orgId,
@@ -430,14 +452,18 @@ class EventModel {
     'reminderEnabled': reminderEnabled,
     'reminderDaysBefore': reminderDaysBefore,
     'reminderSentAt': reminderSentAt != null ? Timestamp.fromDate(reminderSentAt!) : null,
+    'reminderCustomMessage': reminderCustomMessage,
     'postEventEmailEnabled': postEventEmailEnabled,
     'postEventSentAt': postEventSentAt != null ? Timestamp.fromDate(postEventSentAt!) : null,
+    'thankYouCustomMessage': thankYouCustomMessage,
     'notifyOrganizerOnNewRegistration': notifyOrganizerOnNewRegistration,
     'printerIpAddress': printerIpAddress,
     'autoPrintOnCheckIn': autoPrintOnCheckIn,
     'isOnline': isOnline,
     'meetingUrl': meetingUrl,
     'allowGroupRegistration': allowGroupRegistration,
+    'showMarketingConsent': showMarketingConsent,
+    'showPhotoConsent': showPhotoConsent,
     'language': language,
     'createdAt': Timestamp.fromDate(createdAt),
   };
@@ -468,14 +494,18 @@ class EventModel {
     bool? reminderEnabled,
     int? reminderDaysBefore,
     DateTime? reminderSentAt,
+    String? reminderCustomMessage,
     bool? postEventEmailEnabled,
     DateTime? postEventSentAt,
+    String? thankYouCustomMessage,
     bool? notifyOrganizerOnNewRegistration,
     String? printerIpAddress,
     bool? autoPrintOnCheckIn,
     bool? isOnline,
     String? meetingUrl,
     bool? allowGroupRegistration,
+    bool? showMarketingConsent,
+    bool? showPhotoConsent,
     String? language,
   }) {
     return EventModel(
@@ -506,14 +536,18 @@ class EventModel {
       reminderEnabled: reminderEnabled ?? this.reminderEnabled,
       reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
       reminderSentAt: reminderSentAt ?? this.reminderSentAt,
+      reminderCustomMessage: reminderCustomMessage ?? this.reminderCustomMessage,
       postEventEmailEnabled: postEventEmailEnabled ?? this.postEventEmailEnabled,
       postEventSentAt: postEventSentAt ?? this.postEventSentAt,
+      thankYouCustomMessage: thankYouCustomMessage ?? this.thankYouCustomMessage,
       notifyOrganizerOnNewRegistration: notifyOrganizerOnNewRegistration ?? this.notifyOrganizerOnNewRegistration,
       printerIpAddress: printerIpAddress ?? this.printerIpAddress,
       autoPrintOnCheckIn: autoPrintOnCheckIn ?? this.autoPrintOnCheckIn,
       isOnline: isOnline ?? this.isOnline,
       meetingUrl: meetingUrl ?? this.meetingUrl,
       allowGroupRegistration: allowGroupRegistration ?? this.allowGroupRegistration,
+      showMarketingConsent: showMarketingConsent ?? this.showMarketingConsent,
+      showPhotoConsent: showPhotoConsent ?? this.showPhotoConsent,
       language: language ?? this.language,
       createdAt: createdAt,
     );
@@ -607,6 +641,7 @@ class Attendee {
   final bool privacyAccepted;
   final DateTime? privacyAcceptedAt;
   final bool marketingConsent;
+  final bool marketingConsentShown;
   final DateTime? marketingConsentAt;
   final bool? photoConsent;
   final DateTime? photoConsentAt;
@@ -633,6 +668,7 @@ class Attendee {
     this.privacyAccepted = true,
     this.privacyAcceptedAt,
     this.marketingConsent = false,
+    this.marketingConsentShown = true,
     this.marketingConsentAt,
     this.photoConsent,
     this.photoConsentAt,
@@ -670,6 +706,7 @@ class Attendee {
       privacyAccepted: data['privacyAccepted'] ?? true,
       privacyAcceptedAt: (data['privacyAcceptedAt'] as Timestamp?)?.toDate(),
       marketingConsent: data['marketingConsent'] ?? false,
+      marketingConsentShown: data['marketingConsentShown'] ?? true,
       marketingConsentAt: (data['marketingConsentAt'] as Timestamp?)?.toDate(),
       photoConsent: data['photoConsent'] as bool?,
       photoConsentAt: (data['photoConsentAt'] as Timestamp?)?.toDate(),
@@ -699,6 +736,7 @@ class Attendee {
         ? Timestamp.fromDate(privacyAcceptedAt!)
         : Timestamp.fromDate(registeredAt),
     'marketingConsent': marketingConsent,
+    'marketingConsentShown': marketingConsentShown,
     'marketingConsentAt': marketingConsentAt != null
         ? Timestamp.fromDate(marketingConsentAt!)
         : null,
@@ -720,6 +758,7 @@ class Attendee {
     bool? privacyAccepted,
     DateTime? privacyAcceptedAt,
     bool? marketingConsent,
+    bool? marketingConsentShown,
     DateTime? marketingConsentAt,
     bool? photoConsent,
     DateTime? photoConsentAt,
@@ -746,6 +785,7 @@ class Attendee {
       privacyAccepted: privacyAccepted ?? this.privacyAccepted,
       privacyAcceptedAt: privacyAcceptedAt ?? this.privacyAcceptedAt,
       marketingConsent: marketingConsent ?? this.marketingConsent,
+      marketingConsentShown: marketingConsentShown ?? this.marketingConsentShown,
       marketingConsentAt: marketingConsentAt ?? this.marketingConsentAt,
       photoConsent: photoConsent ?? this.photoConsent,
       photoConsentAt: photoConsentAt ?? this.photoConsentAt,

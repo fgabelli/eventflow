@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:eventflow/core/models.dart';
@@ -87,6 +88,7 @@ class AuthService {
     final userCredential = await _auth.signInWithPopup(provider);
     if (userCredential.user != null) {
       await _ensureUserDocument(userCredential.user!);
+      await claimPendingInvites();
       // Track sign_up or login based on isNewUser
       final isNew = userCredential.additionalUserInfo?.isNewUser ?? false;
       final uid = userCredential.user!.uid;
@@ -119,6 +121,7 @@ class AuthService {
     final userCredential = await _auth.signInWithCredential(credential);
     if (userCredential.user != null) {
       await _ensureUserDocument(userCredential.user!);
+      await claimPendingInvites();
       // Track sign_up or login based on isNewUser
       final isNew = userCredential.additionalUserInfo?.isNewUser ?? false;
       final uid = userCredential.user!.uid;
@@ -138,6 +141,8 @@ class AuthService {
       password: password,
     );
     if (userCredential.user != null) {
+      await _ensureUserDocument(userCredential.user!);
+      await claimPendingInvites();
       await AnalyticsService.instance.setUserId(userCredential.user!.uid);
       await AnalyticsService.instance.logEvent('login', params: {'method': 'email'});
     }
@@ -162,10 +167,21 @@ class AuthService {
         await userCredential.user!.sendEmailVerification();
       } catch (_) {}
       await _ensureUserDocument(userCredential.user!);
+      await claimPendingInvites();
       await AnalyticsService.instance.setUserId(userCredential.user!.uid);
       await AnalyticsService.instance.logEvent('sign_up', params: {'method': 'email'});
     }
     return userCredential.user;
+  }
+
+  // Call Cloud Function to claim any pending team invitations
+  Future<void> claimPendingInvites() async {
+    try {
+      final callable = FirebaseFunctions.instance.httpsCallable('claimPendingInvites');
+      await callable.call();
+    } catch (e) {
+      debugPrint('claimPendingInvites error (non-blocking): $e');
+    }
   }
 
   // Resend verification email to current user
@@ -195,18 +211,36 @@ class AuthService {
     await _auth.signOut();
   }
 
-  // Create user document if not exists
+  // Create or merge user document safely without overwriting organizationIds or activeOrgId
   Future<void> _ensureUserDocument(User firebaseUser) async {
     final docRef = _db.collection(Collections.users).doc(firebaseUser.uid);
     final doc = await docRef.get();
     if (!doc.exists) {
-      final appUser = AppUser(
-        id: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName,
-        photoUrl: firebaseUser.photoURL,
-      );
-      await docRef.set(appUser.toFirestore());
+      await docRef.set({
+        'email': (firebaseUser.email ?? '').toLowerCase(),
+        'displayName': firebaseUser.displayName,
+        'photoUrl': firebaseUser.photoURL,
+        'organizationIds': [],
+        'activeOrgId': null,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } else {
+      // Document already exists (e.g. created by linkPendingInvites trigger)
+      // Ensure email/displayName/photoUrl are populated if missing, without touching organizationIds
+      final data = doc.data() ?? {};
+      final updates = <String, dynamic>{};
+      if (data['email'] == null && firebaseUser.email != null) {
+        updates['email'] = firebaseUser.email!.toLowerCase();
+      }
+      if (data['displayName'] == null && firebaseUser.displayName != null) {
+        updates['displayName'] = firebaseUser.displayName;
+      }
+      if (data['photoUrl'] == null && firebaseUser.photoURL != null) {
+        updates['photoUrl'] = firebaseUser.photoURL;
+      }
+      if (updates.isNotEmpty) {
+        await docRef.set(updates, SetOptions(merge: true));
+      }
     }
   }
 

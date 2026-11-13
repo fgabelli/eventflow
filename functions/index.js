@@ -1,6 +1,7 @@
 const { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const functions = require("firebase-functions/v1");
 
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
@@ -30,7 +31,10 @@ const i18nStrings = {
       confirmationSubtitle: 'Il tuo posto è stato riservato',
       greeting: 'Ciao <strong>{{firstName}}</strong>,',
       confirmationBody: 'La tua iscrizione è confermata. Qui trovi le informazioni dell\'evento e il tuo invito per <strong style="color: #101410;">{{eventTitle}}</strong>:',
-      viewInviteButton: 'Visualizza il tuo invito',
+      addToCalendarButton: 'Aggiungi al calendario',
+      calendarIcsHint: 'o apri l\'allegato evento.ics',
+      calendarQrNote: 'Il tuo QR di ingresso è nell\'email di conferma',
+      calendarMeetingLabel: 'Link riunione',
       dateLabel: '📅 Data',
       timeLabel: '🕐 Ora',
       locationLabel: '📍 Luogo',
@@ -64,6 +68,7 @@ const i18nStrings = {
       thankYouPageTitle: 'Grazie per aver partecipato',
       // Attachment
       passFilename: 'biglietto.pkpass',
+      icsFilename: 'evento.ics',
       // Organizer notification
       orgNotificationSubject: '🔔 Nuova Iscrizione - {{eventTitle}}',
       orgNotificationTitle: 'Nuova Iscrizione: {{eventTitle}}',
@@ -71,6 +76,14 @@ const i18nStrings = {
       orgNotificationEmail: 'Email',
       orgNotificationRegisteredAt: 'Registrato il',
       orgNotificationViewEvent: 'Visualizza Evento',
+      // Team invitation
+      teamInviteSubject: '👋 Sei parte del team di {{orgName}} su Ticketto',
+      teamInviteTitle: 'Invito nel Team',
+      teamInviteSubtitle: 'Sei parte di {{orgName}}',
+      teamInviteBody: '<strong style="color: #101410;">{{orgName}}</strong> ti ha aggiunto al team su Ticketto come <strong style="color: #0E6B52;">{{roleLabel}}</strong>. Accedi con questa email per iniziare subito a collaborare.',
+      teamInviteButton: 'Accedi a Ticketto',
+      checkinAppTitle: 'App Ticketto Check-in',
+      checkinAppDesc: 'Come membro dello Staff, puoi scaricare l\'app mobile per scansionare i biglietti e gestire gli ingressi agli eventi:',
     },
     wallet: {
       passDescription: 'Biglietto per {{eventTitle}}',
@@ -98,7 +111,10 @@ const i18nStrings = {
       confirmationSubtitle: 'Your spot has been reserved',
       greeting: 'Hi <strong>{{firstName}}</strong>,',
       confirmationBody: 'Your registration is confirmed. Here are the event details and your invitation for <strong style="color: #101410;">{{eventTitle}}</strong>:',
-      viewInviteButton: 'View your invitation',
+      addToCalendarButton: 'Add to calendar',
+      calendarIcsHint: 'or open the attached event.ics',
+      calendarQrNote: 'Your entry QR code is in the confirmation email',
+      calendarMeetingLabel: 'Meeting link',
       dateLabel: '📅 Date',
       timeLabel: '🕐 Time',
       locationLabel: '📍 Venue',
@@ -132,6 +148,7 @@ const i18nStrings = {
       thankYouPageTitle: 'Thanks for attending',
       // Attachment
       passFilename: 'ticket.pkpass',
+      icsFilename: 'event.ics',
       // Organizer notification
       orgNotificationSubject: '🔔 New Registration - {{eventTitle}}',
       orgNotificationTitle: 'New Registration: {{eventTitle}}',
@@ -139,6 +156,14 @@ const i18nStrings = {
       orgNotificationEmail: 'Email',
       orgNotificationRegisteredAt: 'Registered on',
       orgNotificationViewEvent: 'View Event',
+      // Team invitation
+      teamInviteSubject: '👋 You have been added to the {{orgName}} team on Ticketto',
+      teamInviteTitle: 'Team Invitation',
+      teamInviteSubtitle: 'You are part of {{orgName}}',
+      teamInviteBody: '<strong style="color: #101410;">{{orgName}}</strong> added you to their team on Ticketto as <strong style="color: #0E6B52;">{{roleLabel}}</strong>. Sign in with this email to get started.',
+      teamInviteButton: 'Sign in to Ticketto',
+      checkinAppTitle: 'Ticketto Check-in App',
+      checkinAppDesc: 'As a Staff member, you can download the mobile app to scan tickets and manage check-ins at events:',
     },
     wallet: {
       passDescription: 'Ticket for {{eventTitle}}',
@@ -455,12 +480,242 @@ async function generateGoogleWalletLink(attendee, eventData, orgData, attendeeDo
   }
 }
 
+// ─── Calendar Helpers (Google Calendar URL & RFC 5545 .ics) ──
+function parseRomeDateTime(year, month, day, hour = 0, minute = 0, second = 0) {
+  const getOffsetAt = (utcMs) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Rome",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date(utcMs));
+    const map = {};
+    for (const p of parts) map[p.type] = p.value;
+    const romeAsUtc = Date.UTC(
+      Number(map.year),
+      Number(map.month) - 1,
+      Number(map.day),
+      Number(map.hour),
+      Number(map.minute),
+      Number(map.second)
+    );
+    return romeAsUtc - utcMs;
+  };
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute, second);
+  const offset1 = getOffsetAt(utcGuess);
+  const adjusted1 = utcGuess - offset1;
+  const offset2 = getOffsetAt(adjusted1);
+  return new Date(utcGuess - offset2);
+}
+
+function toUtcDateFromEventField(val) {
+  if (!val) return null;
+  if (typeof val.toDate === "function") {
+    const d = val.toDate();
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? null : val;
+  }
+  if (typeof val === "number") {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof val === "string") {
+    const s = val.trim();
+    if (!s) return null;
+    if (/(?:Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
+    if (m) {
+      return parseRomeDateTime(
+        Number(m[1]),
+        Number(m[2]),
+        Number(m[3]),
+        Number(m[4] || 0),
+        Number(m[5] || 0),
+        Number(m[6] || 0)
+      );
+    }
+    const fallback = new Date(s);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+  return null;
+}
+
+function resolveEventDateRange(event, timeSlot) {
+  const baseStart = toUtcDateFromEventField(event?.date) || new Date();
+
+  if (timeSlot && typeof timeSlot.startTime === "string" && typeof timeSlot.endTime === "string") {
+    const sm = timeSlot.startTime.trim().match(/^(\d{1,2}):(\d{2})$/);
+    const em = timeSlot.endTime.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (sm && em) {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Rome",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(baseStart);
+      const map = {};
+      for (const p of parts) map[p.type] = p.value;
+      const year = Number(map.year);
+      const month = Number(map.month);
+      const day = Number(map.day);
+
+      const start = parseRomeDateTime(year, month, day, Number(sm[1]), Number(sm[2]), 0);
+      let end = parseRomeDateTime(year, month, day, Number(em[1]), Number(em[2]), 0);
+      if (end.getTime() <= start.getTime()) {
+        end = parseRomeDateTime(year, month, day + 1, Number(em[1]), Number(em[2]), 0);
+      }
+      return { start, end };
+    }
+  }
+
+  const parsedEnd = toUtcDateFromEventField(event?.endDate);
+  const end = (parsedEnd && parsedEnd.getTime() > baseStart.getTime())
+    ? parsedEnd
+    : new Date(baseStart.getTime() + 2 * 60 * 60 * 1000);
+
+  return { start: baseStart, end };
+}
+
+function formatUtcCalendarTimestamp(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    String(date.getUTCFullYear()) +
+    pad(date.getUTCMonth() + 1) +
+    pad(date.getUTCDate()) +
+    "T" +
+    pad(date.getUTCHours()) +
+    pad(date.getUTCMinutes()) +
+    pad(date.getUTCSeconds()) +
+    "Z"
+  );
+}
+
+function getCalendarLocation(event) {
+  if (!event) return "";
+  if (event.isOnline) {
+    return typeof event.meetingUrl === "string" ? event.meetingUrl.trim() : "";
+  }
+  return typeof event.location === "string" ? event.location.trim() : "";
+}
+
+function buildCalendarDescription(event, lang = "it") {
+  const parts = [];
+  const rawDesc = typeof event?.description === "string" ? event.description.trim() : "";
+  if (rawDesc) {
+    let shortDesc = rawDesc.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\n{3,}/g, "\n\n");
+    if (shortDesc.length > 300) {
+      shortDesc = shortDesc.slice(0, 297).trimEnd() + "...";
+    }
+    parts.push(shortDesc);
+  }
+  if (event?.isOnline && typeof event.meetingUrl === "string" && event.meetingUrl.trim()) {
+    parts.push(`${t(lang, "email", "calendarMeetingLabel")}: ${event.meetingUrl.trim()}`);
+  }
+  parts.push(t(lang, "email", "calendarQrNote"));
+  return parts.join("\n\n");
+}
+
+function buildGoogleCalendarUrl(event, timeSlot, lang = "it") {
+  const { start, end } = resolveEventDateRange(event, timeSlot);
+  const startUtc = formatUtcCalendarTimestamp(start);
+  const endUtc = formatUtcCalendarTimestamp(end);
+  const title = (event?.title || "Evento").trim();
+  const details = buildCalendarDescription(event, lang);
+  const location = getCalendarLocation(event);
+
+  return (
+    "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    `&text=${encodeURIComponent(title)}` +
+    `&dates=${startUtc}/${endUtc}` +
+    `&details=${encodeURIComponent(details)}` +
+    `&location=${encodeURIComponent(location)}`
+  );
+}
+
+function escapeIcsText(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n|\r|\n/g, "\\n");
+}
+
+function foldIcsLine(line) {
+  if (Buffer.byteLength(line, "utf8") <= 75 && line.length <= 75) {
+    return line;
+  }
+  const chunks = [];
+  let current = "";
+  let currentBytes = 0;
+  for (const ch of line) {
+    const chBytes = Buffer.byteLength(ch, "utf8");
+    if (currentBytes + chBytes > 75 || current.length + ch.length > 75) {
+      chunks.push(current);
+      current = " " + ch;
+      currentBytes = 1 + chBytes;
+    } else {
+      current += ch;
+      currentBytes += chBytes;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks.join("\r\n");
+}
+
+function generateEventIcs(attendee, event, timeSlot, attendeeDocId, lang = "it") {
+  const { start, end } = resolveEventDateRange(event, timeSlot);
+  const dtStamp = formatUtcCalendarTimestamp(new Date());
+  const dtStart = formatUtcCalendarTimestamp(start);
+  const dtEnd = formatUtcCalendarTimestamp(end);
+  const uidBase = String(attendeeDocId || attendee?.id || attendee?.qrCode || crypto.randomUUID()).trim();
+  const resolvedEventId = String(event?.id || attendee?.eventId || "").trim();
+  const eventUrl = resolvedEventId ? `https://ticketto.it/register/${encodeURIComponent(resolvedEventId)}` : "https://ticketto.it";
+  const summary = (event?.title || "Evento").trim();
+  const description = buildCalendarDescription(event, lang);
+  const location = getCalendarLocation(event);
+
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Ticketto//Eventflow//IT",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${uidBase}@ticketto.it`,
+    `DTSTAMP:${dtStamp}`,
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${escapeIcsText(summary)}`,
+    `DESCRIPTION:${escapeIcsText(description)}`,
+    `LOCATION:${escapeIcsText(location)}`,
+    `URL:${eventUrl}`,
+    "STATUS:CONFIRMED",
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:${escapeIcsText(summary)}`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+
+  return lines.map(foldIcsLine).join("\r\n") + "\r\n";
+}
+
 // ─── Email Template ──────────────────────────────────────────
 function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, googleWalletUrl, lang = 'it') {
   const locale = getDateLocale(lang);
-  const eventDate = event.date?.toDate
-    ? event.date.toDate()
-    : new Date(event.date);
+  const eventDate = toUtcDateFromEventField(event.date) || new Date();
+  const googleCalendarUrl = buildGoogleCalendarUrl(event, timeSlot, lang);
   const formattedDate = eventDate.toLocaleDateString(locale, {
     weekday: "long",
     year: "numeric",
@@ -570,18 +825,21 @@ function buildConfirmationEmail(attendee, event, org, timeSlot, walletPassUrl, g
             </td>
           </tr>
 
-          <!-- View Invitation CTA -->
+          <!-- Add to Calendar CTA -->
           <tr>
             <td style="padding: 20px 32px 8px 32px; text-align: center;">
-              <a href="#ticketto-invite" style="display: inline-block; background-color: #9AD530; color: #101410; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; letter-spacing: -0.2px;">
-                ${t(lang, 'email', 'viewInviteButton')}
+              <a href="${googleCalendarUrl.replace(/&/g, '&amp;')}" target="_blank" rel="noopener" style="display: inline-block; background-color: #9AD530; color: #101410; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 10px; letter-spacing: -0.2px;">
+                ${t(lang, 'email', 'addToCalendarButton')}
               </a>
+              <p style="margin: 10px 0 0 0; font-size: 12px; color: #6B7280;">
+                ${t(lang, 'email', 'calendarIcsHint')}
+              </p>
             </td>
           </tr>
 
           <!-- QR Code -->
           <tr>
-            <td id="ticketto-invite" style="padding: 20px 32px 24px 32px; text-align: center;">
+            <td style="padding: 20px 32px 24px 32px; text-align: center;">
               <p style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #101410;">${t(lang, 'email', 'qrTitle')}</p>
               <div style="display: inline-block; background: #FFFFFF; border: 2px solid #E5E7EB; border-radius: 16px; padding: 20px;">
                 <img src="${qrCodeUrl}" alt="QR Code" width="200" height="200" style="display: block;" />
@@ -1006,13 +1264,29 @@ exports.onAttendeeCreated = onDocumentCreated(
         console.warn(`⚠️ Nessuna email organizzatore per org=${attendee.orgId}: invio senza Reply-To`);
       }
 
-      // Attach Apple Wallet pass directly to email (paid plans only)
+      // Attach .ics calendar invite (all plans, including Free) + Apple Wallet pass (paid plans only)
+      const attachments = [];
+      try {
+        const icsContent = generateEventIcs(attendee, { ...eventData, id: eventDoc.id }, timeSlot, event.data.id, lang);
+        attachments.push({
+          filename: t(lang, 'email', 'icsFilename'),
+          content: Buffer.from(icsContent, "utf8").toString("base64"),
+          contentType: "text/calendar; method=PUBLISH",
+        });
+      } catch (icsErr) {
+        console.warn("⚠️ ICS calendar generation failed (non-blocking):", icsErr.message);
+      }
+
       if (applePassBuffer) {
-        emailPayload.attachments = [{
+        attachments.push({
           filename: t(lang, 'email', 'passFilename'),
           content: applePassBuffer.toString("base64"),
-          content_type: "application/vnd.apple.pkpass",
-        }];
+          contentType: "application/vnd.apple.pkpass",
+        });
+      }
+
+      if (attachments.length > 0) {
+        emailPayload.attachments = attachments;
       }
 
       const { data, error } = await resend.emails.send(emailPayload);
@@ -1337,12 +1611,28 @@ exports.resendAttendeeConfirmation = onRequest(
         emailPayload.reply_to = [organizerEmail];
       }
 
+      const resendAttachments = [];
+      try {
+        const icsContent = generateEventIcs(attendee, { ...eventData, id: eventDoc.id }, timeSlot, attendeeId, lang);
+        resendAttachments.push({
+          filename: t(lang, 'email', 'icsFilename'),
+          content: Buffer.from(icsContent, "utf8").toString("base64"),
+          contentType: "text/calendar; method=PUBLISH",
+        });
+      } catch (icsErr) {
+        console.warn("⚠️ ICS calendar generation failed on resend (non-blocking):", icsErr.message);
+      }
+
       if (applePassBuffer) {
-        emailPayload.attachments = [{
+        resendAttachments.push({
           filename: t(lang, 'email', 'passFilename'),
           content: applePassBuffer.toString("base64"),
-          content_type: "application/vnd.apple.pkpass",
-        }];
+          contentType: "application/vnd.apple.pkpass",
+        });
+      }
+
+      if (resendAttachments.length > 0) {
+        emailPayload.attachments = resendAttachments;
       }
 
       const { data, error } = await resend.emails.send(emailPayload);
@@ -3350,6 +3640,60 @@ exports.generateEventInsights = onCall(
 // ─── SCHEDULED EMAILS (REMINDER + POST-EVENT) ────────────────
 // ═══════════════════════════════════════════════════════════════
 
+function escapeScheduledEmailHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildScheduledEmailCustomMessageHtml(rawMessage, accentColor = "#0E6B52") {
+  if (typeof rawMessage !== "string") return "";
+  const trimmed = rawMessage.trim().slice(0, 1000);
+  if (!trimmed) return "";
+  const escapedWithBreaks = escapeScheduledEmailHtml(trimmed).replace(/\r\n|\r|\n/g, "<br>");
+  return `
+          <!-- Custom Message -->
+          <tr>
+            <td style="padding: 0 32px 16px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9FAFB; border-radius: 12px; border: 1px solid #E5E7EB; border-left: 4px solid ${accentColor};">
+                <tr>
+                  <td style="padding: 16px 20px; font-size: 15px; color: #1F2937; line-height: 1.6; word-break: break-word;">
+                    ${escapedWithBreaks}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
+}
+
+async function verifyOrgOwnerOrAdmin(orgId, uid) {
+  if (!orgId || !uid) return false;
+  const directDoc = await db.collection("organizations").doc(orgId).collection("members").doc(uid).get();
+  if (directDoc.exists) {
+    const role = directDoc.data()?.role;
+    return role === "owner" || role === "admin";
+  }
+  const snap = await db.collection("organizations").doc(orgId).collection("members")
+    .where("userId", "==", uid)
+    .limit(1)
+    .get();
+  if (!snap.empty) {
+    const role = snap.docs[0].data()?.role;
+    return role === "owner" || role === "admin";
+  }
+  return false;
+}
+
+function normalizeScheduledEmailType(type) {
+  if (type === "reminder") return "reminder";
+  if (type === "thankYou" || type === "thank_you" || type === "postEvent") return "thankYou";
+  return null;
+}
+
 // Runs every hour
 exports.processScheduledEmails = onSchedule(
   {
@@ -3364,29 +3708,33 @@ exports.processScheduledEmails = onSchedule(
 
     let remindersSent = 0;
     let thankYouSent = 0;
+    let thankYouSkippedStale = 0;
 
     try {
       // ─── 1. REMINDER EMAILS (Pro + Business) ────────────────────
       const reminderEvents = await db.collection("events")
         .where("reminderEnabled", "==", true)
-        .where("reminderSentAt", "==", null)
         .where("status", "==", "published")
         .get();
 
       for (const eventDoc of reminderEvents.docs) {
         const eventData = eventDoc.data();
+        if (eventData.reminderSentAt) continue;
+
         const lang = getEventLang(eventData);
         const eventDate = eventData.date?.toDate ? eventData.date.toDate() : new Date(eventData.date);
+        if (!eventDate || isNaN(eventDate.getTime())) continue;
+
         const daysBefore = eventData.reminderDaysBefore || 1;
         const reminderDate = new Date(eventDate);
         reminderDate.setDate(reminderDate.getDate() - daysBefore);
 
         // Check if it's time to send (reminder date has passed but event hasn't)
         if (now >= reminderDate && now < eventDate) {
-          // Check org plan
+          // Check org plan (Pro + Business)
           const orgDoc = await db.collection("organizations").doc(eventData.orgId).get();
           const orgPlan = orgDoc.exists ? (orgDoc.data().plan || "free") : "free";
-          if (orgPlan === "free") continue;
+          if (orgPlan !== "pro" && orgPlan !== "business") continue;
 
           const orgData = orgDoc.exists ? orgDoc.data() : null;
 
@@ -3415,35 +3763,69 @@ exports.processScheduledEmails = onSchedule(
                 html: html,
               };
               if (organizerEmail) payload.reply_to = [organizerEmail];
-              await resend.emails.send(payload);
-              remindersSent++;
+              const { data: sendData, error: sendErr } = await resend.emails.send(payload);
+              if (sendErr) {
+                console.error(`❌ Reminder email failed for ${att.email}:`, sendErr);
+              } else {
+                remindersSent++;
+                console.log(`✉️ Reminder email sent to ${att.email} (event=${eventDoc.id}, resendId=${sendData?.id})`);
+              }
             } catch (emailErr) {
               console.error(`❌ Reminder email failed for ${att.email}:`, emailErr.message);
             }
           }
 
           await eventDoc.ref.update({ reminderSentAt: admin.firestore.FieldValue.serverTimestamp() });
-          console.log(`✅ Reminder sent for "${eventData.title}" to ${attendees.size} attendees`);
+          console.log(`✅ Reminder sent for "${eventData.title}" (${eventDoc.id}) to ${attendees.size} attendees`);
         }
       }
 
-      // ─── 2. POST-EVENT THANK YOU (Business only) ────────────────
-      const completedEvents = await db.collection("events")
+      // ─── 2. POST-EVENT THANK YOU (Pro + Business, automatic) ────
+      const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+      const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+      const postEventCandidates = await db.collection("events")
         .where("postEventEmailEnabled", "==", true)
-        .where("postEventSentAt", "==", null)
-        .where("status", "==", "completed")
         .get();
 
-      for (const eventDoc of completedEvents.docs) {
+      for (const eventDoc of postEventCandidates.docs) {
         const eventData = eventDoc.data();
-        const lang = getEventLang(eventData);
+        if (eventData.postEventSentAt) continue;
 
-        // Check org plan (Business only)
+        // Only published or completed events (never draft or canceled)
+        if (eventData.status !== "published" && eventData.status !== "completed") continue;
+
+        const startDate = eventData.date?.toDate ? eventData.date.toDate() : new Date(eventData.date);
+        if (!startDate || isNaN(startDate.getTime())) continue;
+
+        const rawEndDate = eventData.endDate
+          ? (eventData.endDate?.toDate ? eventData.endDate.toDate() : new Date(eventData.endDate))
+          : null;
+        const effectiveEndDate = (rawEndDate && !isNaN(rawEndDate.getTime()))
+          ? rawEndDate
+          : new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+
+        const elapsedMs = now.getTime() - effectiveEndDate.getTime();
+
+        // Must be at least 12 hours after event end
+        if (elapsedMs < TWELVE_HOURS_MS) continue;
+
+        // Guard against retroactive sends: if event ended more than 3 days ago,
+        // mark postEventSentAt without sending anything.
+        if (elapsedMs > THREE_DAYS_MS) {
+          await eventDoc.ref.update({ postEventSentAt: admin.firestore.FieldValue.serverTimestamp() });
+          thankYouSkippedStale++;
+          console.log(`⏭️ Marked stale event "${eventData.title}" (${eventDoc.id}, ended ${effectiveEndDate.toISOString()}) with postEventSentAt without sending`);
+          continue;
+        }
+
+        // Check org plan (Pro + Business)
         const orgDoc = await db.collection("organizations").doc(eventData.orgId).get();
         const orgPlan = orgDoc.exists ? (orgDoc.data().plan || "free") : "free";
-        if (orgPlan !== "business") continue;
+        if (orgPlan !== "pro" && orgPlan !== "business") continue;
 
         const orgData = orgDoc.exists ? orgDoc.data() : null;
+        const lang = getEventLang(eventData);
 
         // Get all attendees who checked in
         const attendees = await db.collection("attendees")
@@ -3453,6 +3835,7 @@ exports.processScheduledEmails = onSchedule(
 
         if (attendees.empty) {
           await eventDoc.ref.update({ postEventSentAt: admin.firestore.FieldValue.serverTimestamp() });
+          console.log(`ℹ️ No checked-in attendees for "${eventData.title}" (${eventDoc.id}), marked postEventSentAt`);
           continue;
         }
 
@@ -3471,21 +3854,204 @@ exports.processScheduledEmails = onSchedule(
               html: html,
             };
             if (organizerEmail) payload.reply_to = [organizerEmail];
-            await resend.emails.send(payload);
-            thankYouSent++;
+            const { data: sendData, error: sendErr } = await resend.emails.send(payload);
+            if (sendErr) {
+              console.error(`❌ Thank you email failed for ${att.email}:`, sendErr);
+            } else {
+              thankYouSent++;
+              console.log(`✉️ Thank you email sent to ${att.email} (event=${eventDoc.id}, resendId=${sendData?.id})`);
+            }
           } catch (emailErr) {
             console.error(`❌ Thank you email failed for ${att.email}:`, emailErr.message);
           }
         }
 
         await eventDoc.ref.update({ postEventSentAt: admin.firestore.FieldValue.serverTimestamp() });
-        console.log(`✅ Thank you sent for "${eventData.title}" to ${attendees.size} attendees`);
+        console.log(`✅ Thank you sent for "${eventData.title}" (${eventDoc.id}) to ${attendees.size} attendees`);
       }
 
-      console.log(`📬 Scheduled emails done: ${remindersSent} reminders, ${thankYouSent} thank you emails`);
+      console.log(`📬 Scheduled emails done: ${remindersSent} reminders, ${thankYouSent} thank you emails (${thankYouSkippedStale} stale skipped)`);
     } catch (error) {
       console.error("❌ Scheduled emails processing error:", error);
     }
+  }
+);
+
+// ─── Preview Scheduled Email (Owner/Admin only, no send) ─────
+exports.previewScheduledEmail = onCall(
+  { region: "europe-west1", cors: true },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const { eventId, type, customMessage } = request.data || {};
+    const normalizedType = normalizeScheduledEmailType(type);
+    if (!eventId || typeof eventId !== "string" || !normalizedType) {
+      throw new HttpsError("invalid-argument", "Valid eventId and type ('reminder' or 'thankYou') are required.");
+    }
+
+    const eventDoc = await db.collection("events").doc(eventId).get();
+    if (!eventDoc.exists) {
+      throw new HttpsError("not-found", "Event not found.");
+    }
+
+    const eventData = eventDoc.data();
+    const isAllowed = await verifyOrgOwnerOrAdmin(eventData.orgId, request.auth.uid);
+    if (!isAllowed) {
+      throw new HttpsError("permission-denied", "Only organization owners and admins can preview scheduled emails.");
+    }
+
+    const orgDoc = await db.collection("organizations").doc(eventData.orgId).get();
+    const orgData = orgDoc.exists ? orgDoc.data() : null;
+
+    const effectiveEvent = { ...eventData };
+    if (typeof customMessage === "string") {
+      if (normalizedType === "reminder") {
+        effectiveEvent.reminderCustomMessage = customMessage.slice(0, 1000);
+      } else {
+        effectiveEvent.thankYouCustomMessage = customMessage.slice(0, 1000);
+      }
+    }
+
+    const lang = getEventLang(effectiveEvent);
+    const fakeAttendee = lang === "it"
+      ? { firstName: "Mario", lastName: "Rossi", email: "mario.rossi@example.com" }
+      : { firstName: "Alex", lastName: "Smith", email: "alex.smith@example.com" };
+
+    let subject;
+    let html;
+    if (normalizedType === "reminder") {
+      subject = t(lang, "email", "reminderSubject", { eventTitle: effectiveEvent.title });
+      html = buildReminderEmail(fakeAttendee, effectiveEvent, orgData, lang);
+    } else {
+      const feedbackUrl = `https://ticketto.it/feedback/${eventDoc.id}`;
+      subject = t(lang, "email", "thankYouSubject", { eventTitle: effectiveEvent.title });
+      html = buildThankYouEmail(fakeAttendee, effectiveEvent, orgData, feedbackUrl, lang);
+    }
+
+    return {
+      subject,
+      html,
+      lang,
+      type: normalizedType,
+    };
+  }
+);
+
+// ─── Send Test Scheduled Email to Logged-in User ─────────────
+exports.sendTestScheduledEmail = onCall(
+  { region: "europe-west1", cors: true },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const { eventId, type, customMessage } = request.data || {};
+    const normalizedType = normalizeScheduledEmailType(type);
+    if (!eventId || typeof eventId !== "string" || !normalizedType) {
+      throw new HttpsError("invalid-argument", "Valid eventId and type ('reminder' or 'thankYou') are required.");
+    }
+
+    const eventDoc = await db.collection("events").doc(eventId).get();
+    if (!eventDoc.exists) {
+      throw new HttpsError("not-found", "Event not found.");
+    }
+
+    const eventData = eventDoc.data();
+    const isAllowed = await verifyOrgOwnerOrAdmin(eventData.orgId, request.auth.uid);
+    if (!isAllowed) {
+      throw new HttpsError("permission-denied", "Only organization owners and admins can send test scheduled emails.");
+    }
+
+    const orgDoc = await db.collection("organizations").doc(eventData.orgId).get();
+    const orgData = orgDoc.exists ? orgDoc.data() : null;
+    const orgPlan = orgData?.plan || "free";
+    if (orgPlan !== "pro" && orgPlan !== "business") {
+      throw new HttpsError("permission-denied", "Scheduled emails are available from the Pro plan.");
+    }
+
+    let recipientEmail = request.auth.token?.email;
+    let recipientName = request.auth.token?.name || "";
+    if (!recipientEmail) {
+      const userRec = await admin.auth().getUser(request.auth.uid);
+      recipientEmail = userRec.email;
+      recipientName = userRec.displayName || "";
+    }
+    if (!recipientEmail) {
+      throw new HttpsError("failed-precondition", "Authenticated user does not have an email address.");
+    }
+
+    // Rate limit: max 5 test emails per rolling hour per user
+    const rateRef = db.collection("rate_limits").doc(`scheduled_email_test_${request.auth.uid}`);
+    const nowMs = Date.now();
+    const windowMs = 60 * 60 * 1000;
+    const maxPerHour = 5;
+
+    await db.runTransaction(async (tx) => {
+      const rateSnap = await tx.get(rateRef);
+      const prev = rateSnap.exists && Array.isArray(rateSnap.data().timestamps)
+        ? rateSnap.data().timestamps
+        : [];
+      const recent = prev.filter((ts) => typeof ts === "number" && nowMs - ts < windowMs);
+      if (recent.length >= maxPerHour) {
+        throw new HttpsError("resource-exhausted", "Hourly limit of test emails reached. Please try again later.");
+      }
+      recent.push(nowMs);
+      tx.set(rateRef, {
+        userId: request.auth.uid,
+        timestamps: recent,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    const effectiveEvent = { ...eventData };
+    if (typeof customMessage === "string") {
+      if (normalizedType === "reminder") {
+        effectiveEvent.reminderCustomMessage = customMessage.slice(0, 1000);
+      } else {
+        effectiveEvent.thankYouCustomMessage = customMessage.slice(0, 1000);
+      }
+    }
+
+    const lang = getEventLang(effectiveEvent);
+    const firstName = (recipientName.trim().split(/\s+/)[0]) || (lang === "it" ? "Mario" : "Alex");
+    const testAttendee = { firstName, lastName: "", email: recipientEmail };
+    const prefix = lang === "it" ? "[PROVA] " : "[TEST] ";
+
+    let subject;
+    let html;
+    if (normalizedType === "reminder") {
+      subject = prefix + t(lang, "email", "reminderSubject", { eventTitle: effectiveEvent.title });
+      html = buildReminderEmail(testAttendee, effectiveEvent, orgData, lang);
+    } else {
+      const feedbackUrl = `https://ticketto.it/feedback/${eventDoc.id}`;
+      subject = prefix + t(lang, "email", "thankYouSubject", { eventTitle: effectiveEvent.title });
+      html = buildThankYouEmail(testAttendee, effectiveEvent, orgData, feedbackUrl, lang);
+    }
+
+    const resend = new Resend(RESEND_API_KEY);
+    const organizerEmail = await getOrganizerEmail(eventData.orgId, orgData);
+    const payload = {
+      from: EMAIL_FROM,
+      to: [recipientEmail],
+      subject,
+      html,
+    };
+    if (organizerEmail) payload.reply_to = [organizerEmail];
+
+    const { data: sendData, error: sendErr } = await resend.emails.send(payload);
+    if (sendErr) {
+      console.error("❌ Failed to send test scheduled email:", sendErr);
+      throw new HttpsError("internal", "Failed to send test email.");
+    }
+
+    console.log(`✉️ Sent test ${normalizedType} email to ${recipientEmail} (event=${eventId}, resendId=${sendData?.id})`);
+    return {
+      success: true,
+      to: recipientEmail,
+      id: sendData?.id || null,
+    };
   }
 );
 
@@ -3500,13 +4066,20 @@ function buildReminderEmail(attendee, event, org, lang = 'it') {
     hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome",
   });
 
+  const safeFirstName = escapeScheduledEmailHtml(attendee.firstName || "");
+  const safeTitle = escapeScheduledEmailHtml(event.title || "");
+  const safeLocation = event.location ? escapeScheduledEmailHtml(event.location) : "";
+  const safeOrgName = escapeScheduledEmailHtml(org?.name || "Ticketto");
+  const customMessageHtml = buildScheduledEmailCustomMessageHtml(event.reminderCustomMessage, "#F59E0B");
+
   const reminderMapUrl = getEventMapUrl(event);
-  const locationHtml = (event.location || reminderMapUrl)
+  const safeMapUrl = reminderMapUrl ? escapeScheduledEmailHtml(reminderMapUrl) : "";
+  const locationHtml = (safeLocation || safeMapUrl)
     ? `<tr>
         <td style="padding: 8px 0; color: #6B7280; font-size: 14px; vertical-align: top;">${t(lang, 'email', 'locationLabel')}</td>
         <td style="padding: 8px 0; text-align: right; font-weight: 600; font-size: 14px; color: #1A1A2E;">
-          ${event.location ? `<div>${reminderMapUrl ? `<a href="${reminderMapUrl}" target="_blank" rel="noopener" style="color: #1A1A2E; text-decoration: none;">${event.location}</a>` : event.location}</div>` : ""}
-          ${reminderMapUrl ? `<div style="margin-top: 4px;"><a href="${reminderMapUrl}" target="_blank" rel="noopener" style="color: #0E6B52; text-decoration: underline; font-weight: 600; font-size: 13px;">📍 ${t(lang, 'email', 'openInMapsLabel')}</a></div>` : ""}
+          ${safeLocation ? `<div>${safeMapUrl ? `<a href="${safeMapUrl}" target="_blank" rel="noopener" style="color: #1A1A2E; text-decoration: none;">${safeLocation}</a>` : safeLocation}</div>` : ""}
+          ${safeMapUrl ? `<div style="margin-top: 4px;"><a href="${safeMapUrl}" target="_blank" rel="noopener" style="color: #0E6B52; text-decoration: underline; font-weight: 600; font-size: 13px;">📍 ${t(lang, 'email', 'openInMapsLabel')}</a></div>` : ""}
         </td>
       </tr>`
     : "";
@@ -3536,14 +4109,14 @@ function buildReminderEmail(attendee, event, org, lang = 'it') {
           <tr>
             <td style="padding: 32px 32px 16px 32px;">
               <p style="margin: 0; font-size: 16px; color: #374151;">
-                ${t(lang, 'email', 'greeting', { firstName: attendee.firstName })}
+                ${t(lang, 'email', 'greeting', { firstName: safeFirstName })}
               </p>
               <p style="margin: 8px 0 0 0; font-size: 15px; color: #6B7280; line-height: 1.6;">
-                ${t(lang, 'email', 'reminderBody', { eventTitle: event.title })}
+                ${t(lang, 'email', 'reminderBody', { eventTitle: safeTitle })}
               </p>
             </td>
           </tr>
-
+${customMessageHtml}
           <!-- Event Details -->
           <tr>
             <td style="padding: 0 32px;">
@@ -3578,7 +4151,7 @@ function buildReminderEmail(attendee, event, org, lang = 'it') {
           <tr>
             <td style="padding: 20px 32px 32px 32px; text-align: center; border-top: 1px solid #E5E7EB;">
               <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
-                ${t(lang, 'email', 'sentBy', { orgName: org?.name || "Ticketto" })}
+                ${t(lang, 'email', 'sentBy', { orgName: safeOrgName })}
               </p>
               <p style="margin: 4px 0 0 0; font-size: 11px; color: #D1D5DB;">Powered by Ticketto</p>
             </td>
@@ -3599,6 +4172,12 @@ function buildThankYouEmail(attendee, event, org, feedbackUrl, lang = 'it') {
   const formattedDate = eventDate.toLocaleDateString(locale, {
     weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "Europe/Rome",
   });
+
+  const safeFirstName = escapeScheduledEmailHtml(attendee.firstName || "");
+  const safeTitle = escapeScheduledEmailHtml(event.title || "");
+  const safeOrgName = escapeScheduledEmailHtml(org?.name || "Ticketto");
+  const safeFeedbackUrl = escapeScheduledEmailHtml(feedbackUrl || "");
+  const customMessageHtml = buildScheduledEmailCustomMessageHtml(event.thankYouCustomMessage, "#10B981");
 
   return `<!DOCTYPE html>
 <html lang="${lang}">
@@ -3625,14 +4204,14 @@ function buildThankYouEmail(attendee, event, org, feedbackUrl, lang = 'it') {
           <tr>
             <td style="padding: 32px 32px 16px 32px;">
               <p style="margin: 0; font-size: 16px; color: #374151;">
-                ${t(lang, 'email', 'greeting', { firstName: attendee.firstName })}
+                ${t(lang, 'email', 'greeting', { firstName: safeFirstName })}
               </p>
               <p style="margin: 8px 0 0 0; font-size: 15px; color: #6B7280; line-height: 1.6;">
-                ${t(lang, 'email', 'thankYouBody', { eventTitle: event.title, formattedDate: formattedDate })}
+                ${t(lang, 'email', 'thankYouBody', { eventTitle: safeTitle, formattedDate: formattedDate })}
               </p>
             </td>
           </tr>
-
+${customMessageHtml}
           <!-- Feedback CTA -->
           <tr>
             <td style="padding: 8px 32px 32px 32px; text-align: center;">
@@ -3641,7 +4220,7 @@ function buildThankYouEmail(attendee, event, org, feedbackUrl, lang = 'it') {
                   <td style="padding: 24px;">
                     <p style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #374151;">${t(lang, 'email', 'feedbackTitle')}</p>
                     <p style="margin: 0 0 16px 0; font-size: 14px; color: #6B7280;">${t(lang, 'email', 'feedbackBody')}</p>
-                    <a href="${feedbackUrl}" style="display: inline-block; background: linear-gradient(135deg, #10B981, #059669); color: #FFFFFF; padding: 12px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none;">${t(lang, 'email', 'feedbackButton')}</a>
+                    <a href="${safeFeedbackUrl}" style="display: inline-block; background: linear-gradient(135deg, #10B981, #059669); color: #FFFFFF; padding: 12px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none;">${t(lang, 'email', 'feedbackButton')}</a>
                   </td>
                 </tr>
               </table>
@@ -3652,7 +4231,7 @@ function buildThankYouEmail(attendee, event, org, feedbackUrl, lang = 'it') {
           <tr>
             <td style="padding: 20px 32px 32px 32px; text-align: center; border-top: 1px solid #E5E7EB;">
               <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
-                ${t(lang, 'email', 'sentBy', { orgName: org?.name || "Ticketto" })}
+                ${t(lang, 'email', 'sentBy', { orgName: safeOrgName })}
               </p>
               <p style="margin: 4px 0 0 0; font-size: 11px; color: #D1D5DB;">Powered by Ticketto</p>
             </td>
@@ -4084,5 +4663,359 @@ exports.sendInviteOutreach = onRequest({ cors: true }, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ─── Team Invitation Email Template ──────────────────────────
+function buildTeamInviteEmail({ orgName, role, recipientEmail, lang = "it" }) {
+  const roleLabels = {
+    it: {
+      owner: "Proprietario",
+      admin: "Amministratore",
+      staff: "Staff Check-in",
+      viewer: "Visualizzatore",
+    },
+    en: {
+      owner: "Owner",
+      admin: "Admin",
+      staff: "Check-in Staff",
+      viewer: "Viewer",
+    },
+  };
+
+  const safeLang = SUPPORTED_LANGUAGES.includes(lang) ? lang : "it";
+  const roleLabel = (roleLabels[safeLang] && roleLabels[safeLang][role]) || role;
+  const isStaff = role === "staff";
+
+  const staffAppSection = isStaff
+    ? `
+          <!-- Staff App Download Section -->
+          <tr>
+            <td style="padding: 0 32px 28px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F9FAFB; border-radius: 14px; border: 1px solid #E5E7EB;">
+                <tr>
+                  <td style="padding: 24px 20px; text-align: center;">
+                    <div style="font-size: 28px; margin-bottom: 8px;">📱</div>
+                    <h3 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 700; color: #101410;">
+                      ${t(safeLang, "email", "checkinAppTitle")}
+                    </h3>
+                    <p style="margin: 0 0 16px 0; font-size: 13px; color: #4B5563; line-height: 1.5; max-width: 440px; display: inline-block;">
+                      ${t(safeLang, "email", "checkinAppDesc")}
+                    </p>
+                    <div>
+                      <a href="https://apps.apple.com/it/app/ticketto/id6759349436" target="_blank" rel="noopener" style="display: inline-block; background-color: #101410; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 8px; margin: 4px 6px;">
+                        🍏 App Store
+                      </a>
+                      <a href="https://play.google.com/store/apps/details?id=com.ticketto.app" target="_blank" rel="noopener" style="display: inline-block; background-color: #101410; color: #FFFFFF; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 8px; margin: 4px 6px;">
+                        🤖 Google Play
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+    `
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="${safeLang}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${t(safeLang, "email", "teamInviteTitle")}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F3F4F6; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0E6B52; padding: 36px 32px; text-align: center;">
+              <div style="margin-bottom: 20px;">
+                <img src="https://ticketto.it/images/ticketto_logo_dark.png" alt="Ticketto" height="28" style="height: 28px; display: inline-block; border: 0;" />
+              </div>
+              <h1 style="color: #FFFFFF; margin: 0 0 8px 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">
+                ${t(safeLang, "email", "teamInviteTitle")}
+              </h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 0; font-size: 15px;">
+                ${t(safeLang, "email", "teamInviteSubtitle", { orgName })}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body Message -->
+          <tr>
+            <td style="padding: 32px 32px 20px 32px;">
+              <p style="margin: 0; font-size: 16px; color: #101410; line-height: 1.6;">
+                ${t(safeLang, "email", "teamInviteBody", { orgName, roleLabel })}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Invite Info Box -->
+          <tr>
+            <td style="padding: 0 32px 24px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #E8F2EC; border-radius: 12px; border: 1px solid rgba(14, 107, 82, 0.15);">
+                <tr>
+                  <td style="padding: 18px 22px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 4px 0; color: #0E6B52; font-size: 13px; font-weight: 500;">🏢 ${safeLang === "it" ? "Organizzazione" : "Organization"}</td>
+                        <td style="padding: 4px 0; text-align: right; font-weight: 700; font-size: 14px; color: #101410;">${orgName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 4px 0; color: #0E6B52; font-size: 13px; font-weight: 500;">🛡️ ${safeLang === "it" ? "Ruolo assegnato" : "Assigned Role"}</td>
+                        <td style="padding: 4px 0; text-align: right; font-weight: 700; font-size: 14px; color: #101410;">${roleLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 4px 0; color: #0E6B52; font-size: 13px; font-weight: 500;">✉️ ${safeLang === "it" ? "Email invito" : "Invite Email"}</td>
+                        <td style="padding: 4px 0; text-align: right; font-weight: 600; font-size: 13px; color: #4B5563;">${recipientEmail}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Login CTA Button -->
+          <tr>
+            <td style="padding: 8px 32px 32px 32px; text-align: center;">
+              <a href="https://ticketto.it/login" style="display: inline-block; background-color: #9AD530; color: #101410; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 36px; border-radius: 10px; letter-spacing: -0.2px;">
+                ${t(safeLang, "email", "teamInviteButton")} →
+              </a>
+            </td>
+          </tr>
+
+          ${staffAppSection}
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 24px 32px 32px 32px; text-align: center; border-top: 1px solid #E5E7EB; background-color: #FAFAFA;">
+              <p style="margin: 0 0 10px 0; font-size: 12px; color: #6B7280;">
+                ${t(safeLang, "email", "sentBy", { orgName })}
+              </p>
+              <div style="margin: 6px 0 4px 0;">
+                <img src="https://ticketto.it/images/ticketto_logo.png" alt="Ticketto" height="18" style="height: 18px; vertical-align: middle; border: 0; display: inline-block;" />
+              </div>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #0E6B52; font-weight: 600;">
+                L'invito diventa presenza.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// ─── Shared Helper: Link Pending Invites ─────────────────────
+/**
+ * Links any pending invitations for the given email to the specified user UID.
+ * Updates organizations/{orgId}/members/{uid}, removes the pending invite doc,
+ * and updates users/{uid} with organizationIds and activeOrgId.
+ *
+ * @param {string} email
+ * @param {string} uid
+ * @returns {Promise<{linkedCount: number, orgIds: string[]}>}
+ */
+async function linkPendingInvites(email, uid) {
+  const emailLower = (email || "").toLowerCase().trim();
+  if (!emailLower || !uid) {
+    return { linkedCount: 0, orgIds: [] };
+  }
+
+  // Query pending invites where email matches and userId is empty string
+  const pendingSnap = await db.collectionGroup("members")
+    .where("email", "==", emailLower)
+    .where("userId", "==", "")
+    .get();
+
+  if (pendingSnap.empty) {
+    return { linkedCount: 0, orgIds: [] };
+  }
+
+  const userRef = db.collection("users").doc(uid);
+  const userSnap = await userRef.get();
+  const userData = userSnap.data() || {};
+  let activeOrgId = userData.activeOrgId;
+
+  let authUser = null;
+  try {
+    authUser = await admin.auth().getUser(uid);
+  } catch (_) {}
+  const userDisplayName = (authUser && authUser.displayName) || userData.displayName || null;
+
+  const orgIdsToLink = [];
+  const batch = db.batch();
+
+  for (const doc of pendingSnap.docs) {
+    const inviteData = doc.data();
+    const orgId = inviteData.orgId || doc.ref.parent.parent.id;
+    if (!orgId) continue;
+
+    if (!orgIdsToLink.includes(orgId)) {
+      orgIdsToLink.push(orgId);
+    }
+
+    // 1. Create or update organizations/{orgId}/members/{uid}
+    const memberRef = db.collection("organizations").doc(orgId).collection("members").doc(uid);
+    batch.set(memberRef, {
+      orgId: orgId,
+      userId: uid,
+      email: emailLower,
+      displayName: inviteData.displayName || userDisplayName || null,
+      role: inviteData.role || "staff",
+      joinedAt: inviteData.joinedAt || admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+
+    // 2. Delete the pending invite doc with random ID
+    if (doc.id !== uid) {
+      batch.delete(doc.ref);
+    }
+  }
+
+  if (orgIdsToLink.length > 0) {
+    // 3. Update users/{uid} with organizationIds and activeOrgId
+    const userUpdates = {
+      organizationIds: admin.firestore.FieldValue.arrayUnion(...orgIdsToLink),
+    };
+    if (!activeOrgId) {
+      activeOrgId = orgIdsToLink[0];
+      userUpdates.activeOrgId = activeOrgId;
+    }
+    if (!userData.email && emailLower) {
+      userUpdates.email = emailLower;
+    }
+    if (!userData.displayName && userDisplayName) {
+      userUpdates.displayName = userDisplayName;
+    }
+    batch.set(userRef, userUpdates, { merge: true });
+  }
+
+  await batch.commit();
+  console.log(`🔗 Successfully linked ${orgIdsToLink.length} invites for ${emailLower} (uid=${uid}): orgIds=${orgIdsToLink.join(", ")}`);
+  return { linkedCount: orgIdsToLink.length, orgIds: orgIdsToLink };
+}
+
+// ─── Trigger: User Registration (Auth onCreate) ───────────────
+exports.onUserCreated = functions.auth.user().onCreate(async (user) => {
+  const email = user.email;
+  const uid = user.uid;
+  if (!email || !uid) return;
+
+  console.log(`👤 New user registered: ${email} (uid=${uid}), checking for pending invites...`);
+  try {
+    const result = await linkPendingInvites(email, uid);
+    if (result.linkedCount > 0) {
+      console.log(`🎉 Linked ${result.linkedCount} pending invites for new user ${email}`);
+    }
+  } catch (err) {
+    console.error(`❌ Error linking pending invites for new user ${email}:`, err);
+  }
+});
+
+// ─── Trigger: Team Member Created (onDocumentCreated) ─────────
+exports.onTeamMemberCreated = onDocumentCreated(
+  {
+    document: "organizations/{orgId}/members/{memberId}",
+  },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const data = snap.data();
+    if (!data) return;
+
+    // Only process pending invites (where userId is empty string)
+    if (data.userId !== "") {
+      return;
+    }
+
+    const email = (data.email || "").toLowerCase().trim();
+    if (!email) {
+      console.warn("⚠️ Pending invite without email in", snap.ref.path);
+      return;
+    }
+
+    const orgId = event.params.orgId;
+    const role = data.role || "staff";
+
+    // 1. If user already exists in Firebase Auth, link immediately!
+    let existingUser = null;
+    try {
+      existingUser = await admin.auth().getUserByEmail(email);
+    } catch (err) {
+      if (err.code !== "auth/user-not-found") {
+        console.error("Error looking up user by email:", err);
+      }
+    }
+
+    if (existingUser && existingUser.uid) {
+      console.log(`👤 User already exists for ${email} (uid=${existingUser.uid}), linking immediately...`);
+      try {
+        await linkPendingInvites(email, existingUser.uid);
+      } catch (linkErr) {
+        console.error("Error linking pending invites on member creation:", linkErr);
+      }
+    }
+
+    // 2. Send invitation email via Resend
+    try {
+      const orgSnap = await db.collection("organizations").doc(orgId).get();
+      const orgData = orgSnap.exists ? orgSnap.data() : null;
+      const orgName = (orgData && orgData.name) || "Ticketto";
+      const lang = orgData?.defaultLanguage || "it";
+
+      const html = buildTeamInviteEmail({
+        orgName,
+        role,
+        recipientEmail: email,
+        lang,
+      });
+
+      const resend = new Resend(RESEND_API_KEY);
+      const emailPayload = {
+        from: EMAIL_FROM,
+        to: [email],
+        subject: t(lang, "email", "teamInviteSubject", { orgName }),
+        html: html,
+      };
+
+      const organizerEmail = await getOrganizerEmail(orgId, orgData);
+      if (organizerEmail) {
+        emailPayload.reply_to = [organizerEmail];
+      }
+
+      const { data: resendData, error: resendError } = await resend.emails.send(emailPayload);
+      if (resendError) {
+        console.error(`❌ Errore invio email invito a ${email}:`, resendError);
+      } else {
+        console.log(`✉️ Email invito inviata con successo a ${email} (resendId=${resendData?.id})`);
+      }
+    } catch (emailErr) {
+      console.error("❌ Exception during team invite email sending:", emailErr);
+    }
+  }
+);
+
+// ─── Callable: Claim Pending Invites ─────────────────────────
+exports.claimPendingInvites = onCall(async (request) => {
+  if (!request.auth || !request.auth.uid) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const email = (request.auth.token.email || "").toLowerCase().trim();
+  if (!email) {
+    return { linkedCount: 0, orgIds: [] };
+  }
+
+  const result = await linkPendingInvites(email, request.auth.uid);
+  return { success: true, ...result };
 });
 
