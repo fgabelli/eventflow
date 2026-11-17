@@ -1199,14 +1199,19 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
     switch (field.type) {
       case 'select':
+        final options = field.options ?? [];
+        final currentSelect = _customFieldValues[field.id];
+        final initialSelect = currentSelect is String && options.contains(currentSelect) ? currentSelect : null;
         return Padding(
+          key: ValueKey('cf_${field.id}'),
           padding: const EdgeInsets.only(bottom: 16),
           child: DropdownButtonFormField<String>(
+            initialValue: initialSelect,
             decoration: InputDecoration(
               labelText: label,
               prefixIcon: const Icon(Icons.list_rounded),
             ),
-            items: (field.options ?? []).map((opt) => DropdownMenuItem(
+            items: options.map((opt) => DropdownMenuItem(
               value: opt,
               child: Text(opt),
             )).toList(),
@@ -1219,6 +1224,7 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
       case 'checkbox':
         return Padding(
+          key: ValueKey('cf_${field.id}'),
           padding: const EdgeInsets.only(bottom: 16),
           child: FormField<bool>(
             initialValue: _customFieldValues[field.id] == true,
@@ -1294,8 +1300,10 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
       case 'number':
         return Padding(
+          key: ValueKey('cf_${field.id}'),
           padding: const EdgeInsets.only(bottom: 16),
           child: TextFormField(
+            initialValue: _customFieldValues[field.id]?.toString(),
             decoration: InputDecoration(
               labelText: label,
               hintText: field.placeholder,
@@ -1311,8 +1319,10 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
       case 'email':
         return Padding(
+          key: ValueKey('cf_${field.id}'),
           padding: const EdgeInsets.only(bottom: 16),
           child: TextFormField(
+            initialValue: _customFieldValues[field.id]?.toString(),
             decoration: InputDecoration(
               labelText: label,
               hintText: field.placeholder ?? 'email@example.com',
@@ -1330,8 +1340,10 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
       case 'phone':
         return Padding(
+          key: ValueKey('cf_${field.id}'),
           padding: const EdgeInsets.only(bottom: 16),
           child: TextFormField(
+            initialValue: _customFieldValues[field.id]?.toString(),
             decoration: InputDecoration(
               labelText: label,
               hintText: field.placeholder ?? '+39...',
@@ -1348,8 +1360,10 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
       case 'text':
       default:
         return Padding(
+          key: ValueKey('cf_${field.id}'),
           padding: const EdgeInsets.only(bottom: 16),
           child: TextFormField(
+            initialValue: _customFieldValues[field.id]?.toString(),
             decoration: InputDecoration(
               labelText: label,
               hintText: field.placeholder,
