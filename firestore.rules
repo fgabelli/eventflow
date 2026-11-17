@@ -48,6 +48,18 @@ service cloud.firestore {
       return email != null && email.lower().matches('.*@(litedl\\.com|aiqseo\\.com|mailinator\\.com|guerrillamail\\.com|10minutemail\\.com|tempmail\\.com|yopmail\\.com|sharklasers\\.com|trashmail\\.com|temp-mail\\.org|dispostable\\.com|getnada\\.com|mohmal\\.com|emailondeck\\.com|throwawaymail\\.com|fakeinbox\\.com|maildrop\\.cc|mailnesia\\.com|mintemail\\.com|mytemp\\.email|nada\\.email|burnermail\\.io|tempail\\.com|tempmailaddress\\.com|tmpmail\\.net|tmpmail\\.org|wegwerfmail\\.de)$');
     }
 
+    // Helper: validate post-event feedback document
+    function isValidFeedback(data) {
+      return data.keys().hasOnly(['rating', 'comment', 'createdAt'])
+        && data.keys().hasAll(['rating', 'comment', 'createdAt'])
+        && data.rating is int
+        && data.rating >= 1
+        && data.rating <= 5
+        && (data.comment == null || (data.comment is string && data.comment.size() <= 2000))
+        && data.createdAt is timestamp
+        && data.createdAt == request.time;
+    }
+
     // ─── Users ─────────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isAuth();
@@ -90,6 +102,16 @@ service cloud.firestore {
       // (attendeesCount & timeSlots are updated server-side by Cloud Functions)
       allow update: if isAuth() && isOrgStaff(resource.data.orgId) && !isOrgBlocked(resource.data.orgId) && canPublish(request.resource.data);
       allow delete: if isAuth() && isOrgAdmin(resource.data.orgId);
+
+      // Post-event feedback subcollection
+      match /feedback/{feedbackId} {
+        allow read: if isAuth()
+          && exists(/databases/$(database)/documents/events/$(eventId))
+          && isOrgMember(get(/databases/$(database)/documents/events/$(eventId)).data.orgId);
+        allow create: if exists(/databases/$(database)/documents/events/$(eventId))
+          && isValidFeedback(request.resource.data);
+        allow update, delete: if false;
+      }
     }
 
     // ─── Attendees ─────────────────────────────────────────────

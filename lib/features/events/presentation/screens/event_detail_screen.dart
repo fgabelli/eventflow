@@ -27,6 +27,7 @@ import 'package:eventflow/features/events/presentation/widgets/stripe_warning_ba
 import 'package:eventflow/features/events/presentation/widgets/custom_fields_section.dart';
 import 'package:eventflow/features/events/presentation/widgets/consent_settings_section.dart';
 import 'package:eventflow/features/events/presentation/widgets/scheduled_emails_section.dart';
+import 'package:eventflow/features/events/presentation/widgets/event_feedback_section.dart';
 
 class EventDetailScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -1698,6 +1699,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
               )).toList(),
             );
           },
+        ),
+
+        const SizedBox(height: 24),
+        EventFeedbackSection(
+          eventId: event.id,
+          eventTitle: event.title,
         ),
       ],
     );
