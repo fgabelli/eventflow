@@ -81,7 +81,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                     }
                   },
                   itemBuilder: (ctx) => [
-                    if (org != null && (org.plan == 'pro' || org.plan == 'business'))
+                    if (org != null && (org.plan == SubscriptionPlan.pro || org.plan == SubscriptionPlan.business))
                       const PopupMenuItem(
                         value: 'badges',
                         child: ListTile(
@@ -112,7 +112,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
                 const MobileSettingsButton(),
                 const SizedBox(width: 8),
               ] else ...[
-                if (org != null && (org.plan == 'pro' || org.plan == 'business'))
+                if (org != null && (org.plan == SubscriptionPlan.pro || org.plan == SubscriptionPlan.business))
                   IconButton(
                     onPressed: () => _exportBadgesA4(context, org),
                     icon: const Icon(Icons.picture_as_pdf_rounded),
@@ -737,7 +737,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
 
                 const SizedBox(height: 24),
 
-                if (org.plan == 'business') ...[
+                if (org.plan == SubscriptionPlan.business) ...[
                   SizedBox(
                     width: double.infinity,
                     height: 50,
