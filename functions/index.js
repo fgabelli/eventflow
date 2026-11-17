@@ -59,7 +59,7 @@ const i18nStrings = {
       thankYouSubject: '🙏 Grazie per aver partecipato a {{eventTitle}}!',
       thankYouTitle: '🙏 Grazie!',
       thankYouSubtitle: 'La tua partecipazione è stata preziosa',
-      thankYouBody: 'Grazie per aver partecipato a <strong style="color: #1A1A2E;">{{eventTitle}}</strong> del {{formattedDate}}. Speriamo che l\'esperienza sia stata di tuo gradimento!',
+      thankYouBody: 'Grazie per aver partecipato a <strong style="color: #1A1A2E;">{{eventTitle}}</strong> {{formattedDate}}. Speriamo che l\'esperienza sia stata di tuo gradimento!',
       feedbackTitle: '💬 Lascia un feedback',
       feedbackBody: 'Il tuo parere ci aiuta a migliorare i prossimi eventi',
       feedbackButton: 'Lascia il tuo feedback →',
