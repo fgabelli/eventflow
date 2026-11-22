@@ -8,6 +8,7 @@ import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
+import 'package:eventflow/features/promotions/data/voucher_duplicates.dart';
 
 class PublicVoucherClaimScreen extends StatefulWidget {
   final String? code;
@@ -32,6 +33,8 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
 
   bool _isSubmitting = false;
   bool _isClaimedSuccess = false;
+  /// true se il voucher mostrato e' quello che la persona aveva gia'.
+  bool _giaRitirato = false;
   String? _claimError;
 
   VoucherModel? _claimedVoucher;
@@ -167,6 +170,29 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
       if (promo.totalVouchers > 0 && promo.claimedCount >= promo.totalVouchers) {
         setState(() {
           _claimError = 'I voucher disponibili per questa promozione sono esauriti.';
+          _isSubmitting = false;
+        });
+        return;
+      }
+
+      // Una persona, un voucher per campagna: se email o telefono hanno gia'
+      // un voucher attivo o usato, le si mostra quello invece di crearne un
+      // altro (caso FitUP Lissone del 22/11/2026, vedi voucher_duplicates.dart).
+      final giaRitiratiSnap = await db
+          .collection(Collections.vouchers)
+          .where('promoId', isEqualTo: promo.id)
+          .where('status', whereIn: [VoucherStatus.claimed.name, VoucherStatus.redeemed.name])
+          .get();
+      final doppione = trovaDoppione(
+        esistenti: giaRitiratiSnap.docs.map(VoucherModel.fromFirestore),
+        email: _emailCtrl.text,
+        telefono: _phoneCtrl.text,
+      );
+      if (doppione != null) {
+        setState(() {
+          _claimedVoucher = doppione.voucher;
+          _isClaimedSuccess = true;
+          _giaRitirato = true;
           _isSubmitting = false;
         });
         return;
@@ -575,11 +601,16 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
                     TextFormField(
                       controller: _phoneCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Cellulare (Opzionale)',
+                        labelText: 'Cellulare *',
                         hintText: '+39...',
                         prefixIcon: Icon(Icons.phone_outlined),
                       ),
                       keyboardType: TextInputType.phone,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Obbligatorio';
+                        if (normalizzaTelefono(v).length < cifreMinimeTelefono) return 'Numero non valido';
+                        return null;
+                      },
                     ),
                   ],
                 ),
@@ -671,12 +702,19 @@ class _PublicVoucherClaimScreenState extends State<PublicVoucherClaimScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                AppLocalizations.of(context)['public_voucher_success_title'],
+                _giaRitirato
+                    ? 'Hai già un voucher'
+                    : AppLocalizations.of(context)['public_voucher_success_title'],
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Promozione attivata per ${voucher.claimedFullName.isNotEmpty ? voucher.claimedFullName : "te"}!',
+                _giaRitirato
+                    ? (voucher.isRedeemed
+                        ? 'Con questi dati il voucher di questa promozione è già stato utilizzato. Ne è previsto uno per persona.'
+                        : 'Con questi dati risulta già attivato un voucher per questa promozione: eccolo. Ne è previsto uno per persona.')
+                    : 'Promozione attivata per ${voucher.claimedFullName.isNotEmpty ? voucher.claimedFullName : "te"}!',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 textAlign: TextAlign.center,
               ),

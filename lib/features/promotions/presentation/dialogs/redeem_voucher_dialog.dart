@@ -8,6 +8,7 @@ import 'package:eventflow/core/constants/app_constants.dart';
 import 'package:eventflow/core/models.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
+import 'package:eventflow/features/promotions/data/voucher_duplicates.dart';
 
 class RedeemVoucherDialog extends ConsumerStatefulWidget {
   final Organization org;
@@ -33,6 +34,8 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
 
   VoucherModel? _foundVoucher;
   PromotionModel? _foundPromo;
+  /// Altri voucher della stessa campagna con lo stesso nome e cognome.
+  List<VoucherModel> _stessoNome = const [];
 
   @override
   void initState() {
@@ -64,6 +67,7 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
       _successMessage = null;
       _foundVoucher = null;
       _foundPromo = null;
+      _stessoNome = const [];
     });
 
     try {
@@ -118,9 +122,12 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
         promo = PromotionModel.fromFirestore(promoDoc);
       }
 
+      final stessoNome = await _cercaStessoNome(voucher);
+
       setState(() {
         _foundVoucher = voucher;
         _foundPromo = promo;
+        _stessoNome = stessoNome;
         _isLoading = false;
       });
     } catch (e) {
@@ -128,6 +135,21 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
         _errorMessage = 'Errore durante la verifica: $e';
         _isLoading = false;
       });
+    }
+  }
+
+  /// Se il controllo fallisce non si blocca la convalida: e' solo un avviso.
+  Future<List<VoucherModel>> _cercaStessoNome(VoucherModel voucher) async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection(Collections.vouchers)
+          .where('promoId', isEqualTo: voucher.promoId)
+          .where('status', whereIn: [VoucherStatus.claimed.name, VoucherStatus.redeemed.name])
+          .get();
+      return stessoNomeNellaCampagna(voucher, snap.docs.map(VoucherModel.fromFirestore));
+    } catch (e) {
+      debugPrint('Controllo omonimi non riuscito: $e');
+      return const [];
     }
   }
 
@@ -254,6 +276,7 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
                                   setState(() {
                                     _foundVoucher = null;
                                     _foundPromo = null;
+                                    _stessoNome = const [];
                                     _errorMessage = null;
                                     _successMessage = null;
                                   });
@@ -388,13 +411,17 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
         ? isVoucherExpired
         : (isVoucherExpired || isRegistrationClosed);
     final isRedeemed = voucher.isRedeemed;
+    final isCancelled = voucher.isCancelled;
     final isClaimed = voucher.isClaimed;
     final isAvailable = voucher.isAvailable;
 
     Color statusColor = AppColors.primary;
     String statusText = 'Valido & Disponibile';
 
-    if (isRedeemed) {
+    if (isCancelled) {
+      statusColor = AppColors.error;
+      statusText = 'ANNULLATO';
+    } else if (isRedeemed) {
       statusColor = AppColors.error;
       statusText = 'GIÀ RISCATTATO';
     } else if (isExpired) {
@@ -669,8 +696,28 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
             ),
           ],
 
+          // Voucher annullato dallo staff: non si convalida
+          if (isCancelled) ...[
+            _avviso(
+              icona: Icons.block_outlined,
+              colore: AppColors.error,
+              testo: 'Voucher annullato: non può essere convalidato.',
+            ),
+          ],
+
+          // Stessa campagna, stesso nome e cognome: avviso, non blocco
+          if (_stessoNome.isNotEmpty && !isCancelled) ...[
+            _avviso(
+              icona: Icons.warning_amber_rounded,
+              colore: const Color(0xFFB45309),
+              testo: 'Attenzione: in questa promozione c\'è già ${_stessoNome.length == 1 ? "un altro voucher" : "${_stessoNome.length} altri voucher"} a nome ${voucher.claimedFullName}:\n'
+                  '${_stessoNome.map((v) => v.isRedeemed && v.redeemedAt != null ? "• ${v.code}, usato il ${dateFormat.format(v.redeemedAt!)}" : "• ${v.code}, attivato${v.claimedAt != null ? " il ${dateFormat.format(v.claimedAt!)}" : ""}").join("\n")}\n'
+                  'Ne spetta uno per persona: se è la stessa persona chiedi un documento. Se è un omonimo puoi convalidare.',
+            ),
+          ],
+
           // Action Button: Confirm Redemption
-          if (!isRedeemed && !isExpired) ...[
+          if (!isRedeemed && !isExpired && !isCancelled) ...[
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -689,6 +736,28 @@ class _RedeemVoucherDialogState extends ConsumerState<RedeemVoucherDialog> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _avviso({required IconData icona, required Color colore, required String testo}) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: colore.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: colore.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icona, color: colore),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(testo, style: TextStyle(color: colore, fontWeight: FontWeight.w600, fontSize: 13)),
+          ),
         ],
       ),
     );
