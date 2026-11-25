@@ -152,8 +152,12 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _hasTimeSlots = event.hasTimeSlots;
     _editTimeSlots = List.from(event.timeSlots);
     _editCustomFields = List.from(event.customFields);
-    _selectedColor = event.primaryColor ?? '#0E6B52';
-    _hexColorCtrl.text = _selectedColor ?? '#0E6B52';
+    final orgColor = ref.read(currentOrgProvider).value?.primaryColor;
+    final defaultColor = (orgColor != null && orgColor.isNotEmpty) ? orgColor : '#0E6B52';
+    _selectedColor = (event.primaryColor != null && event.primaryColor!.isNotEmpty)
+        ? event.primaryColor!
+        : defaultColor;
+    _hexColorCtrl.text = _selectedColor ?? defaultColor;
     _showAttendeesCount = event.showAttendeesCount;
     _reminderEnabled = event.reminderEnabled;
     _reminderDaysBefore = event.reminderDaysBefore;
@@ -974,7 +978,11 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   }
 
   Widget _buildDetailView(EventModel event) {
-    final primaryColor = _parseHexColor(event.primaryColor);
+    final orgColor = ref.watch(currentOrgProvider).value?.primaryColor;
+    final effectiveColorHex = (event.primaryColor != null && event.primaryColor!.isNotEmpty)
+        ? event.primaryColor
+        : ((orgColor != null && orgColor.isNotEmpty) ? orgColor : '#0E6B52');
+    final primaryColor = _parseHexColor(effectiveColorHex);
     final isWhiteOrLight = primaryColor.computeLuminance() > 0.65;
     final cardDecoration = isWhiteOrLight
         ? BoxDecoration(
@@ -1160,7 +1168,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                     Text(
                       event.primaryColor != null && event.primaryColor!.isNotEmpty
                           ? 'Colore impostato: ${event.primaryColor}'
-                          : 'Colore predefinito (#0E6B52)',
+                          : (orgColor != null && orgColor.isNotEmpty
+                              ? 'Colore brand organizzazione ($orgColor)'
+                              : 'Colore predefinito (#0E6B52)'),
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
                   ],

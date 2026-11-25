@@ -175,6 +175,7 @@ class _AiEventCreatorDialogState extends ConsumerState<AiEventCreatorDialog> {
         hasTimeSlots: _hasTimeSlots,
         timeSlots: _hasTimeSlots ? _timeSlots : [],
         customFields: _customFields,
+        primaryColor: (org.primaryColor != null && org.primaryColor!.isNotEmpty) ? org.primaryColor : null,
       ));
 
       if (mounted) {

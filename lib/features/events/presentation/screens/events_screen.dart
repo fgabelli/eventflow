@@ -606,7 +606,12 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
   @override
   void initState() {
     super.initState();
-    // Default event language = current UI language
+    // Default event color = organization brand color, fallback to Ticketto green
+    final orgColor = ref.read(currentOrgProvider).value?.primaryColor;
+    if (orgColor != null && orgColor.isNotEmpty) {
+      _selectedColor = orgColor;
+      _hexColorController.text = orgColor;
+    }
   }
 
   @override
