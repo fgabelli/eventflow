@@ -860,8 +860,10 @@ class _CreateEventSheetState extends ConsumerState<_CreateEventSheet> {
                     decoration: InputDecoration(
                       hintText: AppLocalizations.of(context)['event_desc_hint'],
                     ),
-                    maxLines: 3,
-                    textInputAction: TextInputAction.next,
+                    minLines: 5,
+                    maxLines: 15,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
                   ),
                   const SizedBox(height: 20),
 

@@ -1927,7 +1927,14 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         const SizedBox(height: 20),
 
         _buildLabel(AppLocalizations.of(context)['description_label']),
-        TextField(controller: _descCtrl, maxLines: 3, decoration: InputDecoration(hintText: AppLocalizations.of(context)['description_label'])),
+        TextField(
+          controller: _descCtrl,
+          minLines: 5,
+          maxLines: 15,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.newline,
+          decoration: InputDecoration(hintText: AppLocalizations.of(context)['description_label']),
+        ),
         const SizedBox(height: 20),
 
         _buildLabel(AppLocalizations.of(context)['location_label']),

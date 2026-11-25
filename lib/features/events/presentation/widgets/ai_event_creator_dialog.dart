@@ -491,7 +491,13 @@ class _AiEventCreatorDialogState extends ConsumerState<AiEventCreatorDialog> {
 
                 // Description
                 _buildLabel('Descrizione'),
-                TextField(controller: _descCtrl, maxLines: 3),
+                TextField(
+                  controller: _descCtrl,
+                  minLines: 5,
+                  maxLines: 15,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                ),
                 const SizedBox(height: 16),
 
                 // Date & Time
