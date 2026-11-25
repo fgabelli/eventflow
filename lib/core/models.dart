@@ -562,10 +562,12 @@ class EventModel {
       );
 
   bool get isFull => attendeesCount >= maxAttendees;
+  bool get isRegistrationDeadlinePassed =>
+      registrationDeadline != null && !DateTime.now().isBefore(registrationDeadline!);
   bool get isRegistrationOpen =>
       status == EventStatus.published &&
       !isFull &&
-      (registrationDeadline == null || DateTime.now().isBefore(registrationDeadline!));
+      !isRegistrationDeadlinePassed;
 }
 
 // ─── Custom Field ──────────────────────────────────────────────────

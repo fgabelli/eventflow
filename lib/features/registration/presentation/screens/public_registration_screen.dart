@@ -113,6 +113,15 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
     });
 
     try {
+      // Check registration deadline
+      if (event.isRegistrationDeadlinePassed) {
+        setState(() {
+          _registrationError = AppLocalizations.of(_localizedCtx ?? context)['registration_closed_msg'];
+          _isSubmitting = false;
+        });
+        return;
+      }
+
       // Check capacity (overall or slot-based)
       if (event.hasTimeSlots && _selectedSlotId != null) {
         final selectedSlot = event.timeSlots.firstWhere((s) => s.id == _selectedSlotId);
@@ -578,8 +587,8 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
 
               const SizedBox(height: 28),
 
-              // Capacity warning
-              if (event.isFull) ...[
+              // Capacity or deadline warning
+              if (event.isFull || event.isRegistrationDeadlinePassed) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -593,7 +602,9 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          AppLocalizations.of(_localizedCtx ?? context)['event_full_warning'],
+                          event.isFull
+                              ? AppLocalizations.of(_localizedCtx ?? context)['event_full_warning']
+                              : AppLocalizations.of(_localizedCtx ?? context)['registration_closed_msg'],
                           style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.w500),
                         ),
                       ),
@@ -604,7 +615,7 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
               ],
 
               // Registration Form
-              if (!event.isFull) ...[
+              if (!event.isFull && !event.isRegistrationDeadlinePassed) ...[
                 Text(
                   AppLocalizations.of(_localizedCtx ?? context)['register_title'],
                   style: Theme.of(context).textTheme.headlineMedium,
@@ -770,7 +781,7 @@ class _PublicRegistrationScreenState extends State<PublicRegistrationScreen> {
                 ),
 
                 // Group Registration (only if organizer enabled it)
-                if (event.allowGroupRegistration && !event.isFull) ...[
+                if (event.allowGroupRegistration && !event.isFull && !event.isRegistrationDeadlinePassed) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

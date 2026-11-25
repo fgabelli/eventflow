@@ -77,6 +77,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
   // Bug #7: Date/time fields for editing
   late DateTime _editDate;
   late TimeOfDay _editTime;
+  DateTime? _editRegistrationDeadline;
 
   @override
   void initState() {
@@ -171,6 +172,7 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
     _meetingUrlCtrl.text = event.meetingUrl ?? '';
     _editDate = event.date;
     _editTime = TimeOfDay(hour: event.date.hour, minute: event.date.minute);
+    _editRegistrationDeadline = event.registrationDeadline;
   }
 
   Future<void> _saveEvent(EventModel event) async {
@@ -245,6 +247,9 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
         'primaryColor': _selectedColor,
         'showAttendeesCount': _showAttendeesCount,
         'date': Timestamp.fromDate(newDate),
+        'registrationDeadline': _editRegistrationDeadline != null
+            ? Timestamp.fromDate(_editRegistrationDeadline!)
+            : null,
         'reminderEnabled': isPremiumPlan ? _reminderEnabled : false,
         'reminderDaysBefore': _reminderDaysBefore,
         'reminderCustomMessage': normalizeCustomMsg(_reminderCustomMsgCtrl.text),
@@ -2073,6 +2078,98 @@ class _EventDetailScreenState extends ConsumerState<EventDetailScreen> {
                 ],
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Optional registration deadline (date + time)
+        _buildLabel('Chiudi le iscrizioni il (facoltativo)'),
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () async {
+                  final base = _editRegistrationDeadline ?? _editDate;
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: base,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2030),
+                  );
+                  if (picked != null) {
+                    final prev = _editRegistrationDeadline;
+                    setState(() {
+                      _editRegistrationDeadline = DateTime(
+                        picked.year,
+                        picked.month,
+                        picked.day,
+                        prev?.hour ?? _editTime.hour,
+                        prev?.minute ?? _editTime.minute,
+                      );
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.event_busy_outlined),
+                  ),
+                  child: Text(
+                    _editRegistrationDeadline != null
+                        ? '${_editRegistrationDeadline!.day.toString().padLeft(2, '0')}/${_editRegistrationDeadline!.month.toString().padLeft(2, '0')}/${_editRegistrationDeadline!.year}'
+                        : 'Aperte fino all\'evento',
+                    style: TextStyle(
+                      color: _editRegistrationDeadline != null ? null : AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: InkWell(
+                onTap: () async {
+                  final base = _editRegistrationDeadline ?? _editDate;
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: _editRegistrationDeadline != null
+                        ? TimeOfDay(hour: _editRegistrationDeadline!.hour, minute: _editRegistrationDeadline!.minute)
+                        : _editTime,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _editRegistrationDeadline = DateTime(
+                        base.year,
+                        base.month,
+                        base.day,
+                        picked.hour,
+                        picked.minute,
+                      );
+                    });
+                  }
+                },
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.access_time_outlined),
+                  ),
+                  child: Text(
+                    _editRegistrationDeadline != null
+                        ? '${_editRegistrationDeadline!.hour.toString().padLeft(2, '0')}:${_editRegistrationDeadline!.minute.toString().padLeft(2, '0')}'
+                        : '--:--',
+                    style: TextStyle(
+                      color: _editRegistrationDeadline != null ? null : AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (_editRegistrationDeadline != null) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Rimuovi scadenza',
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: () => setState(() => _editRegistrationDeadline = null),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 20),
