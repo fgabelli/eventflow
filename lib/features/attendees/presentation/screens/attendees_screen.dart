@@ -1798,6 +1798,7 @@ class _AttendeesScreenState extends ConsumerState<AttendeesScreen> {
       final attendeesSnap = await FirebaseFirestore.instance
           .collection(Collections.attendees)
           .where('eventId', isEqualTo: _selectedEventId)
+          .where('orgId', isEqualTo: org.id)
           .get();
       
       final attendees = attendeesSnap.docs.map((d) => Attendee.fromFirestore(d)).toList();
