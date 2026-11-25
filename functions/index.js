@@ -18,6 +18,29 @@ const storage = admin.storage();
 // These are loaded from functions/.env file
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const EMAIL_FROM = process.env.EMAIL_FROM || 'Ticketto <event@ticketto.it>';
+const EMAIL_UNSUBSCRIBE_HEADERS = {
+  "List-Unsubscribe": "<mailto:event@ticketto.it?subject=unsubscribe>",
+};
+
+function htmlToPlainText(html) {
+  if (!html || typeof html !== "string") return "";
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|h[1-6]|li|table)>/gi, "\n")
+    .replace(/<td[^>]*>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 // ─── i18n Localization ──────────────────────────────────────
 const SUPPORTED_LANGUAGES = ['it', 'en'];
@@ -26,7 +49,7 @@ const i18nStrings = {
   it: {
     email: {
       // Confirmation email
-      confirmationSubject: '🎫 Registrazione Confermata – {{eventTitle}}',
+      confirmationSubject: 'Registrazione confermata - {{eventTitle}}',
       confirmationTitle: 'Registrazione Confermata',
       confirmationSubtitle: 'Il tuo posto è stato riservato',
       greeting: 'Ciao <strong>{{firstName}}</strong>,',
@@ -50,13 +73,13 @@ const i18nStrings = {
       googleWalletButton: 'Aggiungi a Google Wallet',
       sentBy: 'Inviato da <strong>{{orgName}}</strong>',
       // Reminder email
-      reminderSubject: '📅 Promemoria: {{eventTitle}} si avvicina!',
+      reminderSubject: 'Promemoria: {{eventTitle}} si avvicina',
       reminderTitle: '📅 Promemoria Evento',
       reminderSubtitle: 'Non dimenticare, ci vediamo presto!',
       reminderBody: 'Ti ricordiamo che l\'evento <strong style="color: #1A1A2E;">{{eventTitle}}</strong> si avvicina. Ecco i dettagli:',
       reminderNote: 'Ricorda di portare con te il QR code ricevuto nella mail di conferma per un check-in rapido all\'ingresso.',
       // Thank you email
-      thankYouSubject: '🙏 Grazie per aver partecipato a {{eventTitle}}!',
+      thankYouSubject: 'Grazie per aver partecipato a {{eventTitle}}',
       thankYouTitle: '🙏 Grazie!',
       thankYouSubtitle: 'La tua partecipazione è stata preziosa',
       thankYouBody: 'Grazie per aver partecipato a <strong style="color: #1A1A2E;">{{eventTitle}}</strong> {{formattedDate}}. Speriamo che l\'esperienza sia stata di tuo gradimento!',
@@ -107,7 +130,7 @@ const i18nStrings = {
   en: {
     email: {
       // Confirmation email
-      confirmationSubject: '🎫 Registration Confirmed – {{eventTitle}}',
+      confirmationSubject: 'Registration confirmed - {{eventTitle}}',
       confirmationTitle: 'Registration Confirmed',
       confirmationSubtitle: 'Your spot has been reserved',
       greeting: 'Hi <strong>{{firstName}}</strong>,',
@@ -131,13 +154,13 @@ const i18nStrings = {
       googleWalletButton: 'Add to Google Wallet',
       sentBy: 'Sent by <strong>{{orgName}}</strong>',
       // Reminder email
-      reminderSubject: '📅 Reminder: {{eventTitle}} is coming up!',
+      reminderSubject: 'Reminder: {{eventTitle}} is coming up',
       reminderTitle: '📅 Event Reminder',
       reminderSubtitle: 'Don\'t forget, see you soon!',
       reminderBody: 'Just a reminder that <strong style="color: #1A1A2E;">{{eventTitle}}</strong> is coming up. Here are the details:',
       reminderNote: 'Remember to bring the QR code you received in the confirmation email for a quick check-in at the entrance.',
       // Thank you email
-      thankYouSubject: '🙏 Thanks for attending {{eventTitle}}!',
+      thankYouSubject: 'Thanks for attending {{eventTitle}}',
       thankYouTitle: '🙏 Thank you!',
       thankYouSubtitle: 'Your attendance meant a lot to us',
       thankYouBody: 'Thank you for attending <strong style="color: #1A1A2E;">{{eventTitle}}</strong> on {{formattedDate}}. We hope you enjoyed the experience!',
@@ -1261,6 +1284,8 @@ exports.onAttendeeCreated = onDocumentCreated(
         to: [attendee.email],
         subject: t(lang, 'email', 'confirmationSubject', { eventTitle: eventData.title }),
         html: html,
+        text: htmlToPlainText(html),
+        headers: EMAIL_UNSUBSCRIBE_HEADERS,
       };
 
       // Reply-To → organizzatore: se il partecipante risponde (disdetta, domande)
@@ -1622,6 +1647,8 @@ exports.resendAttendeeConfirmation = onRequest(
         to: [attendee.email],
         subject: t(lang, 'email', 'confirmationSubject', { eventTitle: eventData.title }),
         html: html,
+        text: htmlToPlainText(html),
+        headers: EMAIL_UNSUBSCRIBE_HEADERS,
       };
 
       const organizerEmail = await getOrganizerEmail(orgId, orgData);
@@ -3792,6 +3819,8 @@ exports.processScheduledEmails = onSchedule(
                 to: [att.email],
                 subject: t(lang, 'email', 'reminderSubject', { eventTitle: eventData.title }),
                 html: html,
+                text: htmlToPlainText(html),
+                headers: EMAIL_UNSUBSCRIBE_HEADERS,
               };
               if (organizerEmail) payload.reply_to = [organizerEmail];
               const { data: sendData, error: sendErr } = await resend.emails.send(payload);
@@ -3883,6 +3912,8 @@ exports.processScheduledEmails = onSchedule(
               to: [att.email],
               subject: t(lang, 'email', 'thankYouSubject', { eventTitle: eventData.title }),
               html: html,
+              text: htmlToPlainText(html),
+              headers: EMAIL_UNSUBSCRIBE_HEADERS,
             };
             if (organizerEmail) payload.reply_to = [organizerEmail];
             const { data: sendData, error: sendErr } = await resend.emails.send(payload);
@@ -4048,7 +4079,7 @@ exports.sendTestScheduledEmail = onCall(
     const lang = getEventLang(effectiveEvent);
     const firstName = (recipientName.trim().split(/\s+/)[0]) || (lang === "it" ? "Mario" : "Alex");
     const testAttendee = { firstName, lastName: "", email: recipientEmail };
-    const prefix = lang === "it" ? "[PROVA] " : "[TEST] ";
+    const prefix = lang === "it" ? "[Prova] " : "[Test] ";
 
     let subject;
     let html;
@@ -4068,6 +4099,8 @@ exports.sendTestScheduledEmail = onCall(
       to: [recipientEmail],
       subject,
       html,
+      text: htmlToPlainText(html),
+      headers: EMAIL_UNSUBSCRIBE_HEADERS,
     };
     if (organizerEmail) payload.reply_to = [organizerEmail];
 
