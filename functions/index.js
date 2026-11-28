@@ -2239,16 +2239,67 @@ exports.stripeWebhook = onRequest(
 );
 
 // ─── Create Stripe Customer Portal Session ──────────────────
-exports.createPortalSession = onRequest(
-  {
-    cors: true,
-  },
-  async (req, res) => {
-    const { customerId, returnUrl } = req.query;
+exports.createPortalSession = onCall(
+  { cors: true },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError(
+        "unauthenticated",
+        "È necessario essere autenticati per gestire l'abbonamento."
+      );
+    }
 
-    if (!customerId) {
-      res.status(400).json({ error: "Missing customerId" });
-      return;
+    const uid = request.auth.uid;
+    const { orgId } = request.data || {};
+
+    if (!orgId || typeof orgId !== "string" || !orgId.trim()) {
+      throw new HttpsError("invalid-argument", "orgId mancante o non valido.");
+    }
+
+    const cleanOrgId = orgId.trim();
+    const orgRef = db.collection("organizations").doc(cleanOrgId);
+    const orgDoc = await orgRef.get();
+
+    if (!orgDoc.exists) {
+      throw new HttpsError("not-found", "Organizzazione non trovata.");
+    }
+
+    const orgData = orgDoc.data() || {};
+
+    // Verify user is owner or admin of this organization
+    let isAuthorized = orgData.ownerId === uid;
+    if (!isAuthorized) {
+      const memberDoc = await orgRef.collection("members").doc(uid).get();
+      if (memberDoc.exists && ["owner", "admin"].includes(memberDoc.data()?.role)) {
+        isAuthorized = true;
+      } else {
+        const memberSnap = await orgRef
+          .collection("members")
+          .where("userId", "==", uid)
+          .limit(1)
+          .get();
+        if (
+          !memberSnap.empty &&
+          ["owner", "admin"].includes(memberSnap.docs[0].data()?.role)
+        ) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      throw new HttpsError(
+        "permission-denied",
+        "Solo gli amministratori dell'organizzazione possono gestire l'abbonamento."
+      );
+    }
+
+    const customerId = orgData.stripeCustomerId;
+    if (!customerId || typeof customerId !== "string") {
+      throw new HttpsError(
+        "failed-precondition",
+        "Nessun cliente Stripe associato a questa organizzazione."
+      );
     }
 
     try {
@@ -2256,12 +2307,16 @@ exports.createPortalSession = onRequest(
 
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: returnUrl || "https://ticketto.it/settings",
+        return_url: "https://ticketto.it/app.html#/subscription",
       });
 
-      res.json({ url: session.url });
+      return { url: session.url };
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error("❌ Error creating portal session:", error);
+      throw new HttpsError(
+        "internal",
+        "Impossibile aprire il portale di gestione abbonamento."
+      );
     }
   }
 );
