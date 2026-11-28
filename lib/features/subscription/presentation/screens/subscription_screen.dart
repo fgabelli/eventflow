@@ -4,9 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:intl/intl.dart';
 import 'package:eventflow/core/theme/app_theme.dart';
 import 'package:eventflow/core/l10n/app_localizations.dart';
 import 'package:eventflow/core/constants/app_constants.dart';
+import 'package:eventflow/core/models.dart';
 import 'package:eventflow/features/auth/presentation/providers/auth_providers.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,10 +24,54 @@ class SubscriptionScreen extends ConsumerStatefulWidget {
 class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   bool _isYearly = true;
   bool _isLoading = false;
+  bool _isPortalLoading = false;
 
   SubscriptionPlan get _currentPlan {
     final org = ref.watch(currentOrgProvider).value;
     return org?.plan ?? SubscriptionPlan.free;
+  }
+
+  Future<void> _handleOpenPortal() async {
+    final org = ref.read(currentOrgProvider).value;
+    if (org == null) return;
+
+    setState(() => _isPortalLoading = true);
+    try {
+      final callable = FirebaseFunctions.instanceFor(region: 'us-central1')
+          .httpsCallable('createPortalSession');
+      final result = await callable.call({'orgId': org.id});
+      final url = result.data?['url'] as String?;
+
+      if (url == null || url.isEmpty) {
+        throw Exception('URL portale non disponibile');
+      }
+
+      if (kIsWeb) {
+        await launchUrl(Uri.parse(url), webOnlyWindowName: '_self');
+      } else {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Errore nell\'apertura del portale'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${AppLocalizations.of(context)['error_generic_short']}: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPortalLoading = false);
+    }
   }
 
   Future<void> _handleSubscribe(SubscriptionPlan plan) async {
@@ -161,6 +208,13 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width <= 800;
+    final org = ref.watch(currentOrgProvider).value;
+    final role = ref.watch(currentRoleProvider).value;
+    final isAdminOrOwner = role == OrgRole.owner || role == OrgRole.admin;
+    final showManagementSection = org != null &&
+        (org.subscriptionCancelAt != null ||
+            (isAdminOrOwner && org.hasManageableSubscription));
+
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: isMobile
@@ -179,7 +233,12 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           children: [
             // Header
             _buildHeader(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+
+            if (showManagementSection) ...[
+              _buildSubscriptionManagementSection(org, isAdminOrOwner),
+              const SizedBox(height: 24),
+            ],
 
             // Billing toggle
             _buildBillingToggle(),
@@ -261,6 +320,121 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSubscriptionManagementSection(
+    Organization org,
+    bool isAdminOrOwner,
+  ) {
+    final cancelAt = org.subscriptionCancelAt;
+    final formattedCancelDate =
+        cancelAt != null ? DateFormat('dd/MM/yyyy').format(cancelAt) : null;
+    final canManagePortal = isAdminOrOwner && org.hasManageableSubscription;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 760),
+      child: Column(
+        children: [
+          if (formattedCancelDate != null)
+            Container(
+              width: double.infinity,
+              margin: EdgeInsets.only(bottom: canManagePortal ? 12 : 0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppColors.warning,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Il piano ${org.plan.label} resta attivo fino al $formattedCancelDate, poi passa a Free. Eventi e dati restano disponibili.',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (canManagePortal)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 12,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Abbonamento ${org.plan.label}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Cambio carta, fatture, disdetta',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _isPortalLoading ? null : _handleOpenPortal,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: _isPortalLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.credit_card_rounded, size: 18),
+                    label: const Text(
+                      'Gestisci abbonamento',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 

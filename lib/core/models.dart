@@ -23,6 +23,9 @@ class Organization {
   final bool stripeChargesEnabled;
   final bool trusted;
   final bool blocked;
+  final String? stripeSubscriptionId;
+  final String? subscriptionStatus;
+  final DateTime? subscriptionCancelAt;
 
   Organization({
     required this.id,
@@ -43,10 +46,17 @@ class Organization {
     this.stripeChargesEnabled = false,
     this.trusted = false,
     this.blocked = false,
+    this.stripeSubscriptionId,
+    this.subscriptionStatus,
+    this.subscriptionCancelAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   bool get hasActiveStripe => paymentMode == 'standard' && stripeChargesEnabled;
   bool get isStripePending => stripeConnectStatus == 'pending' || stripeConnectStatus == 'pending_verification';
+  bool get hasManageableSubscription =>
+      stripeSubscriptionId != null &&
+      stripeSubscriptionId!.isNotEmpty &&
+      (subscriptionStatus == 'active' || subscriptionStatus == 'past_due');
 
   factory Organization.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -72,6 +82,9 @@ class Organization {
       stripeChargesEnabled: data['stripeChargesEnabled'] == true,
       trusted: data['trusted'] == true,
       blocked: data['blocked'] == true,
+      stripeSubscriptionId: data['stripeSubscriptionId'] as String?,
+      subscriptionStatus: data['subscriptionStatus'] as String?,
+      subscriptionCancelAt: (data['subscriptionCancelAt'] as Timestamp?)?.toDate(),
     );
   }
 
